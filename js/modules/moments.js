@@ -1,0 +1,11 @@
+export function renderMomentsView(container) {
+  container.innerHTML = `
+    <div class="empty-placeholder">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+      </svg>
+      <span>Moments Feed (In Dev)</span>
+    </div>
+  `;
+}

@@ -1,0 +1,354 @@
+/* 地区选择弹窗容器 */
+.modal-container {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.modal-container.active {
+  display: flex;
+}
+
+.modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-sheet {
+  position: relative;
+  width: 100%;
+  height: 72%;
+  background: #FFFFFF;
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--line-color);
+  display: flex;
+  flex-direction: column;
+  padding: 10px 16px env(safe-area-inset-bottom, 16px) 16px;
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.12);
+  z-index: 100;
+  animation: slideUp 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.sheet-drag-handle {
+  width: 36px;
+  height: 4px;
+  background-color: #E0E0E0;
+  border-radius: 2px;
+  margin: 0 auto 10px auto;
+}
+
+.sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sheet-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.sheet-back-btn, .sheet-close-btn {
+  background: transparent;
+  border: none;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-main);
+}
+
+.sheet-search-wrap {
+  background: var(--bg-sub);
+  border-radius: 8px;
+  padding: 7px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.sheet-search-wrap input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-size: 13px;
+}
+
+.sheet-options-list {
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+  padding-bottom: 10px;
+}
+
+.sheet-options-list::-webkit-scrollbar {
+  display: none;
+}
+
+.sheet-option-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 4px;
+  border-bottom: 1px solid var(--line-color);
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-main);
+  transition: opacity 0.15s;
+}
+
+.sheet-option-item:active {
+  opacity: 0.4;
+}
+
+.sheet-option-item svg {
+  color: var(--text-muted);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 搜索匹配项样式 */
+.search-match-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.search-match-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-match-text strong {
+  font-size: 13.5px;
+  color: var(--text-main);
+}
+
+.search-crumb {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.no-result-text {
+  padding: 24px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* 地区选择弹窗容器 */
+.modal-container {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.modal-container.active {
+  display: flex;
+}
+
+.modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-sheet {
+  position: relative;
+  width: 100%;
+  height: 75%;
+  background: #FFFFFF;
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--line-color);
+  display: flex;
+  flex-direction: column;
+  padding: 10px 16px env(safe-area-inset-bottom, 16px) 16px;
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.12);
+  z-index: 100;
+  animation: slideUp 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.sheet-drag-handle {
+  width: 36px;
+  height: 4px;
+  background-color: #E0E0E0;
+  border-radius: 2px;
+  margin: 0 auto 10px auto;
+}
+
+.sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sheet-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.sheet-back-btn, .sheet-close-btn {
+  background: transparent;
+  border: none;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-main);
+}
+
+/* 🚀 GPS 自动定位按钮样式 (纯黑线条风) */
+.gps-auto-btn {
+  width: 100%;
+  background-color: var(--bg-sub);
+  border: 1px dashed var(--line-dark);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.gps-auto-btn:active {
+  background-color: #000000;
+  color: #FFFFFF;
+}
+
+.sheet-search-wrap {
+  background: var(--bg-sub);
+  border-radius: 8px;
+  padding: 7px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.sheet-search-wrap input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-size: 13px;
+}
+
+.sheet-options-list {
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+  padding-bottom: 10px;
+}
+
+.sheet-options-list::-webkit-scrollbar {
+  display: none;
+}
+
+.sheet-option-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--line-color);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+  transition: opacity 0.15s;
+}
+
+.sheet-option-item:active {
+  opacity: 0.4;
+}
+
+.sheet-option-item svg {
+  color: var(--text-muted);
+}
+
+.search-match-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.search-match-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-match-text strong {
+  font-size: 13px;
+  color: var(--text-main);
+}
+
+.search-crumb {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.no-result-text {
+  padding: 24px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
