@@ -1,0 +1,255 @@
+/* ═══════════ 👈 左侧边缘滑动手势触发区 ═══════════ */
+.edge-swipe-zone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: 100%;
+  z-index: 80;
+  cursor: ew-resize;
+}
+
+/* 电脑端微弱的呼吸指示条（让用户感知可滑动） */
+.edge-swipe-indicator {
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 36px;
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.edge-swipe-zone:hover .edge-swipe-indicator {
+  background-color: #000000;
+  height: 50px;
+  width: 4px;
+}
+
+/* ═══════════ 📱 系统级 App 侧边栏抽屉 ═══════════ */
+.app-drawer-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 90;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1), visibility 0.3s;
+}
+
+.app-drawer-mask.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.app-drawer-sidebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 260px;
+  height: 100%;
+  background-color: #FFFFFF;
+  border-right: 1px solid var(--line-dark);
+  box-shadow: 10px 0 35px rgba(0, 0, 0, 0.15);
+  z-index: 95;
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  display: flex;
+  flex-direction: column;
+  padding: calc(16px + var(--safe-top)) 16px calc(16px + var(--safe-bottom)) 16px;
+}
+
+.app-drawer-sidebar.active {
+  transform: translateX(0);
+}
+
+/* 抽屉顶部头部 */
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line-color);
+  margin-bottom: 16px;
+}
+
+.drawer-os-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-os-name {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: var(--text-main);
+}
+
+.drawer-os-version {
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 0.8px;
+}
+
+.drawer-close-btn {
+  background: transparent;
+  border: 1px solid var(--line-color);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-main);
+  transition: all 0.15s ease;
+}
+
+.drawer-close-btn:hover {
+  border-color: #000000;
+}
+
+/* 抽屉中的应用列表 */
+.drawer-app-list {
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-app-list::-webkit-scrollbar {
+  display: none;
+}
+
+.drawer-app-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-muted);
+  position: relative;
+}
+
+.drawer-app-item:hover {
+  background-color: var(--bg-sub);
+  color: var(--text-main);
+}
+
+/* 选中激活的应用 */
+.drawer-app-item.active {
+  background-color: #000000;
+  color: #FFFFFF;
+  border-color: #000000;
+}
+
+.drawer-app-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1.5px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.drawer-app-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drawer-app-name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.drawer-app-desc {
+  font-size: 9.5px;
+  opacity: 0.7;
+}
+
+.drawer-app-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+/* 抽屉底部快捷栏 */
+.drawer-footer {
+  padding-top: 14px;
+  border-top: 1px solid var(--line-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.drawer-status-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.drawer-live-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #111111;
+}
+
+/* 占位 App 视图样式 */
+.app-view-container {
+  display: none;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+}
+
+.app-view-container.active {
+  display: flex;
+}
+
+.drawer-app-list {
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 2px;
+  margin-bottom: 8px;
+}
+
+.drawer-app-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  color: var(--text-muted);
+  position: relative;
+  flex-shrink: 0;
+}

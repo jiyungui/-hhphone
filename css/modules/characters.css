@@ -1,0 +1,481 @@
+/* ═══════════════════════════════════════════════════════════════
+   MINI PHONE OS · CHARACTERS MODULE (INS LINEAR COMPACT STYLE)
+   纯正极简白黑线条风 · 紧凑包裹 · 绝无 Emoji
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1. 角色库主容器 */
+.characters-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0 14px env(safe-area-inset-bottom, 14px) 14px;
+  overflow: hidden;
+  background-color: var(--bg-main);
+}
+
+/* 顶部标题栏 */
+.char-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0 8px 0;
+  border-bottom: 1px solid var(--line-color);
+  margin-bottom: 8px;
+}
+
+.char-header-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text-main);
+}
+
+.char-count-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-family: ui-monospace, monospace;
+}
+
+/* 顶栏下方的加号新建栏 */
+.char-add-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--bg-sub);
+  border: 1px dashed var(--line-dark);
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: all 0.15s ease;
+  color: var(--text-main);
+  flex-shrink: 0;
+}
+
+.char-add-bar:hover {
+  background: #FFFFFF;
+  border-color: #000000;
+}
+
+.char-add-bar:active {
+  transform: scale(0.98);
+}
+
+.char-add-bar-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--line-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.char-add-bar-text {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* 2. 角色卡片列表 (流式紧凑堆叠) */
+.char-grid-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 16px;
+}
+
+.char-grid-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* ✨ 紧凑包裹卡片：高度只包裹头像，绝无多余空白 */
+.char-card-item {
+  height: auto;
+  min-height: unset;
+  border: 1px solid var(--line-color);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.char-card-item:hover {
+  border-color: #111111;
+  background: var(--bg-sub);
+}
+
+/* 长方形 3:4 证件照缩略图 */
+.char-card-avatar-thumb {
+  width: 52px;
+  height: 70px;
+  border-radius: 6px;
+  border: 1px solid var(--line-dark);
+  background: var(--bg-sub);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.char-card-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 右侧信息排版 */
+.char-card-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.char-card-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.char-name-occ-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.char-card-name {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.char-card-occ {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.char-action-icons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.char-del-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.char-del-btn:hover {
+  color: #000000;
+  background: #E5E5E5;
+}
+
+/* 标签行紧凑排列 */
+.char-card-mid-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.char-chip {
+  font-size: 8.5px;
+  font-weight: 700;
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  background: var(--bg-sub);
+  border: 1px solid var(--line-color);
+  color: var(--text-muted);
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.char-chip.active-tag {
+  background: #000000;
+  color: #FFFFFF;
+  border-color: #000000;
+}
+
+/* ═══════════ 📝 创建/编辑角色内置表单页面 ═══════════ */
+.char-form-scroll-view {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.char-form-scroll-view::-webkit-scrollbar {
+  display: none;
+}
+
+.char-form-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line-color);
+  margin-bottom: 4px;
+}
+
+.char-form-back-btn {
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+/* 顶部证件照 + 基础信息 */
+.char-id-photo-row {
+  display: flex;
+  gap: 12px;
+  background: #FFFFFF;
+  border: 1px solid var(--line-color);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.id-photo-frame {
+  width: 90px;
+  height: 120px;
+  border-radius: 8px;
+  border: 1.5px dashed var(--line-dark);
+  background: var(--bg-sub);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.id-photo-frame:hover {
+  background: #FFFFFF;
+}
+
+.id-photo-frame.has-image {
+  border-style: solid;
+  border-color: #000000;
+  background: #FFFFFF;
+}
+
+.id-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.id-photo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: var(--text-muted);
+}
+
+.id-photo-lbl {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.id-basic-info-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.form-input-sm {
+  width: 100%;
+  background: var(--bg-sub);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 5px 7px;
+  font-size: 11px;
+  outline: none;
+  color: var(--text-main);
+  font-family: inherit;
+}
+
+.form-input-sm:focus {
+  border-color: #000000;
+  background: #FFFFFF;
+}
+
+/* 详细信息母本输入框 */
+.full-detail-textarea {
+  width: 100%;
+  background: var(--bg-sub);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--text-main);
+  outline: none;
+  resize: vertical;
+  min-height: 85px;
+  font-family: inherit;
+  line-height: 1.45;
+}
+
+.full-detail-textarea:focus {
+  border-color: #000000;
+  background: #FFFFFF;
+}
+
+/* 特征提取专用标头与提取按钮 */
+.extract-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3px;
+}
+
+.single-extract-btn {
+  background: transparent;
+  border: 1px solid var(--line-dark);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 8.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--text-main);
+  transition: all 0.15s ease;
+}
+
+.single-extract-btn:hover {
+  background: #000000;
+  color: #FFFFFF;
+}
+
+.single-extract-btn:active {
+  transform: scale(0.94);
+}
+
+.extract-all-btn {
+  background: var(--bg-sub);
+  border: 1px dashed var(--line-dark);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-main);
+}
+
+.extract-all-btn:hover {
+  background: #000000;
+  color: #FFFFFF;
+}
+
+/* 地理位置选择触发按钮 */
+.location-picker-btn {
+  width: 100%;
+  background: var(--bg-sub);
+  border: 1px solid var(--line-color);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.location-picker-btn:hover {
+  background: #FFFFFF;
+  border-color: #000000;
+}
+
+.loc-btn-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loc-placeholder {
+  color: var(--text-muted);
+  font-weight: normal;
+}
+
+/* 最底部的全宽保存角色按钮 */
+.char-bottom-save-row {
+  margin-top: 6px;
+  margin-bottom: 24px;
+}
+
+.char-save-main-btn {
+  width: 100%;
+  padding: 12px;
+  background: #000000;
+  color: #FFFFFF;
+  border: 1px solid #000000;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.char-save-main-btn:active {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
