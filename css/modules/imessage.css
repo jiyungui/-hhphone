@@ -1,9 +1,15 @@
+/* ═══════════════════════════════════════════════════════════════
+   MINI PHONE OS · IMESSAGE & CHAT MODULE (INS LINEAR STYLE)
+   纯正极简白黑线条风 · 正方形头像 · 2-3-2 分组卡片 · 绝无 Emoji
+   ═══════════════════════════════════════════════════════════════ */
+
 .imessage-container {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 0 16px;
+  padding: 0 14px env(safe-area-inset-bottom, 14px) 14px;
   overflow: hidden;
+  background-color: var(--bg-main);
 }
 
 /* 顶部搜索框 */
@@ -16,7 +22,7 @@
   padding: 6px 10px;
   gap: 7px;
   margin-top: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .search-box:focus-within {
@@ -33,14 +39,14 @@
   color: var(--text-main);
 }
 
-/* ═══════════ ✨ 日历 & 天气 (紧凑精致排版) ═══════════ */
+/* ═══════════ 📅 日历 & 实时天气卡片 ═══════════ */
 .calendar-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-bottom: 12px;
+  gap: 8px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--line-color);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .calendar-top-bar {
@@ -70,7 +76,6 @@
   letter-spacing: 0.2px;
 }
 
-/* 右侧天气 */
 .calendar-weather-right {
   display: flex;
   align-items: center;
@@ -108,7 +113,6 @@
   color: #888888;
 }
 
-/* ═══════════ 7 天列排布（紧凑微缩） ═══════════ */
 .calendar-week-row {
   display: flex;
   justify-content: space-between;
@@ -122,7 +126,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 5px 0;
+  padding: 4px 0;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
@@ -130,291 +134,20 @@
 }
 
 .cal-weekday {
-  font-size: 10.5px;
+  font-size: 10px;
   color: #555555;
   font-weight: 500;
 }
 
 .cal-day-num {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #111111;
-  line-height: 1.15;
-}
-
-.cal-lunar {
-  font-size: 9px;
-  color: #AAAAAA;
-  font-weight: 400;
-}
-
-/* 选中黑色圆角胶囊（紧凑） */
-.cal-day-col.active {
-  background-color: #000000;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.12);
-}
-
-.cal-day-col.active .cal-weekday {
-  color: #FFFFFF;
-}
-
-.cal-day-col.active .cal-day-num {
-  color: #FFFFFF;
-}
-
-.cal-day-col.active .cal-lunar {
-  color: rgba(255, 255, 255, 0.85);
-}
-
-/* ═══════════ 会话列表 ═══════════ */
-.chat-list {
-  flex: 1;
-  overflow-y: auto;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-list::-webkit-scrollbar {
-  display: none;
-}
-
-.chat-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--line-color);
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-
-.chat-item:last-child {
-  border-bottom: none;
-}
-
-.chat-item:active {
-  opacity: 0.5;
-}
-
-.avatar-frame {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 1.5px solid var(--line-dark);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11.5px;
-  font-weight: 700;
-  background: var(--bg-main);
-  flex-shrink: 0;
-  position: relative;
-}
-
-.avatar-online-dot {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #000000;
-  border: 1.5px solid #FFFFFF;
-}
-
-.chat-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.chat-top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 2px;
-}
-
-.chat-name {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.chat-time {
-  font-size: 10.5px;
-  color: var(--text-muted);
-}
-
-.chat-bottom-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.chat-last-msg {
-  font-size: 11.5px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 170px;
-}
-
-.unread-pill {
-  width: 5px;
-  height: 5px;
-  background-color: var(--line-dark);
-  border-radius: 50%;
-}
-
-.imessage-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 0 16px;
-  overflow: hidden;
-}
-
-/* 顶部搜索框 */
-.search-box {
-  background: var(--bg-sub);
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  padding: 6px 10px;
-  gap: 7px;
-  margin-top: 6px;
-  margin-bottom: 10px;
-}
-
-.search-box:focus-within {
-  border-color: var(--line-dark);
-  background: #FFFFFF;
-}
-
-.search-box input {
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 12px;
-  width: 100%;
-  color: var(--text-main);
-}
-
-/* ═══════════ 日历 & 实时天气卡片 ═══════════ */
-.calendar-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--line-color);
-  margin-bottom: 10px;
-}
-
-.calendar-top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 0 2px;
-}
-
-.calendar-meta-left {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.cal-year-month {
-  font-size: 17px;
-  font-weight: 700;
-  color: #111111;
-  letter-spacing: -0.3px;
-}
-
-.cal-week-range {
-  font-size: 10.5px;
-  color: #999999;
-  font-weight: 500;
-  letter-spacing: 0.2px;
-}
-
-.calendar-weather-right {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 6px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-  color: #555555;
-}
-
-.calendar-weather-right:hover {
-  background-color: var(--bg-sub);
-}
-
-.weather-icon-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #444444;
-}
-
-.weather-text-wrap {
-  font-size: 11.5px;
-  font-weight: 500;
-  color: #444444;
-  white-space: nowrap;
-  max-width: 130px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.weather-text-wrap.unset {
-  border-bottom: 1px dashed #AAAAAA;
-  color: #888888;
-}
-
-.calendar-week-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 2px;
-}
-
-.cal-day-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 5px 0;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
-  gap: 2px;
-}
-
-.cal-weekday {
-  font-size: 10.5px;
-  color: #555555;
-  font-weight: 500;
-}
-
-.cal-day-num {
-  font-size: 13.5px;
   font-weight: 700;
   color: #111111;
   line-height: 1.15;
 }
 
 .cal-lunar {
-  font-size: 9px;
+  font-size: 8.5px;
   color: #AAAAAA;
   font-weight: 400;
 }
@@ -433,21 +166,21 @@
   color: rgba(255, 255, 255, 0.85);
 }
 
-/* ═══════════ ✨ 5 个圆形自定义头像栏 (Ins 线条风) ═══════════ */
+/* ═══════════ 5 个圆形头像栏 ═══════════ */
 .story-avatars-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2px 2px 12px 2px;
+  padding: 2px 2px 8px 2px;
   border-bottom: 1px solid var(--line-color);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .story-avatar-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   cursor: pointer;
 }
 
@@ -456,8 +189,8 @@
 }
 
 .story-avatar-circle {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   border: 1.5px dashed #BBBBBB;
   display: flex;
@@ -469,17 +202,9 @@
   transition: all 0.2s ease;
 }
 
-/* 当已有自定义图片时：实线黑白双层精致外圈 */
 .story-avatar-circle.has-image {
   border: 1.5px solid #111111;
   background-color: #FFFFFF;
-}
-
-.story-avatar-empty {
-  color: #888888;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .story-avatar-img {
@@ -489,142 +214,197 @@
   display: block;
 }
 
-/* 头像右下角极简小黑圈徽标 */
 .story-avatar-badge {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #000000;
-  border: 2px solid #FFFFFF;
-}
-
-.story-avatar-label {
-  font-size: 9.5px;
-  color: var(--text-muted);
-  font-weight: 500;
-  letter-spacing: 0.2px;
-}
-
-/* ═══════════ 会话列表 ═══════════ */
-.chat-list {
-  flex: 1;
-  overflow-y: auto;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-list::-webkit-scrollbar {
-  display: none;
-}
-
-.chat-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--line-color);
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-
-.chat-item:last-child {
-  border-bottom: none;
-}
-
-.chat-item:active {
-  opacity: 0.5;
-}
-
-.avatar-frame {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 1.5px solid var(--line-dark);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11.5px;
-  font-weight: 700;
-  background: var(--bg-main);
-  flex-shrink: 0;
-  position: relative;
-}
-
-.avatar-online-dot {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #000000;
   border: 1.5px solid #FFFFFF;
 }
 
-.chat-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.chat-top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 2px;
-}
-
-.chat-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.chat-time {
-  font-size: 10.5px;
+.story-avatar-label {
+  font-size: 9px;
   color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.2px;
 }
 
-.chat-bottom-row {
+/* ═══════════ 5 个头像框下方的新建对话「+」栏 ═══════════ */
+.chat-new-entry-bar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: var(--bg-sub);
+  border: 1px dashed var(--line-dark);
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: all 0.15s ease;
+  color: var(--text-main);
+  flex-shrink: 0;
 }
 
-.chat-last-msg {
-  font-size: 11.5px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 170px;
+.chat-new-entry-bar:hover {
+  background: #FFFFFF;
+  border-color: #000000;
 }
 
-.unread-pill {
-  width: 5px;
-  height: 5px;
-  background-color: var(--line-dark);
-  border-radius: 50%;
+.chat-new-entry-bar:active {
+  transform: scale(0.98);
 }
 
-/* ═══════════ 会话列表容器与极简空状态 ═══════════ */
+.chat-new-entry-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--line-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-new-entry-text {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* ═══════════ 2-3-2-3 动态分箱卡片列表 (无右上角标签) ═══════════ */
 .chat-list-container {
   flex: 1;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  gap: 8px;
+  padding-bottom: 20px;
 }
 
 .chat-list-container::-webkit-scrollbar {
   display: none;
 }
 
+/* 2-3-2 单独的分组卡片框 (已去除右上角黑标签，整体极简干净) */
+.chat-group-box {
+  background: #FFFFFF;
+  border: 1px solid var(--line-color);
+  border-radius: 12px;
+  padding: 0 10px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.15s ease;
+}
+
+.chat-group-box:hover {
+  border-color: #111111;
+}
+
+/* 框内的单个角色会话行 */
+.chat-item-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line-color);
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.chat-item-row:last-child {
+  border-bottom: none;
+}
+
+.chat-item-row:active {
+  opacity: 0.5;
+}
+
+/* ✨ 正方形等比头像框 (38px x 38px) */
+.chat-row-avatar-thumb {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--line-dark);
+  background: var(--bg-sub);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.chat-row-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.chat-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chat-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.chat-row-name {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-row-time {
+  font-size: 9.5px;
+  color: var(--text-muted);
+  font-family: ui-monospace, monospace;
+}
+
+.chat-row-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-row-last-msg {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 185px;
+}
+
+.chat-row-del-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  opacity: 0.6;
+}
+
+.chat-row-del-btn:hover {
+  opacity: 1;
+  color: #000000;
+}
+
+/* 空状态 */
 .chat-empty-state {
   flex: 1;
   display: flex;
@@ -654,13 +434,6 @@
 }
 
 .empty-desc {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--text-dim);
-}
-
-.chat-avatar-img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
 }

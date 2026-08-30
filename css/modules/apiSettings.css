@@ -1798,3 +1798,55 @@ select.form-input {
 .backup-btn.outline:active {
   background: var(--bg-sub);
 }
+
+/* ═══════════ 旧机搬家：JSON 文件导入专属样式 ═══════════ */
+.migrate-dropzone {
+  border: 1.5px dashed var(--line-dark);
+  border-radius: 8px;
+  padding: 14px 10px;
+  background: var(--bg-sub);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-top: 4px;
+}
+
+.migrate-dropzone:hover, .migrate-dropzone.dragover {
+  background: #FFFFFF;
+  border-color: #000000;
+}
+
+.migrate-dropzone-text {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.migrate-dropzone-sub {
+  font-size: 8.5px;
+  color: var(--text-muted);
+}
+
+.migrate-or-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  margin: 8px 0;
+  letter-spacing: 0.5px;
+}
+
+.migrate-or-divider::before, .migrate-or-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--line-color);
+}
+
+.migrate-or-divider:not(:empty)::before { margin-right: 8px; }
+.migrate-or-divider:not(:empty)::after { margin-left: 8px; }

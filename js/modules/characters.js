@@ -1,4 +1,5 @@
 import { worldLocations } from '../data/locationData.js';
+import { McpGateway } from '../utils/mcpGateway.js';
 
 let currentViewMode = 'list';
 let editingCharId = null;
@@ -50,20 +51,18 @@ export function renderCharactersView(container) {
 }
 
 /**
- * 1. 紧凑型角色列表主视图（高度贴合头像，去除开聊按键，信息上移）
+ * 1. 紧凑型角色列表主视图
  */
 function renderCharacterListView(container) {
   const characters = getStoredCharacters();
 
   container.innerHTML = `
     <div class="characters-container">
-      <!-- 顶栏标题 -->
       <div class="char-header">
         <span class="char-header-title">Characters</span>
         <span class="char-count-badge">${characters.length} CHARS</span>
       </div>
 
-      <!-- 顶栏下方的新建加号栏 -->
       <div class="char-add-bar" id="btn-open-add-char" title="录入新角色">
         <div class="char-add-bar-icon">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
@@ -74,7 +73,6 @@ function renderCharacterListView(container) {
         <span class="char-add-bar-text">录入新角色档案</span>
       </div>
 
-      <!-- 紧凑型角色列表 -->
       <div class="char-grid-list" id="char-grid-list">
         ${characters.length === 0 ? `
           <div class="empty-placeholder">
@@ -88,7 +86,6 @@ function renderCharacterListView(container) {
           </div>
         ` : characters.map(c => `
           <div class="char-card-item" data-id="${c.id}">
-            <!-- 3:4 长方形证件照头像 -->
             <div class="char-card-avatar-thumb">
               ${c.avatarUrl ? `<img src="${c.avatarUrl}" class="char-card-avatar-img" />` : `
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.8">
@@ -98,7 +95,6 @@ function renderCharacterListView(container) {
               `}
             </div>
 
-            <!-- 右侧紧凑信息区 -->
             <div class="char-card-info">
               <div class="char-card-top-row">
                 <div class="char-name-occ-wrap">
@@ -115,7 +111,6 @@ function renderCharacterListView(container) {
                 </div>
               </div>
 
-              <!-- 地理与时间感知等标签紧凑同行排列 -->
               <div class="char-card-mid-row">
                 ${c.residence ? `<span class="char-chip">${c.residence}</span>` : ''}
                 ${c.timePerception ? '<span class="char-chip active-tag">时间感知</span>' : ''}
@@ -128,7 +123,6 @@ function renderCharacterListView(container) {
     </div>
   `;
 
-  // 绑定事件
   const addBtn = container.querySelector('#btn-open-add-char');
   if (addBtn) {
     addBtn.onclick = () => {
@@ -174,7 +168,6 @@ function renderCharacterFormView(container) {
 
   container.innerHTML = `
     <div class="characters-container">
-      <!-- 顶部仅保留返回栏 -->
       <div class="char-form-header">
         <button class="char-form-back-btn" id="btn-back-char-list">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -182,7 +175,6 @@ function renderCharacterFormView(container) {
         </button>
       </div>
 
-      <!-- 表单主体滚动区 -->
       <div class="char-form-scroll-view">
         
         <!-- 1. 证件照 + 基础信息 -->
@@ -239,7 +231,7 @@ function renderCharacterFormView(container) {
               <span id="btn-extract-all-text">一键全部提取 (AI 驱动)</span>
             </button>
           </div>
-          <span class="card-desc">在此粘贴关于该 Char 的全部设定、背景故事或性格资料。点击各项目的「提取」键，AI 会精准提炼出连贯完整的特征。</span>
+          <span class="card-desc">在此粘贴关于该 Char 的全部设定、背景故事或性格资料。保存后将作为底层绝对认知注入模型。</span>
           <textarea class="full-detail-textarea" id="form-char-detailed-info" placeholder="在此粘贴角色的全部信息设定...&#10;例如：&#10;性格冷静内敛，喜欢在句尾加“...呢”。平时爱好研究各类古籍和喝热红茶，极度厌恶大蒜和嘈杂环境。常穿一件炭黑色修身长风衣，里面是整洁的白衬衫。眼瞳为深琥珀色，神情沉稳从容...">${charDraft.detailedInfo || ''}</textarea>
         </div>
 
@@ -247,7 +239,6 @@ function renderCharacterFormView(container) {
         <div class="api-card">
           <span class="card-title">特征提取与性格锚点</span>
 
-          <!-- A. 口癖提取 -->
           <div class="form-group">
             <div class="extract-label-row">
               <label class="form-label">口癖与语言习惯提取</label>
@@ -259,7 +250,6 @@ function renderCharacterFormView(container) {
             <textarea class="doc-textarea" id="form-char-catchphrase" style="min-height: 48px;" placeholder="点击提取或输入口癖习惯...">${charDraft.catchphrase}</textarea>
           </div>
 
-          <!-- B. 爱好兴趣讨厌提取 -->
           <div class="form-group">
             <div class="extract-label-row">
               <label class="form-label">爱好 · 兴趣 · 讨厌的东西提取</label>
@@ -271,7 +261,6 @@ function renderCharacterFormView(container) {
             <textarea class="doc-textarea" id="form-char-likes" style="min-height: 60px;" placeholder="点击提取或输入爱好与雷点...">${charDraft.likesAndDislikes}</textarea>
           </div>
 
-          <!-- C. 穿衣风格提取 -->
           <div class="form-group">
             <div class="extract-label-row">
               <label class="form-label">穿衣搭配风格提取</label>
@@ -283,7 +272,6 @@ function renderCharacterFormView(container) {
             <textarea class="doc-textarea" id="form-char-dress" style="min-height: 52px;" placeholder="点击提取或输入穿衣搭配风格...">${charDraft.dressStyle}</textarea>
           </div>
 
-          <!-- D. 外貌提取 -->
           <div class="form-group">
             <div class="extract-label-row">
               <label class="form-label">外貌特征细节提取</label>
@@ -324,8 +312,8 @@ function renderCharacterFormView(container) {
 
           <div class="toggle-row" style="margin-top: 4px;">
             <div class="toggle-info">
-              <span class="toggle-name">开启真实时间与作息感知</span>
-              <span class="toggle-hint">允许角色感知现实时间流逝、早晚作息与节气</span>
+              <span class="toggle-name">开启现实时间与时空感知</span>
+              <span class="toggle-hint">严格按真实时间时段 (${new Date().getHours() >= 18 ? '夜晚' : '白天'}) 与作息交流，严禁时间混乱</span>
             </div>
             <label>
               <input type="checkbox" class="switch-input" id="form-char-time-percept" ${charDraft.timePerception ? 'checked' : ''}/>
@@ -412,7 +400,7 @@ function renderCharacterFormView(container) {
         <div class="char-bottom-save-row">
           <button class="char-save-main-btn" id="btn-save-character">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            <span>保存角色档案并激活</span>
+            <span>保存角色档案并激活认知</span>
           </button>
         </div>
 
@@ -554,7 +542,7 @@ function bindCharacterFormEvents(container) {
     };
   }
 
-  // 保存角色
+  // ✨ 核心保存角色（同步强化至沙盒绝对认知库）
   const saveBtn = container.querySelector('#btn-save-character');
   if (saveBtn) {
     saveBtn.onclick = () => {
@@ -590,6 +578,27 @@ function bindCharacterFormEvents(container) {
       }
 
       saveStoredCharacters(list);
+
+      // ✨ 将核心口癖、喜好、约定自动作为不可磨灭的永久认知锚点存入角色独立沙盒
+      if (charDraft.catchphrase) {
+        McpGateway.saveCharMemory(name, {
+          id: `mem-cog-cp-${Date.now()}`,
+          charName: name,
+          anchorType: '语言习惯与口癖',
+          content: charDraft.catchphrase,
+          time: new Date().toISOString().replace('T', ' ').substring(0, 16)
+        });
+      }
+      if (charDraft.likesAndDislikes) {
+        McpGateway.saveCharMemory(name, {
+          id: `mem-cog-lk-${Date.now()}`,
+          charName: name,
+          anchorType: '爱好与偏好雷点',
+          content: charDraft.likesAndDislikes,
+          time: new Date().toISOString().replace('T', ' ').substring(0, 16)
+        });
+      }
+
       currentViewMode = 'list';
       editingCharId = null;
       renderCharactersView(container);
@@ -649,7 +658,6 @@ ${rawText}`;
     }
   }
 
-  // 离线长句语义扫描兜底
   return {
     catchphrase: extractFallbackIntact(rawText, ['口癖', '口头禅', '语气', '语调', '说话', '习惯', '喜欢说', '句末', '措辞']),
     likesAndDislikes: extractFallbackIntact(rawText, ['爱好', '喜欢', '偏爱', '热衷', '兴趣', '喜好', '讨厌', '厌恶', '反感', '雷点', '抗拒']),
@@ -685,9 +693,6 @@ function extractFallbackIntact(fullText, keywords) {
   return paragraphs[0] || '';
 }
 
-/**
- * 五大洲地理选择抽屉
- */
 function openLocationDrawer(onSelected) {
   const modalRoot = document.getElementById('modal-root') || document.body;
   const drawer = document.createElement('div');

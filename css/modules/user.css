@@ -1,0 +1,301 @@
+/* ═══════════════════════════════════════════════════════════════
+   MINI PHONE OS · USER MODULE (INS LINEAR COMPACT STYLE)
+   纯正极简白黑线条风 · 紧凑包裹 · 绝无 Emoji
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1. User 主容器 */
+.user-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0 14px env(safe-area-inset-bottom, 14px) 14px;
+  overflow: hidden;
+  background-color: var(--bg-main);
+}
+
+/* 顶部标题栏 */
+.user-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0 8px 0;
+  border-bottom: 1px solid var(--line-color);
+  margin-bottom: 8px;
+}
+
+.user-header-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text-main);
+}
+
+.user-count-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-family: ui-monospace, monospace;
+}
+
+/* 顶栏下方的加号新建栏 */
+.user-add-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--bg-sub);
+  border: 1px dashed var(--line-dark);
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: all 0.15s ease;
+  color: var(--text-main);
+  flex-shrink: 0;
+}
+
+.user-add-bar:hover {
+  background: #FFFFFF;
+  border-color: #000000;
+}
+
+.user-add-bar:active {
+  transform: scale(0.98);
+}
+
+.user-add-bar-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--line-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-add-bar-text {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* 2. 身份卡片列表 (紧凑流式排列) */
+.user-grid-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 16px;
+}
+
+.user-grid-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* 紧凑卡片：只包裹头像高度 */
+.user-card-item {
+  height: auto;
+  border: 1px solid var(--line-color);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.user-card-item:hover {
+  border-color: #111111;
+  background: var(--bg-sub);
+}
+
+.user-card-item.is-current-active {
+  border-color: #000000;
+  background: #FAFAFA;
+}
+
+/* 3:4 长方形证件照缩略图 */
+.user-card-avatar-thumb {
+  width: 52px;
+  height: 70px;
+  border-radius: 6px;
+  border: 1px solid var(--line-dark);
+  background: var(--bg-sub);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.user-card-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 右侧信息 */
+.user-card-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.user-card-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-name-occ-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.user-card-name {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-card-occ {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.user-action-icons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.user-del-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.user-del-btn:hover {
+  color: #000000;
+  background: #E5E5E5;
+}
+
+/* 标签行 */
+.user-card-mid-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.user-chip {
+  font-size: 8.5px;
+  font-weight: 700;
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  background: var(--bg-sub);
+  border: 1px solid var(--line-color);
+  color: var(--text-muted);
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-chip.active-tag {
+  background: #000000;
+  color: #FFFFFF;
+  border-color: #000000;
+}
+
+/* ═══════════ 📝 创建/编辑 User 身份表单 ═══════════ */
+.user-form-scroll-view {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-form-scroll-view::-webkit-scrollbar {
+  display: none;
+}
+
+.user-form-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line-color);
+  margin-bottom: 4px;
+}
+
+.user-form-back-btn {
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+/* 顶部证件照 + 基础信息行 */
+.user-id-photo-row {
+  display: flex;
+  gap: 12px;
+  background: #FFFFFF;
+  border: 1px solid var(--line-color);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.user-bottom-save-row {
+  margin-top: 6px;
+  margin-bottom: 24px;
+}
+
+.user-save-main-btn {
+  width: 100%;
+  padding: 12px;
+  background: #000000;
+  color: #FFFFFF;
+  border: 1px solid #000000;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.user-save-main-btn:active {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
