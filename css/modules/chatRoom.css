@@ -1,28 +1,29 @@
 /* ═══════════════════════════════════════════════════════════════
-   MINI PHONE OS · CHAT ROOM MODULE (INS LINEAR STYLE)
-   纯正极简白黑线条风 · 沉浸式对话空间 · 绝无 Emoji
+   MINI PHONE OS · CHAT ROOM MODULE (INS LINEAR REAL TEXTING)
+   时间戳外置 · 连发多气泡 · 独立全屏 · 绝无 Emoji
    ═══════════════════════════════════════════════════════════════ */
 
-/* 1. 聊天室主容器 (全屏覆盖在主工作区内) */
+/* 1. 全屏独立聊天室主容器 */
 .chat-room-container {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  height: 100%;
-  background-color: var(--bg-main);
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 30;
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-main);
+  z-index: 60;
   overflow: hidden;
+  animation: fadeIn 0.15s ease;
 }
 
-/* ═══════════ 2. 顶栏 (Header) ═══════════ */
+/* ═══════════ 2. 顶栏 ═══════════ */
 .chat-room-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
+  padding: calc(6px + var(--safe-top)) calc(12px + var(--safe-right)) 6px calc(10px + var(--safe-left));
   border-bottom: 1px solid var(--line-color);
   background-color: #FFFFFF;
   flex-shrink: 0;
@@ -35,12 +36,11 @@
   min-width: 0;
 }
 
-/* 返回键 */
 .chat-back-btn {
   background: transparent;
   border: none;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -53,10 +53,9 @@
   background: var(--bg-sub);
 }
 
-/* 圆形可自定义头像框 */
 .chat-header-avatar {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   border: 1.5px solid var(--line-dark);
   background: var(--bg-sub);
@@ -65,7 +64,6 @@
   justify-content: center;
   overflow: hidden;
   cursor: pointer;
-  position: relative;
   flex-shrink: 0;
 }
 
@@ -75,7 +73,6 @@
   object-fit: cover;
 }
 
-/* 角色姓名与在线状态 */
 .chat-header-info {
   display: flex;
   flex-direction: column;
@@ -90,22 +87,21 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 110px;
+  max-width: 130px;
 }
 
-/* 圆圈对号 + 在线 */
 .chat-header-status {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 600;
   color: var(--text-muted);
 }
 
 .status-check-circle {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   border: 1px solid var(--line-dark);
   display: flex;
@@ -114,20 +110,19 @@
   background: #FFFFFF;
 }
 
-/* 右侧文本功能按键（搜索 / 设置） */
 .chat-header-right {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   flex-shrink: 0;
 }
 
 .chat-header-text-btn {
   background: transparent;
   border: 1px solid var(--line-color);
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 10.5px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-main);
   cursor: pointer;
@@ -144,7 +139,7 @@
   color: #FFFFFF;
 }
 
-/* ═══════════ 3. 内置搜索条 (点击“搜索”滑出) ═══════════ */
+/* ═══════════ 3. 搜索条 ═══════════ */
 .chat-search-slide-bar {
   display: none;
   align-items: center;
@@ -152,7 +147,6 @@
   padding: 6px 12px;
   background: var(--bg-sub);
   border-bottom: 1px solid var(--line-color);
-  animation: fadeIn 0.15s ease;
 }
 
 .chat-search-slide-bar.active {
@@ -164,56 +158,50 @@
   background: #FFFFFF;
   border: 1px solid var(--line-color);
   border-radius: 6px;
-  padding: 5px 8px;
+  padding: 4px 7px;
   font-size: 11px;
   outline: none;
-}
-
-.chat-search-slide-input:focus {
-  border-color: #000000;
 }
 
 .chat-search-close-btn {
   background: transparent;
   border: none;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
 }
 
-/* ═══════════ 4. 对话消息流区域 ═══════════ */
+/* ═══════════ 4. 消息流与外置时间戳 ═══════════ */
 .chat-messages-area {
   flex: 1;
   overflow-y: auto;
-  padding: 12px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .chat-messages-area::-webkit-scrollbar {
   display: none;
 }
 
-/* 顶部 Handoff 记忆就绪提示 */
 .chat-handoff-pill {
   align-self: center;
   background: var(--bg-sub);
   border: 1px solid var(--line-color);
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 9px;
+  padding: 2.5px 8px;
+  border-radius: 10px;
+  font-size: 8.5px;
   color: var(--text-muted);
   font-weight: 600;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
-/* 消息行容器 */
+/* 单条/连发消息行容器 */
 .msg-bubble-row {
   display: flex;
-  gap: 8px;
-  max-width: 86%;
+  max-width: 84%;
 }
 
 .msg-bubble-row.assistant {
@@ -222,20 +210,32 @@
 
 .msg-bubble-row.user {
   align-self: flex-end;
-  flex-direction: row-reverse;
 }
 
-/* 气泡正文 (Ins 白黑双反差) */
+/* 气泡 + 外置时间外壳 */
+.msg-bubble-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.msg-bubble-row.assistant .msg-bubble-wrapper {
+  align-items: flex-start;
+}
+
+.msg-bubble-row.user .msg-bubble-wrapper {
+  align-items: flex-end;
+}
+
+/* 气泡正文 */
 .msg-bubble {
-  padding: 8px 12px;
+  padding: 7px 11px;
   border-radius: 12px;
   font-size: 11.5px;
-  line-height: 1.5;
+  line-height: 1.45;
   word-break: break-word;
-  position: relative;
 }
 
-/* 角色消息：白底黑线 */
 .msg-bubble-row.assistant .msg-bubble {
   background-color: #FFFFFF;
   color: #111111;
@@ -243,7 +243,6 @@
   border-top-left-radius: 2px;
 }
 
-/* 用户消息：纯黑底白字 */
 .msg-bubble-row.user .msg-bubble {
   background-color: #000000;
   color: #FFFFFF;
@@ -251,24 +250,20 @@
   border-top-right-radius: 2px;
 }
 
-.msg-time-tag {
-  font-size: 8px;
+/* ✨ 时间节点完全移到气泡外侧下方 */
+.msg-time-outside {
+  font-size: 8.5px;
   color: var(--text-muted);
-  margin-top: 3px;
   font-family: ui-monospace, monospace;
+  padding: 0 2px;
+  line-height: 1;
 }
 
-.msg-bubble-row.user .msg-time-tag {
-  text-align: right;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-/* 正在输入呼吸指示点 */
 .typing-wave-wrap {
   display: flex;
   align-items: center;
   gap: 3px;
-  padding: 4px 6px;
+  padding: 3px 5px;
 }
 
 .typing-dot {
@@ -287,66 +282,61 @@
   50% { transform: scale(1.2); opacity: 1; }
 }
 
-/* ═══════════ 5. 底栏 (Footer) ═══════════ */
+/* ═══════════ 5. 紧凑底栏 ═══════════ */
 .chat-room-footer {
   display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  padding: 8px 10px calc(8px + var(--safe-bottom)) 10px;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px calc(6px + var(--safe-bottom)) 10px;
   border-top: 1px solid var(--line-color);
   background-color: #FFFFFF;
   flex-shrink: 0;
 }
 
-/* 底部文本操作按钮（更多 / 续写 / 发送） */
 .chat-footer-btn {
   background: var(--bg-sub);
   border: 1px solid var(--line-dark);
-  padding: 7px 10px;
-  border-radius: 8px;
-  font-size: 11px;
+  padding: 0 8px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-main);
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.15s ease;
 }
 
 .chat-footer-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.94);
   background: #000000;
   color: #FFFFFF;
 }
 
-/* 发送键主色高亮 */
 .chat-footer-btn.send-btn {
   background: #000000;
   color: #FFFFFF;
   border-color: #000000;
 }
 
-.chat-footer-btn.send-btn:disabled {
-  background: #E5E5E5;
-  color: #999999;
-  border-color: #E5E5E5;
-  cursor: not-allowed;
-}
-
-/* 弹性输入框 */
 .chat-input-textarea {
   flex: 1;
   background: var(--bg-sub);
   border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 7px 9px;
-  font-size: 11.5px;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 11px;
   outline: none;
   resize: none;
-  height: 33px;
-  max-height: 80px;
+  height: 28px;
+  min-height: 28px;
+  max-height: 64px;
   font-family: inherit;
-  line-height: 1.4;
+  line-height: 1.35;
   color: var(--text-main);
   transition: all 0.15s;
 }
@@ -356,15 +346,14 @@
   background: #FFFFFF;
 }
 
-/* ═══════════ 6. 更多工具抽屉 (More Drawer) ═══════════ */
+/* ═══════════ 6. 更多工具抽屉 ═══════════ */
 .chat-more-drawer {
   display: none;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
-  padding: 12px 10px;
+  padding: 10px;
   background: var(--bg-sub);
   border-top: 1px solid var(--line-color);
-  animation: slideUp 0.2s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .chat-more-drawer.active {
@@ -380,9 +369,9 @@
 }
 
 .more-tool-icon-box {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   border: 1px solid var(--line-dark);
   background: #FFFFFF;
   display: flex;
@@ -398,7 +387,1196 @@
 }
 
 .more-tool-lbl {
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 700;
   color: var(--text-muted);
+}
+
+/* ═══════════ 角色内置全屏抽屉面板与内嵌翻译 ═══════════ */
+.chat-room-header .chat-header-text-btn.highlight {
+  background: #000000;
+  color: #FFFFFF;
+  border-color: #000000;
+}
+
+/* 内嵌翻译气泡样式 */
+.msg-inline-translation {
+  margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.trans-split-line {
+  width: 100%;
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.trans-text {
+  font-size: 10.5px;
+  color: #666666;
+  line-height: 1.35;
+  font-weight: 500;
+}
+
+/* 抽屉遮罩与容器 */
+.char-settings-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 90;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.15s ease;
+}
+
+.char-settings-drawer {
+  width: 100%;
+  height: 100%;
+  background: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.cs-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc(10px + var(--safe-top)) 14px 10px 14px;
+  border-bottom: 1px solid var(--line-color);
+}
+
+.cs-drawer-title {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.cs-drawer-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-main);
+  padding: 4px;
+}
+
+.cs-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cs-section-card {
+  background: #FFFFFF;
+  border: 1px solid var(--line-dark);
+  border-radius: 10px;
+  padding: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cs-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cs-avatar-preview {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1.5px solid #000000;
+  background: var(--bg-sub);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cs-avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cs-avatar-badge {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #FFFFFF;
+  font-size: 8px;
+  text-align: center;
+  padding: 1px 0;
+}
+
+.cs-info-inputs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cs-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.cs-input {
+  background: var(--bg-sub);
+  border: 1px solid var(--line-color);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 11px;
+  outline: none;
+  width: 100%;
+}
+
+.cs-card-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cs-card-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.cs-card-desc {
+  font-size: 9px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.cs-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-top: 1px solid var(--line-color);
+}
+
+.cs-toggle-row:first-of-type {
+  border-top: none;
+}
+
+.cs-toggle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 78%;
+}
+
+.cs-toggle-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.cs-toggle-desc {
+  font-size: 8.5px;
+  color: var(--text-muted);
+}
+
+.cs-memories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 140px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.cs-memory-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-sub);
+  border: 1px solid var(--line-color);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 10px;
+}
+
+.cs-mem-tag {
+  font-size: 8px;
+  background: #000000;
+  color: #FFFFFF;
+  padding: 1px 4px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.cs-mem-content {
+  flex: 1;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cs-mem-del {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.cs-mini-btn {
+  background: #000000;
+  color: #FFFFFF;
+  border: none;
+  font-size: 8.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cs-save-btn {
+  background: #000000;
+  color: #FFFFFF;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  margin-top: 6px;
+  margin-bottom: calc(10px + var(--safe-bottom));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MINI PHONE OS · CHAT SETTINGS & INLINE TRANSLATION (INS STYLE)
+   纯正极简白黑线条风 · 气泡内嵌翻译 · 记忆库连通 · 绝无 Emoji
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1. 气泡内嵌翻译样式 */
+.msg-bubble-translation-wrap {
+  margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.msg-trans-line-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--line-color, #EAEAEA);
+}
+
+.msg-bubble-row.user .msg-trans-line-divider {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.msg-trans-text {
+  font-size: 10px;
+  line-height: 1.35;
+  color: #777777;
+  letter-spacing: 0.1px;
+}
+
+.msg-bubble-row.user .msg-trans-text {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* 2. 角色设置全屏子页面 (Slide-in Subview) */
+.char-settings-subview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #FFFFFF;
+  z-index: 70;
+  display: none;
+  flex-direction: column;
+  animation: slideInRight 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.char-settings-subview.active {
+  display: flex;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* 设置子页面顶栏 */
+.settings-subview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(8px + var(--safe-top, 0px)) 12px 8px 10px;
+  border-bottom: 1px solid var(--line-color, #E5E5E5);
+  background: #FFFFFF;
+  flex-shrink: 0;
+}
+
+.settings-subview-back {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: #111111;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+.settings-subview-back:active {
+  background: #F5F5F5;
+}
+
+.settings-subview-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  color: #111111;
+}
+
+.settings-save-top-btn {
+  background: #000000;
+  color: #FFFFFF;
+  border: 1px solid #000000;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.settings-save-top-btn:active {
+  opacity: 0.8;
+  transform: scale(0.96);
+}
+
+/* 设置滚动主体 */
+.settings-subview-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px calc(24px + var(--safe-bottom, 0px)) 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #FAFAFA;
+}
+
+.settings-subview-body::-webkit-scrollbar {
+  display: none;
+}
+
+/* INS 风格极简卡片 */
+.ins-settings-card {
+  background: #FFFFFF;
+  border: 1px solid var(--line-color, #E5E5E5);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ins-card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ins-card-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #111111;
+}
+
+.ins-card-desc {
+  font-size: 9.5px;
+  color: #888888;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* 按钮微组件 */
+.ins-mini-btn {
+  background: transparent;
+  border: 1px solid #111111;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #111111;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ins-mini-btn:hover {
+  background: #111111;
+  color: #FFFFFF;
+}
+
+.ins-mini-btn.highlight {
+  background: #000000;
+  color: #FFFFFF;
+  border-color: #000000;
+}
+
+.ins-mini-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 头像与字段行 */
+.ins-avatar-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ins-avatar-box-lg {
+  width: 58px;
+  height: 58px;
+  border-radius: 10px;
+  border: 1.5px solid #111111;
+  background: #F5F5F5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ins-avatar-box-lg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ins-avatar-edit-tag {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.65);
+  color: #FFFFFF;
+  font-size: 8px;
+  font-weight: 600;
+  text-align: center;
+  padding: 1.5px 0;
+}
+
+.ins-form-fields-flex {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ins-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ins-field-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: #888888;
+}
+
+.ins-input-text, .ins-input-readonly, .ins-select-input {
+  background: #FFFFFF;
+  border: 1px solid var(--line-color, #E5E5E5);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: #111111;
+  outline: none;
+}
+
+.ins-input-text:focus, .ins-select-input:focus {
+  border-color: #000000;
+}
+
+.ins-input-readonly {
+  background: #F9F9F9;
+  color: #888888;
+  cursor: not-allowed;
+}
+
+/* 开关 Toggle */
+.ins-setting-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.toggle-left-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toggle-main-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #111111;
+}
+
+.toggle-sub-desc {
+  font-size: 9.5px;
+  color: #888888;
+  line-height: 1.35;
+}
+
+.ins-switch {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.ins-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ins-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #E5E5E5;
+  transition: 0.2s;
+  border-radius: 18px;
+  border: 1px solid #CCCCCC;
+}
+
+.ins-slider:before {
+  position: absolute;
+  content: "";
+  height: 12px;
+  width: 12px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #FFFFFF;
+  transition: 0.2s;
+  border-radius: 50%;
+  border: 0.5px solid #AAAAAA;
+}
+
+input:checked + .ins-slider {
+  background-color: #000000;
+  border-color: #000000;
+}
+
+input:checked + .ins-slider:before {
+  transform: translateX(16px);
+  border: none;
+}
+
+/* 日程列表 */
+.ins-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ins-schedule-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ins-schedule-time {
+  width: 80px;
+  padding: 4px 6px;
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  border: 1px solid var(--line-color, #E5E5E5);
+  border-radius: 6px;
+  outline: none;
+}
+
+.ins-schedule-text {
+  flex: 1;
+  padding: 4px 6px;
+  font-size: 10.5px;
+  border: 1px solid var(--line-color, #E5E5E5);
+  border-radius: 6px;
+  outline: none;
+}
+
+.ins-schedule-time:focus, .ins-schedule-text:focus {
+  border-color: #000000;
+}
+
+.ins-item-del-btn {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  color: #AAAAAA;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.ins-item-del-btn:hover {
+  color: #000000;
+}
+
+/* 后台活动与心境 */
+.ins-bg-activity-box {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.ins-bg-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 6px;
+  background: #F9F9F9;
+  border-radius: 6px;
+  border-left: 2px solid #111111;
+  font-size: 10px;
+}
+
+.ins-bg-time {
+  font-family: ui-monospace, monospace;
+  color: #888888;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+.ins-bg-text {
+  flex: 1;
+  color: #333333;
+}
+
+/* 记忆库列表 */
+.ins-memory-tag-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.ins-memory-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 5px 8px;
+  background: #F7F7F7;
+  border-radius: 6px;
+  font-size: 10px;
+  color: #222222;
+}
+
+.ins-memory-bullet {
+  font-size: 8px;
+  color: #111111;
+  line-height: 1.4;
+}
+
+.ins-memory-text {
+  flex: 1;
+  line-height: 1.35;
+}
+
+.ins-add-memory-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.ins-add-memory-row .ins-input-text {
+  flex: 1;
+}
+
+.ins-empty-hint {
+  text-align: center;
+  padding: 10px 0;
+  font-size: 9.5px;
+  color: #AAAAAA;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MINI PHONE OS · INS TOAST (日程与记忆自动录入轻提示)
+   ═══════════════════════════════════════════════════════════════ */
+.ins-mini-toast {
+  position: absolute;
+  top: calc(44px + var(--safe-top, 0px));
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: #000000;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+  z-index: 99;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+.ins-mini-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   设置页面底部危险操作区（清空聊天记录按键）
+   ═══════════════════════════════════════════════════════════════ */
+.ins-danger-card {
+  border-color: #EEEEEE;
+  background: #FFFFFF;
+}
+
+.danger-title {
+  color: #111111;
+}
+
+.ins-danger-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: #FFFFFF;
+  color: #E53935;
+  border: 1px solid #FFCDD2;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-top: 4px;
+  text-align: center;
+}
+
+.ins-danger-btn:hover {
+  background: #FFEBEE;
+  border-color: #EF5350;
+}
+
+.ins-danger-btn:active {
+  transform: scale(0.98);
+  opacity: 0.85;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   精巧气泡小菜单（极简黑底白字微胶囊 · 绝对定位 · 零整页闪烁）
+   ═══════════════════════════════════════════════════════════════ */
+.msg-bubble-wrapper {
+  position: relative; /* 确保小菜单挂载时基于气泡本身定位 */
+}
+
+.ins-bubble-menu-popover {
+  position: absolute;
+  top: -28px;
+  background: #111111;
+  border-radius: 6px;
+  padding: 2px 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22);
+  z-index: 65;
+  animation: popInMicro 0.12s cubic-bezier(0.2, 0.9, 0.3, 1);
+  white-space: nowrap;
+}
+
+/* User 气泡菜单靠右对齐，Char 气泡菜单靠左对齐 */
+.msg-bubble-row.user .ins-bubble-menu-popover {
+  right: 0;
+}
+
+.msg-bubble-row.assistant .ins-bubble-menu-popover {
+  left: 0;
+}
+
+@keyframes popInMicro {
+  from { opacity: 0; transform: translateY(3px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.bubble-menu-item {
+  background: transparent;
+  border: none;
+  color: #FFFFFF;
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  transition: background-color 0.1s ease;
+  line-height: 1.2;
+}
+
+.bubble-menu-item:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.bubble-menu-item:active {
+  transform: scale(0.92);
+}
+
+.bubble-menu-divider {
+  width: 1px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.25);
+  margin: 0 1px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MINI PHONE OS · INS ADVANCED MULTI-SELECT & QUOTE MODULE
+   纯正极简白黑线条风 · 深度卡片化引用 · 悬浮控制台 · 绝无 Emoji
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ═══════════ 1. 多选模式下气泡行高亮与勾选框 ═══════════ */
+.chat-messages-area.multiselect-active .msg-bubble-row {
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
+}
+
+.chat-messages-area.multiselect-active .msg-bubble-row:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.chat-messages-area.multiselect-active .msg-bubble-row.is-selected {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* 选中时的气泡轮廓高亮 */
+.msg-bubble-wrapper.selected-bubble .msg-bubble {
+  box-shadow: 0 0 0 1.5px #111111;
+  transform: scale(0.99);
+}
+
+.multiselect-checkbox-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-right: 10px;
+  flex-shrink: 0;
+}
+
+/* INS 风格黑白复选圈 */
+.ins-checkbox-circle {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1.5px solid #111111;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+.ins-checkbox-circle.checked {
+  background: #111111;
+  border-color: #111111;
+  transform: scale(1.05);
+}
+
+/* ═══════════ 2. 重塑多选悬浮控制底栏 ═══════════ */
+.chat-multiselect-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px calc(10px + var(--safe-bottom, 0px)) 14px;
+  border-top: 1px solid var(--line-color, #E5E5E5);
+  background: #FFFFFF;
+  flex-shrink: 0;
+  box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.03);
+  animation: slideUpFooter 0.15s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+@keyframes slideUpFooter {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.multiselect-left-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.multiselect-badge {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #888888;
+  font-family: ui-monospace, monospace;
+}
+
+.multiselect-num {
+  font-size: 13px;
+  font-weight: 800;
+  color: #111111;
+  font-family: ui-monospace, monospace;
+}
+
+.multiselect-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.multi-btn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.multi-btn-pill.cancel {
+  background: #F4F4F4;
+  color: #111111;
+  border-color: #E5E5E5;
+}
+
+.multi-btn-pill.cancel:hover {
+  background: #EAEAEA;
+}
+
+.multi-btn-pill.delete {
+  background: #111111;
+  color: #FFFFFF;
+  border-color: #111111;
+}
+
+.multi-btn-pill.delete:hover {
+  background: #2A2A2A;
+}
+
+.multi-btn-pill.delete:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.multi-btn-pill:active {
+  transform: scale(0.95);
+}
+
+/* ═══════════ 3. 输入框上方「引用预览卡片」 ═══════════ */
+.chat-quote-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px 6px 10px;
+  background: #F8F8F8;
+  border-top: 1px solid var(--line-color, #EAEAEA);
+  border-bottom: 1px solid var(--line-color, #EAEAEA);
+  flex-shrink: 0;
+  animation: fadeIn 0.12s ease;
+  gap: 8px;
+}
+
+.quote-bar-left-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #111111;
+}
+
+.chat-quote-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.quote-bar-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.quote-user-tag {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: -0.2px;
+}
+
+.quote-hint-label {
+  font-size: 8px;
+  font-weight: 600;
+  color: #888888;
+  letter-spacing: 0.5px;
+}
+
+.quote-text-preview {
+  font-size: 10px;
+  color: #555555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quote-cancel-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #EAEAEA;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #444444;
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+}
+
+.quote-cancel-btn:hover {
+  background: #111111;
+  color: #FFFFFF;
+}
+
+/* ═══════════ 4. 气泡内「引用卡片」与正文深度分层 ═══════════ */
+.msg-bubble-quote-card {
+  margin-bottom: 6px;
+  padding: 4px 7px;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: all 0.15s ease;
+}
+
+/* 对方气泡（白底）内的引用卡片 */
+.msg-bubble-row.assistant .msg-bubble-quote-card {
+  background: #F0F0F0;
+  border-left: 2.5px solid #111111;
+}
+
+/* 我方气泡（黑底）内的引用卡片 */
+.msg-bubble-row.user .msg-bubble-quote-card {
+  background: rgba(255, 255, 255, 0.12);
+  border-left: 2.5px solid #FFFFFF;
+}
+
+.quote-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.quote-card-user {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: -0.1px;
+}
+
+.msg-bubble-row.assistant .quote-card-user {
+  color: #111111;
+}
+
+.msg-bubble-row.user .quote-card-user {
+  color: #FFFFFF;
+}
+
+.quote-card-mark {
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  opacity: 0.6;
+}
+
+.quote-card-text {
+  font-size: 9.5px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 190px;
+}
+
+.msg-bubble-row.assistant .quote-card-text {
+  color: #555555;
+}
+
+.msg-bubble-row.user .quote-card-text {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MINI PHONE OS · 撤回系统提示条（INS LINEAR SYSTEM NOTICE PILL）
+   ═══════════════════════════════════════════════════════════════ */
+.chat-system-notice-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 0;
+  width: 100%;
+  animation: fadeIn 0.15s ease;
+}
+
+.chat-system-notice-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #F3F3F3;
+  color: #888888;
+  font-size: 9.5px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 12px;
+  letter-spacing: 0.2px;
+  user-select: none;
 }

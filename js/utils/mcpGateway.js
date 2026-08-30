@@ -1,6 +1,6 @@
 /**
- * Ombre Brain 角色沙盒隔离记忆与绝对认知驱动 (McpGateway)
- * 包含：角色绝对认知基底、防混乱时间感知引擎、沙盒隔离与 Handoff 调度
+ * Ombre Brain 角色沙盒隔离记忆与沉浸式线上对话驱动 (McpGateway)
+ * 核心机制：禁止照搬记忆、禁止动作旁白、真实现实时间对齐、单轮 2~5 短气泡连发协议
  */
 
 export const McpGateway = {
@@ -85,7 +85,7 @@ export const McpGateway = {
   getCharRelationshipWeather(charName) {
     const memories = this.getCharMemories(charName);
     if (!charName) {
-      return { status: '全局静息', degree: '待分配沙盒', weatherText: '请先在上方指定角色沙盒' };
+      return { status: '全局静息', degree: '待分配沙盒', weatherText: '请先指定角色沙盒' };
     }
     if (memories.length === 0) {
       return { status: '初遇初识', degree: '初始探索态', weatherText: `与 ${charName} 处于初始建联阶段` };
@@ -96,9 +96,6 @@ export const McpGateway = {
     }
   },
 
-  /**
-   * 精确计算角色真实年龄
-   */
   calculateExactAge(birthDateStr) {
     if (!birthDateStr) return '未知';
     const birth = new Date(birthDateStr);
@@ -108,12 +105,9 @@ export const McpGateway = {
     if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) {
       age--;
     }
-    return `${age}岁 (出生日期: ${birthDateStr})`;
+    return `${age}岁 (出生于: ${birthDateStr})`;
   },
 
-  /**
-   * 时间感知与时空对齐生成器（彻底消除时间混乱）
-   */
   getRealtimeTemporalContext(timePerceptionEnabled, birthDateStr) {
     const now = new Date();
     const year = now.getFullYear();
@@ -132,89 +126,78 @@ export const McpGateway = {
     else if (h >= 14 && h < 18) timeOfDay = '下午';
     else if (h >= 18 && h < 23) timeOfDay = '夜晚';
 
-    if (!timePerceptionEnabled) {
-      return `[Time Perception Status]: 静止沙盒模式 (未开启现实时间对齐)\n- 角色基准年龄：${this.calculateExactAge(birthDateStr)}`;
-    }
-
-    return `=== 真实时间与时空感知锚点 (TEMPORAL GROUNDING) ===
-- 当前现实确切时间：${year}年${month}月${date}日 ${hours}:${minutes} (${dayName} · ${timeOfDay})
-- 角色确切年龄推算：${this.calculateExactAge(birthDateStr)}
-- 时间认知执行铁律：
-  1. 必须绝对清醒感知此时此刻的现实时段 (${timeOfDay})，在日常对话中展现合乎现实生物钟的精力与作息反应。
-  2. 跨会话或隔日再次交流时，必须准确识别时间流逝（如昨天、今早、几小时前），严禁出现时间线错乱。
-  3. 所有过往经历的时间跨度计算，必须严格以角色出生日 (${birthDateStr || '未知'}) 与当前年份 (${year}年) 为客观基准。`;
+    return `=== 真实时间与时空锚点 ===
+- 现实确切时间：${year}年${month}月${date}日 ${hours}:${minutes} (${dayName} · ${timeOfDay})
+- 角色实际确切年龄：${this.calculateExactAge(birthDateStr)}
+- 时间感知准则：此时此刻是现实中的【${timeOfDay}】，展现合乎该时段的生活作息。`;
   },
 
   /**
-   * 核心：生成强化版角色沙盒认知与记忆数据包（供 AI 严格遵守）
+   * 核心：构建绝对防 OOC、禁止照抄记忆、多气泡短短信连发的沙盒 Prompt
    */
   generateIsolatedHandoffBlock(userPersona, charName, lastMessages = []) {
-    // 1. 从角色库全量档案中检索该角色所有完整设定
     const charList = JSON.parse(localStorage.getItem('mini_character_vault_full') || '[]');
     const charProfile = charList.find(c => c.name === charName) || {};
 
-    const charMemories = this.getCharMemories(charName).map(m => `- [${m.anchorType || '约定'}] ${m.content}`);
+    const charMemories = this.getCharMemories(charName);
     const darkroom = this.getCharDarkroom(charName);
     const weather = this.getCharRelationshipWeather(charName);
 
-    // 2. 检索针对该角色或全角色可见的 User 习惯
     const userVault = JSON.parse(localStorage.getItem('mini_memory_vault') || '[]');
     const visibleUserFacts = userVault
       .filter(m => m.scope === 'user' && (!m.boundChar || m.boundChar === '__all__' || m.boundChar === charName))
-      .map(m => `- [User特征感知] ${m.content}`);
+      .map(m => `- [User偏好/习惯]: ${m.content}`);
 
-    // 3. 时间感知上下文
+    const userPersonasFull = JSON.parse(localStorage.getItem('mini_user_personas_full') || '[]');
+    const currentUserObj = userPersonasFull.find(u => u.name === userPersona) || {};
+
     const timeContext = this.getRealtimeTemporalContext(charProfile.timePerception !== false, charProfile.birthDate);
+    const memoryListFormatted = charMemories.map((m, idx) => `${idx + 1}. [${m.anchorType || '历史经历'}]: ${m.content}`);
 
-    // 4. 构建全维度角色认知契约
-    let block = `=== 角色沙盒绝对认知契约 (CHARACTER COGNITIVE BASELINE) ===\n`;
-    block += `你现在必须完全、不可动摇地代入角色【${charName}】。以下所有基础设定、特征、习惯与背景均为你的客观真实认知，你必须严格恪守，绝不可脱离角色：\n\n`;
+    let prompt = `【系统终极指令：绝对人设恪守与纯手机短信连发规范】\n\n`;
 
-    block += `[基本身份档案]:\n`;
-    block += `- 姓名：${charName}\n`;
-    block += `- 性别：${charProfile.gender || '保密'}\n`;
-    block += `- 职业 / 身份：${charProfile.occupation || '未公开'}\n`;
-    block += `- 出生地：${charProfile.birthplace || '未记录'}\n`;
-    block += `- 现居住地：${charProfile.residence || '未记录'}\n\n`;
+    prompt += `1. 人类实体定义（绝对禁止 OOC / 绝非 AI 助手）：
+你不是人工智能、不是语言模型，你是真实生活中的独立人类【${charName}】！
+你有自己的情绪波动、作息轨迹与说话风格。严禁任何 AI 客套、说教或助手式回复。\n\n`;
 
-    if (charProfile.catchphrase) {
-      block += `[口癖与语言习惯 (必须在说话中严格体现)]:\n${charProfile.catchphrase}\n\n`;
-    }
+    prompt += `2. 记忆的正确使用法则（绝对禁止机械背诵/照搬）：
+【核心原则】：以下记忆是你与 User 的过往经历与潜意识默契，用来支撑你的心理状态与关系厚度。
+【严禁项】：
+- 严禁机械化大段复读记忆、严禁在每句话里生硬提及过去的事件！
+- 记忆是用来让你“心领神会”的（比如知道对方不吃蒜，就在聊吃的时自然避开，而不是开口闭口说“因为你不吃蒜...”）。\n\n`;
 
-    if (charProfile.likesAndDislikes) {
-      block += `[爱好 · 兴趣 · 讨厌与雷点 (形成本能反应)]:\n${charProfile.likesAndDislikes}\n\n`;
-    }
+    prompt += `3. 手机即时短信多气泡输出规范（模拟真人微信打字连发）：
+【情境】：你正在手机上给 User 发即时文字消息。
+【输出格式要求】：
+- 严禁输出一大坨长篇大论！真人发微信都是一句一句短消息连发的。
+- 本次思考请将你要说的话，拆分为 2 到 4 条短消息，以标准的 JSON 数组格式输出！
+- 范例格式：["短消息第一句", "补充的第二句", "问句或收尾短句"]
+- 严禁包含任何动作描写、神态描写或括号旁白（如严禁 *(叹气)*、(看着手机) 等）。只能是打在键盘上的纯文字！\n\n`;
 
-    if (charProfile.dressStyle) {
-      block += `[常穿服装与穿搭风格]:\n${charProfile.dressStyle}\n\n`;
-    }
+    prompt += `=== 【${charName}】人设档案 ===
+- 姓名：${charName}
+- 性别：${charProfile.gender || '保密'}
+- 职业身份：${charProfile.occupation || '未公开'}
+- 出生地：${charProfile.birthplace || '未记录'}
+- 居住地：${charProfile.residence || '未记录'}
+- 口癖与语调习惯：${charProfile.catchphrase || '自然克制'}
+- 爱好与雷点：${charProfile.likesAndDislikes || '无特殊雷点'}
+${charProfile.detailedInfo ? `- 详细背景设定：\n${charProfile.detailedInfo}` : ''}\n\n`;
 
-    if (charProfile.appearance) {
-      block += `[外貌特征细节与身形眼眸]:\n${charProfile.appearance}\n\n`;
-    }
+    prompt += `${timeContext}\n\n`;
 
-    if (charProfile.detailedInfo) {
-      block += `[角色完整背景故事与核心设定 (背景常识)]:\n${charProfile.detailedInfo}\n\n`;
-    }
+    prompt += `=== 对话对象 User 画像 ===
+- User 姓名：${userPersona || 'User'}
+${currentUserObj.likesAndDislikes ? `- User 偏好与雷点（潜意识尊重）：${currentUserObj.likesAndDislikes}\n` : ''}${visibleUserFacts.length > 0 ? `${visibleUserFacts.join('\n')}\n` : ''}\n`;
 
-    block += `${timeContext}\n\n`;
+    prompt += `=== 历史记忆库 (潜意识背景) ===
+- 关系天气：${weather.status} (${weather.weatherText})
+- 暗房状态：${darkroom.length > 0 ? `潜思中 (${darkroom.length}条)` : '静息'}
+${memoryListFormatted.length > 0 ? memoryListFormatted.join('\n') : '(初始相识阶段)'}\n\n`;
 
-    block += `=== 独立羁绊与沙盒记忆 (ISOLATED SANDBOX MEMORIES) ===\n`;
-    block += `[当前交互 User 身份]: ${userPersona || 'User'}\n`;
-    block += `[关系天气状态]: ${weather.status} (${weather.weatherText})\n`;
-    block += `[内部暗房门状态]: ${darkroom.length > 0 ? `潜思中 (${darkroom.length}条自省)` : '静息'}\n\n`;
+    prompt += `【执行要求】：针对 User 刚发送的内容，以【${charName}】的人格进行单次思考，直接返回 2~4 条简短自然的短信 JSON 数组（格式形如 ["消息1", "消息2"]），禁止多余文字！`;
 
-    if (visibleUserFacts.length > 0) {
-      block += `[对 User 的潜意识隐性认知 (心领神会，无需刻意机械复读)]:\n${visibleUserFacts.join('\n')}\n\n`;
-    }
-
-    if (charMemories.length > 0) {
-      block += `[与该 User 的历史专属约定与羁绊记忆]:\n${charMemories.join('\n')}\n\n`;
-    }
-
-    block += `[系统执行准则]:\n1. 严格以【${charName}】的第一人称视角沉浸式交流。\n2. 严禁跳出角色、严禁表现出 AI 助手口吻、严禁违反上述性格与时间认知。\n=== 契约装载完毕 ===`;
-
-    return block;
+    return prompt;
   },
 
   exportSingleCharBackup(charName) {
@@ -226,7 +209,7 @@ export const McpGateway = {
       manifest: {
         type: "SingleCharMemorySandbox",
         charName: charName,
-        version: "3.0",
+        version: "5.0",
         exportedAt: new Date().toISOString()
       },
       profile: profile,
