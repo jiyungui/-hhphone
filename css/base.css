@@ -10,7 +10,7 @@
   --radius-md: 16px;
   --radius-lg: 36px;
   
-  /* 动态可用高度（JS 兜底）与系统安全区域变量 */
+  /* 动态可用高度与 iOS 物理安全区域变量 */
   --app-height: 100dvh;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -29,20 +29,31 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
+/* 彻底禁止 iOS 页面橡皮筋乱晃 */
+html {
   width: 100%;
   height: 100%;
-  height: var(--app-height);
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  min-height: -webkit-fill-available;
   overflow: hidden;
   background-color: #E8E8E8;
   display: flex;
   justify-content: center;
   align-items: center;
-  /* 禁止手机端浏览器橡皮筋下拉效果 */
   overscroll-behavior: none;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
-/* 💻 桌面端展示：拟真手机壳 */
+/* ═══════════ 💻 电脑桌面端展示：拟真手机壳 ═══════════ */
 .phone-frame {
   width: 390px;
   height: 800px;
@@ -55,15 +66,13 @@ html, body {
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
-/* 顶部状态栏 */
+/* 顶部假状态栏（仅桌面端显示） */
 .status-bar {
-  height: calc(36px + var(--safe-top));
-  padding-top: var(--safe-top);
-  padding-left: calc(18px + var(--safe-left));
-  padding-right: calc(18px + var(--safe-right));
+  height: 36px;
+  padding: 0 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -72,6 +81,7 @@ html, body {
   letter-spacing: 0.3px;
   background-color: var(--bg-main);
   z-index: 20;
+  flex-shrink: 0;
 }
 
 .status-icons {
@@ -83,6 +93,8 @@ html, body {
 /* 手机主区域 */
 .phone-body {
   flex: 1;
+  width: 100%;
+  height: 100%;
   display: flex;
   overflow: hidden;
   position: relative;
@@ -94,8 +106,6 @@ html, body {
   position: relative;
   overflow: hidden;
   background-color: var(--bg-main);
-  padding-right: var(--safe-right);
-  padding-bottom: var(--safe-bottom);
 }
 
 .view-panel {
@@ -125,7 +135,7 @@ html, body {
   text-transform: uppercase;
 }
 
-/* 📱 移动设备 / 桌面 Standalone App 模态：自动全屏去壳 */
+/* ═══════════ 📱 iOS / 移动设备 / PWA 桌面独立全屏 ═══════════ */
 @media (max-width: 600px), (display-mode: standalone) {
   body {
     background-color: var(--bg-main);
@@ -134,10 +144,31 @@ html, body {
   .phone-frame {
     width: 100vw;
     height: 100%;
-    height: var(--app-height);
+    height: 100dvh;
+    min-height: -webkit-fill-available;
     max-height: none;
     border: none;
     border-radius: 0;
     box-shadow: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  /* ✨ 关键：手机上直接隐藏网页假状态栏，使用 iOS 原生状态栏 */
+  .status-bar {
+    display: none !important;
+  }
+
+  /* 顶部自动避开灵动岛/刘海，底部避开黑条横杠 */
+  .phone-body {
+    padding-top: var(--safe-top);
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
+  }
+
+  /* 左侧 Dock 栏在手机端顶到底部，并加上安全距离 */
+  .dock-nav {
+    padding-bottom: max(var(--safe-bottom), 14px) !important;
   }
 }
