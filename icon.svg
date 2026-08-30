@@ -1,6 +1,57 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 桌面图标背景基底 -->
   <rect width="512" height="512" fill="#FFFFFF"/>
-  <rect x="32" y="32" width="448" height="448" rx="96" fill="none" stroke="#111111" stroke-width="24"/>
-  <circle cx="256" cy="256" r="110" fill="none" stroke="#111111" stroke-width="24"/>
-  <line x1="256" y1="90" x2="256" y2="422" stroke="#111111" stroke-width="24" stroke-linecap="round"/>
+
+  <!-- 1. 倾斜 45° 辅助放射微光光芒 -->
+  <g stroke="#111111" stroke-width="5" stroke-linecap="round" opacity="0.85">
+    <line x1="256" y1="256" x2="356" y2="156" stroke-dasharray="14 10"/>
+    <line x1="256" y1="256" x2="156" y2="356" stroke-dasharray="14 10"/>
+    <line x1="256" y1="256" x2="156" y2="156" stroke-dasharray="14 10"/>
+    <line x1="256" y1="256" x2="356" y2="356" stroke-dasharray="14 10"/>
+  </g>
+
+  <!-- 2. 精致环形光晕轨道 (Astrolabe Halo) -->
+  <ellipse cx="256" cy="256" rx="146" ry="52" fill="none" stroke="#111111" stroke-width="4.5" transform="rotate(-30 256 256)" stroke-dasharray="6 8"/>
+
+  <!-- 3. 核心闪烁主星 (Primary Sparkle Nova) -->
+  <!-- 外层弧线大芒星 -->
+  <path d="M 256 68 
+           C 256 182 330 256 444 256 
+           C 330 256 256 330 256 444 
+           C 256 330 182 256 68 256 
+           C 182 256 256 182 256 68 Z" 
+        fill="#FFFFFF" 
+        stroke="#111111" 
+        stroke-width="13" 
+        stroke-linejoin="round"/>
+
+  <!-- 内部双层几何悬浮菱形核心 -->
+  <path d="M 256 180 L 332 256 L 256 332 L 180 256 Z" 
+        fill="none" 
+        stroke="#111111" 
+        stroke-width="6" 
+        stroke-linejoin="round"/>
+  <circle cx="256" cy="256" r="7" fill="#111111"/>
+
+  <!-- 4. 右上角伴生小闪星 (Top-Right Satellite Sparkle) -->
+  <path d="M 396 100 
+           C 396 122 408 134 430 134 
+           C 408 134 396 146 396 168 
+           C 396 146 384 134 362 134 
+           C 384 134 396 122 396 100 Z" 
+        fill="#111111"/>
+
+  <!-- 5. 左下角伴生微星 (Bottom-Left Satellite Sparkle) -->
+  <path d="M 120 360 
+           C 120 376 128 384 144 384 
+           C 128 384 120 392 120 408 
+           C 120 392 112 384 96 384 
+           C 112 384 120 376 120 360 Z" 
+        fill="#111111"/>
+
+  <!-- 6. 点缀散落微光粒子 (Glint Pixels) -->
+  <circle cx="126" cy="142" r="5.5" fill="#111111"/>
+  <circle cx="390" cy="386" r="4.5" fill="#111111"/>
+  <circle cx="256" cy="38" r="3.5" fill="#111111"/>
+  <circle cx="474" cy="256" r="3.5" fill="#111111"/>
 </svg>

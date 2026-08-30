@@ -1,53 +1,9 @@
 import { getLunarDayName } from '../utils/lunar.js';
 import { getCurrentLocationWeather, syncRealWeather, openLocationModal } from './weatherService.js';
+import { getStoryAvatarsHtml, initStoryAvatars } from './storyAvatars.js';
 
-const mockChats = [
-  {
-    id: 1,
-    initial: "K",
-    name: "K-01 / System",
-    lastMsg: "[REPORT] All parameters are stable.",
-    time: "10:42",
-    unread: true,
-    online: true
-  },
-  {
-    id: 2,
-    initial: "EVA",
-    name: "Eva Rostova",
-    lastMsg: "Will check the terminal tonight.",
-    time: "08:15",
-    unread: false,
-    online: false
-  },
-  {
-    id: 3,
-    initial: "NX",
-    name: "Nexus Protocol",
-    lastMsg: "Verification code: 994-021",
-    time: "Ytd",
-    unread: false,
-    online: false
-  },
-  {
-    id: 4,
-    initial: "09",
-    name: "Unit-09",
-    lastMsg: "Connection interrupted. Retrying...",
-    time: "Mon",
-    unread: true,
-    online: true
-  },
-  {
-    id: 5,
-    initial: "Z",
-    name: "Zero",
-    lastMsg: "Archive downloaded successfully.",
-    time: "10/24",
-    unread: false,
-    online: false
-  }
-];
+// 当前会话列表数据（默认为空，后续可由角色库或新建对话动态添加）
+let chatList = [];
 
 let selectedDateObj = new Date();
 
@@ -99,7 +55,7 @@ function isSameDay(d1, d2) {
 }
 
 /**
- * 渲染 iMessage 主界面
+ * 渲染 iMessage 整体视图
  */
 export function renderIMessageView(container) {
   const weekData = getWeekData(selectedDateObj);
@@ -116,7 +72,7 @@ export function renderIMessageView(container) {
         <input type="text" placeholder="搜索对话" id="imessage-search"/>
       </div>
 
-      <!-- 📅 日历 & 实时天气卡片 -->
+      <!-- 📅 日历 & 天气卡片 -->
       <div class="calendar-card">
         <div class="calendar-top-bar">
           <div class="calendar-meta-left">
@@ -143,33 +99,55 @@ export function renderIMessageView(container) {
         </div>
       </div>
 
-      <!-- 消息列表 -->
-      <ul class="chat-list" id="chat-list-ul">
-        ${mockChats.map(chat => `
-          <li class="chat-item" data-id="${chat.id}">
-            <div class="avatar-frame">
-              ${chat.initial}
-              ${chat.online ? '<div class="avatar-online-dot"></div>' : ''}
+      <!-- ✨ 日历下方的 5 个圆形头像框 -->
+      ${getStoryAvatarsHtml()}
+
+      <!-- 消息列表（无占位联系人，展示极简线条风空状态） -->
+      <div class="chat-list-container">
+        ${chatList.length === 0 ? `
+          <div class="chat-empty-state">
+            <div class="empty-icon-wrap">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#BBBBBB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                <line x1="8" y1="10" x2="16" y2="10"></line>
+              </svg>
             </div>
-            <div class="chat-info">
-              <div class="chat-top-row">
-                <span class="chat-name">${chat.name}</span>
-                <span class="chat-time">${chat.time}</span>
-              </div>
-              <div class="chat-bottom-row">
-                <span class="chat-last-msg">${chat.lastMsg}</span>
-                ${chat.unread ? '<span class="unread-pill"></span>' : ''}
-              </div>
-            </div>
-          </li>
-        `).join('')}
-      </ul>
+            <span class="empty-title">NO CONVERSATIONS</span>
+            <span class="empty-desc">暂无对话记录</span>
+          </div>
+        ` : `
+          <ul class="chat-list" id="chat-list-ul">
+            ${chatList.map(chat => `
+              <li class="chat-item" data-id="${chat.id}">
+                <div class="avatar-frame">
+                  ${chat.avatar ? `<img src="${chat.avatar}" class="chat-avatar-img" />` : chat.initial}
+                  ${chat.online ? '<div class="avatar-online-dot"></div>' : ''}
+                </div>
+                <div class="chat-info">
+                  <div class="chat-top-row">
+                    <span class="chat-name">${chat.name}</span>
+                    <span class="chat-time">${chat.time}</span>
+                  </div>
+                  <div class="chat-bottom-row">
+                    <span class="chat-last-msg">${chat.lastMsg}</span>
+                    ${chat.unread ? '<span class="unread-pill"></span>' : ''}
+                  </div>
+                </div>
+              </li>
+            `).join('')}
+          </ul>
+        `}
+      </div>
     </div>
   `;
 
+  // 绑定日历与天气事件
   bindEvents(container, weekData);
 
-  // 后台静默发起实时天气同步（如果已定位），更新右上角温度
+  // 初始化 5 个头像槽位的加载与上传逻辑
+  initStoryAvatars(container);
+
+  // 后台静默刷新气温
   if (weatherData.isSet) {
     syncRealWeather().then(updated => {
       if (updated) {
