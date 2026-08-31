@@ -238,44 +238,100 @@ function getProviderDefaultModels(provider) {
 
 function calculateStorageMetrics() {
   const comp = config.compression;
-  const mediaRawKB = 8400;
-  const docRawKB =
-    Math.round(JSON.stringify(documentVault).length / 1024) +
-    documentVault.length * 48;
-  const chatRawKB = 220;
-  const cfgRawKB =
-    Math.round(JSON.stringify(config).length / 1024) +
-    Math.round(JSON.stringify(savedPresets).length / 1024) +
-    12;
 
-  let memRawKB = 0;
-  userCharList.forEach((c) => {
-    memRawKB +=
-      Math.round(JSON.stringify(McpGateway.getCharMemories(c)).length / 1024) +
-      Math.round(JSON.stringify(McpGateway.getCharDarkroom(c)).length / 1024);
-  });
-  memRawKB = Math.max(memRawKB, 16);
+  let mediaBytes = 0;
+  let chatBytes = 0;
+  let docBytes = 0;
+  let memBytes = 0;
+  let cfgBytes = 0;
 
-  const totalRawKB = mediaRawKB + docRawKB + chatRawKB + memRawKB + cfgRawKB;
+  // ✨ 核心修复：直接无死角遍历整个 localStorage 的所有真实物理 Key
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key) continue;
+    const rawVal = localStorage.getItem(key) || "";
+    const valLength = rawVal.length * 2; // UTF-16 真实字符内存占用字节
 
+    if (key.startsWith("mini_chat_dialog_history_")) {
+      // 深度扫描聊天记录：区分文字与发送的 Base64 大图
+      try {
+        const msgs = JSON.parse(rawVal);
+        let msgChatBytes = 0;
+        let msgMediaBytes = 0;
+        if (Array.isArray(msgs)) {
+          msgs.forEach((m) => {
+            if (m.mediaUrl && typeof m.mediaUrl === "string") {
+              msgMediaBytes += m.mediaUrl.length * 2;
+            }
+            msgChatBytes += JSON.stringify(m).length * 2;
+          });
+        }
+        mediaBytes += msgMediaBytes;
+        chatBytes += Math.max(0, msgChatBytes - msgMediaBytes);
+      } catch (e) {
+        chatBytes += valLength;
+      }
+    } else if (key === "mini_character_vault_full" || key === "mini_user_personas_full") {
+      // 扫描角色头像与 User 证件照
+      try {
+        const list = JSON.parse(rawVal);
+        if (Array.isArray(list)) {
+          list.forEach((item) => {
+            if (item.avatarUrl && typeof item.avatarUrl === "string" && item.avatarUrl.length > 200) {
+              mediaBytes += item.avatarUrl.length * 2;
+            }
+          });
+        }
+      } catch (e) {}
+      cfgBytes += valLength;
+    } else if (key === "mini_mcp_documents") {
+      docBytes += valLength;
+    } else if (
+      key.startsWith("mini_vault_") ||
+      key.startsWith("mini_character_memories_") ||
+      key.startsWith("mini_darkroom_") ||
+      key.startsWith("mini_facts_") ||
+      key.startsWith("echo_") ||
+      key === "mini_memory_vault"
+    ) {
+      memBytes += valLength;
+    } else {
+      cfgBytes += valLength;
+    }
+  }
+
+  const mediaRawKB = Math.round(mediaBytes / 1024);
+  const docRawKB = Math.round(docBytes / 1024);
+  const chatRawKB = Math.round(chatBytes / 1024);
+  const memRawKB = Math.round(memBytes / 1024);
+  const cfgRawKB = Math.round(cfgBytes / 1024);
+
+  const totalRawKB = Math.max(1, mediaRawKB + docRawKB + chatRawKB + memRawKB + cfgRawKB);
+
+  // 压缩计算
   let mediaFactor = 1.0;
-  if (comp.stripMediaMetadata) mediaFactor *= 0.65;
-  if (comp.assetDeduplication) mediaFactor *= 0.75;
+  if (comp.stripMediaMetadata) mediaFactor *= 0.82;
+  if (comp.assetDeduplication) mediaFactor *= 0.88;
   const mediaOptKB = Math.round(mediaRawKB * mediaFactor);
 
   let textFactor = 1.0;
-  if (comp.minifyJsonSchema) textFactor *= 0.6;
-
+  if (comp.minifyJsonSchema) textFactor *= 0.72;
   const docOptKB = Math.round(docRawKB * textFactor);
   const chatOptKB = Math.round(chatRawKB * textFactor);
   const memOptKB = Math.round(memRawKB * textFactor);
   const cfgOptKB = Math.round(cfgRawKB * textFactor);
 
   let subtotalKB = mediaOptKB + docOptKB + chatOptKB + memOptKB + cfgOptKB;
-  if (comp.deflatePackage) subtotalKB = Math.round(subtotalKB * 0.65);
+  if (comp.deflatePackage) subtotalKB = Math.round(subtotalKB * 0.75);
 
-  const totalOptKB = subtotalKB;
-  const ratio = Math.max(1, Math.round((1 - totalOptKB / totalRawKB) * 100));
+  const totalOptKB = Math.max(1, subtotalKB);
+  const ratio = Math.max(0, Math.min(99, Math.round((1 - totalOptKB / totalRawKB) * 100)));
+
+  // 格式化输出函数：大于 1024KB 显示 MB，小于 1024KB 显示 KB
+  const formatSize = (kb) => {
+    if (kb >= 1024) return `${(kb / 1024).toFixed(2)} MB`;
+    return `${kb} KB`;
+  };
 
   return {
     raw: {
@@ -285,6 +341,7 @@ function calculateStorageMetrics() {
       memKB: memRawKB,
       cfgKB: cfgRawKB,
       totalKB: totalRawKB,
+      totalFormatted: formatSize(totalRawKB),
       totalMB: (totalRawKB / 1024).toFixed(2),
     },
     optimized: {
@@ -294,6 +351,7 @@ function calculateStorageMetrics() {
       memKB: memOptKB,
       cfgKB: cfgOptKB,
       totalKB: totalOptKB,
+      totalFormatted: formatSize(totalOptKB),
       totalMB: (totalOptKB / 1024).toFixed(2),
       ratio,
     },
@@ -387,9 +445,16 @@ function bindTabEvents(container) {
   const subTitleEl = container.querySelector("#api-sub-title");
   const viewRoot = container.querySelector("#api-sub-view-root");
 
-  dockItems.forEach((btn) => {
+   dockItems.forEach((btn) => {
     btn.addEventListener("click", () => {
       const tabId = btn.getAttribute("data-tab");
+      
+      // ✨ 核心：离开或重新进入介绍板块时，自动清空上一轮的问答驻留
+      if (config.activeTab === "guide" || tabId === "guide") {
+        config.guide.lastQuery = "";
+        config.guide.lastAnswer = "";
+      }
+
       config.activeTab = tabId;
       saveConfig();
 
@@ -968,15 +1033,7 @@ function renderRetrievalSection() {
       </span>
       <span class="card-desc">将设定文档、长篇故事或规则手记投喂给指定 Char。Gateway 会在发起请求前将相关切片打包垫入底座。</span>
 
-      <div class="creator-meta-2col" style="margin-top: 2px;">
-        <select class="anchor-select" id="doc-target-char-select">
-          <option value="__all__">绑定对象: 全角色共享认知 (Global)</option>
-          ${userCharList.map((c) => `<option value="${c}">绑定对象: 仅 ${c} 学习认知</option>`).join("")}
-        </select>
-        <input type="text" class="anchor-input-type" id="doc-title-input" placeholder="文档标题 (如: 世界观卷三 / 规则手记)" />
-      </div>
-
-      <div class="doc-dropzone" id="doc-dropzone">
+               <div class="doc-dropzone" id="doc-dropzone" style="margin-top: 8px;">
         <div class="doc-dropzone-icon">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -985,16 +1042,16 @@ function renderRetrievalSection() {
           </svg>
         </div>
         <span class="doc-dropzone-text">点击选择文件 或 拖拽至此处</span>
-        <span class="doc-dropzone-sub">支持 .txt / .md / .json / .csv / .log (最大 20MB)</span>
+        <span class="doc-dropzone-sub">支持 .txt / .md / .json / .csv / .log (自动弹出内容预览与命名)</span>
       </div>
       <input type="file" id="doc-file-native-input" accept=".txt,.md,.json,.csv,.log" style="display:none;" />
 
       <div class="doc-manual-editor">
         <textarea class="doc-textarea" id="doc-manual-textarea" placeholder="或者直接在此处粘贴要投喂的长篇设定内容..."></textarea>
-        <button class="api-btn api-btn-primary" id="btn-save-manual-doc" style="padding: 7px;">
-          <span>存入知识库并为选定 Char 激活</span>
+        <button class="api-btn api-btn-primary" id="btn-save-manual-doc" style="padding: 8px;">
+          <span>预览内容并命名入库</span>
         </button>
-      </div>
+           </div>
     </div>
 
     <div class="api-card">
@@ -1030,9 +1087,12 @@ function renderRetrievalSection() {
               </div>
               <div class="doc-meta-row"><span class="doc-token-tag">~${doc.tokens} Tokens</span><span>·</span><span>${doc.chunksCount} 切片</span></div>
             </div>
-            <div class="doc-actions-right">
+            <div class="doc-actions-right" style="display:flex; align-items:center; gap:6px;">
+              <button class="mem-del-btn" data-rename-doc="${doc.id}" title="重命名文档" style="opacity:0.85;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
               <label><input type="checkbox" class="switch-input doc-toggle-switch" data-doc-toggle="${doc.id}" ${doc.active ? "checked" : ""}/><div class="switch-track"><div class="switch-thumb"></div></div></label>
-              <button class="mem-del-btn" data-del-doc="${doc.id}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              <button class="mem-del-btn" data-del-doc="${doc.id}" title="删除文档"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
           </div>
         `,
@@ -1050,12 +1110,13 @@ function renderGuideSection() {
   const lastQuery = config.guide.lastQuery;
   const lastAnswer = config.guide.lastAnswer;
 
-  const quickQuestions = [
-    "如何导入旧小手机的 JSON 记忆总结？",
-    "如何实现角色独立记忆隔离？",
-    "压缩板块的策略如何影响总结导出大小？",
-    "MCP 漫游凭证怎么用？",
-    "怎样配置 MiniMax / ElevenLabs 语音？",
+   const quickQuestions = [
+    "API 如何正确连接与配置？",
+    "如何给指定角色投喂设定文档 (读取)？",
+    "EchoVault 原生记忆库如何使用？",
+    "如何使用「旧机搬家」导入历史记忆？",
+    "聊天室的「内嵌翻译」与「时区感知」怎么开启？",
+    "聊天气泡的「重回」、「引用」与「撤回」如何使用？",
   ];
 
   return `
@@ -1135,30 +1196,30 @@ function renderCompressSection() {
       </span>
       <span class="card-desc">针对导入的壁纸、头像、视频、聊天记录与知识库进行打包瘦身。零画质损失，仅在「总结」板块导出全量数据时大幅缩小备份文件大小。</span>
 
-      <div class="compress-compare-card">
+         <div class="compress-compare-card">
         <div class="compare-box">
-          <span class="compare-val">${metrics.raw.totalMB} MB</span>
-          <span class="compare-lbl">优化前原始体积</span>
+          <span class="compare-val">${metrics.raw.totalFormatted}</span>
+          <span class="compare-lbl">优化前原始总占用</span>
         </div>
         <div class="compare-arrow">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
         <div class="compare-box">
-          <span class="compare-val optimized">~${metrics.optimized.totalMB} MB</span>
+          <span class="compare-val optimized">~${metrics.optimized.totalFormatted}</span>
           <span class="compare-lbl">导出包预计缩小 ${metrics.optimized.ratio}%</span>
         </div>
       </div>
 
       <div class="storage-breakdown-box">
         <div class="storage-progress-bar">
-          <div class="storage-bar-segment media" style="width: 70%;" title="媒体与UI资产 70%"></div>
-          <div class="storage-bar-segment chat" style="width: 20%;" title="聊天与投喂文档 20%"></div>
-          <div class="storage-bar-segment memory" style="width: 10%;" title="记忆与配置 10%"></div>
+          <div class="storage-bar-segment media" style="width: ${Math.round((metrics.raw.mediaKB / metrics.raw.totalKB) * 100)}%;"></div>
+          <div class="storage-bar-segment chat" style="width: ${Math.round(((metrics.raw.docKB + metrics.raw.chatKB) / metrics.raw.totalKB) * 100)}%;"></div>
+          <div class="storage-bar-segment memory" style="width: ${Math.round(((metrics.raw.memKB + metrics.raw.cfgKB) / metrics.raw.totalKB) * 100)}%;"></div>
         </div>
         <div class="storage-legend-row">
-          <div class="storage-legend-item"><span class="legend-color-dot media"></span><span>壁纸/头像/媒体 (~${(metrics.raw.mediaKB / 1024).toFixed(1)}MB)</span></div>
-          <div class="storage-legend-item"><span class="legend-color-dot chat"></span><span>文档/会话记录 (~${((metrics.raw.docKB + metrics.raw.chatKB) / 1024).toFixed(1)}MB)</span></div>
-          <div class="storage-legend-item"><span class="legend-color-dot memory"></span><span>MCP 记忆库 (~${metrics.raw.memKB.toFixed(0)}KB)</span></div>
+          <div class="storage-legend-item"><span class="legend-color-dot media"></span><span>媒体图片 (${metrics.raw.mediaKB >= 1024 ? `${(metrics.raw.mediaKB / 1024).toFixed(1)}MB` : `${metrics.raw.mediaKB}KB`})</span></div>
+          <div class="storage-legend-item"><span class="legend-color-dot chat"></span><span>文档/聊天 (${((metrics.raw.docKB + metrics.raw.chatKB) >= 1024) ? `${((metrics.raw.docKB + metrics.raw.chatKB) / 1024).toFixed(1)}MB` : `${metrics.raw.docKB + metrics.raw.chatKB}KB`})</span></div>
+          <div class="storage-legend-item"><span class="legend-color-dot memory"></span><span>记忆/配置 (${metrics.raw.memKB + metrics.raw.cfgKB}KB)</span></div>
         </div>
       </div>
     </div>
@@ -1233,18 +1294,18 @@ function renderAnalyticsSection() {
         <span class="saved-ratio-tag">已无损优化 ${metrics.optimized.ratio}%</span>
       </span>
 
-      <div class="summary-stat-row">
-        <div class="summary-stat-col"><span class="summary-num">${metrics.raw.totalMB} MB</span><span class="summary-lbl">当前原始总占用</span></div>
-        <div class="summary-stat-col highlight"><span class="summary-num">~${metrics.optimized.totalMB} MB</span><span class="summary-lbl">无损压缩导出包</span></div>
+          <div class="summary-stat-row">
+        <div class="summary-stat-col"><span class="summary-num">${metrics.raw.totalFormatted}</span><span class="summary-lbl">当前原始总占用</span></div>
+        <div class="summary-stat-col highlight"><span class="summary-num">~${metrics.optimized.totalFormatted}</span><span class="summary-lbl">无损压缩导出包</span></div>
         <div class="summary-stat-col"><span class="summary-num">${docCount + charCount + userCount + 6} 项</span><span class="summary-lbl">总资产实体数</span></div>
       </div>
 
-      <div class="summary-bar-track">
-        <div class="summary-bar-seg img" style="width: 68%;"></div>
-        <div class="summary-bar-seg doc" style="width: 15%;"></div>
-        <div class="summary-bar-seg chat" style="width: 9%;"></div>
-        <div class="summary-bar-seg mem" style="width: 5%;"></div>
-        <div class="summary-bar-seg cfg" style="width: 3%;"></div>
+         <div class="summary-bar-track">
+        <div class="summary-bar-seg img" style="width: ${Math.round((metrics.raw.mediaKB / metrics.raw.totalKB) * 100)}%;"></div>
+        <div class="summary-bar-seg doc" style="width: ${Math.round((metrics.raw.docKB / metrics.raw.totalKB) * 100)}%;"></div>
+        <div class="summary-bar-seg chat" style="width: ${Math.round((metrics.raw.chatKB / metrics.raw.totalKB) * 100)}%;"></div>
+        <div class="summary-bar-seg mem" style="width: ${Math.round((metrics.raw.memKB / metrics.raw.totalKB) * 100)}%;"></div>
+        <div class="summary-bar-seg cfg" style="width: ${Math.round((metrics.raw.cfgKB / metrics.raw.totalKB) * 100)}%;"></div>
       </div>
     </div>
 
@@ -1255,11 +1316,11 @@ function renderAnalyticsSection() {
         <div class="asset-item-card">
           <div class="asset-item-left">
             <div class="asset-icon-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
-            <div class="asset-info"><span class="asset-name">图片、壁纸与头像资产</span><span class="asset-sub">IndexedDB 高清原图 · 100% 原始画质无损</span></div>
+            <div class="asset-info"><span class="asset-name">图片、壁纸与头像资产</span><span class="asset-sub">已存头像与媒体 · 100% 原始画质无损</span></div>
           </div>
           <div class="asset-size-group">
-            <span class="asset-size-raw">~${(metrics.raw.mediaKB / 1024).toFixed(1)} MB</span>
-            <span class="asset-size-opt">~${(metrics.optimized.mediaKB / 1024).toFixed(2)} MB</span>
+            <span class="asset-size-raw">${metrics.raw.mediaKB >= 1024 ? `${(metrics.raw.mediaKB / 1024).toFixed(1)} MB` : `${metrics.raw.mediaKB} KB`}</span>
+            <span class="asset-size-opt">${metrics.optimized.mediaKB >= 1024 ? `${(metrics.optimized.mediaKB / 1024).toFixed(2)} MB` : `${metrics.optimized.mediaKB} KB`}</span>
           </div>
         </div>
 
@@ -1716,7 +1777,7 @@ function bindSubViewEvents(container) {
     };
   }
 
-  // 4. 读取板块事件
+   // 4. 读取板块事件
   const dropzone = container.querySelector("#doc-dropzone");
   const nativeFileInput = container.querySelector("#doc-file-native-input");
   const targetCharSelect = container.querySelector("#doc-target-char-select");
@@ -1742,6 +1803,7 @@ function bindSubViewEvents(container) {
           e.dataTransfer.files[0],
           targetCharSelect,
           docTitleInput,
+          container
         );
       }
     };
@@ -1751,12 +1813,85 @@ function bindSubViewEvents(container) {
           e.target.files[0],
           targetCharSelect,
           docTitleInput,
+          container
         );
       }
     };
   }
 
+   // ✨ 粘贴文本写入按钮事件绑定
+  const saveManualDocBtn = container.querySelector("#btn-save-manual-doc");
+  const manualDocTextarea = container.querySelector("#doc-manual-textarea");
+  if (saveManualDocBtn && manualDocTextarea) {
+    saveManualDocBtn.onclick = () => {
+      const text = manualDocTextarea.value.trim();
+      if (!text) {
+        alert("请先粘贴或输入长篇文本内容！");
+        return;
+      }
+      const title = (docTitleInput && docTitleInput.value.trim()) || `文档_${new Date().toISOString().slice(5, 10)}`;
+      const charTarget = (targetCharSelect && targetCharSelect.value) || "__all__";
+      openDocPreviewModal(title, text, charTarget, container);
+    };
+  }
+
+  // ✨ 核心新增：已入库文档【重命名按钮】事件绑定
+  container.querySelectorAll("[data-rename-doc]").forEach((btn) => {
+    btn.onclick = () => {
+      const docId = btn.getAttribute("data-rename-doc");
+      const targetDoc = documentVault.find((d) => d.id === docId);
+      if (!targetDoc) return;
+      const newTitle = prompt("修改文档名称:", targetDoc.title);
+      if (newTitle && newTitle.trim()) {
+        targetDoc.title = newTitle.trim();
+        saveDocumentVault();
+        container.querySelector("#api-sub-view-root").innerHTML = renderCurrentSubTabHtml();
+        bindSubViewEvents(container);
+      }
+    };
+  });
+
+  // ✨ 核心修复：已上传文档【删除按钮】事件绑定
+  container.querySelectorAll("[data-del-doc]").forEach((btn) => {
+    btn.onclick = () => {
+      const docId = btn.getAttribute("data-del-doc");
+      const targetDoc = documentVault.find((d) => d.id === docId);
+      const title = targetDoc ? targetDoc.title : "该文档";
+      if (confirm(`确定要从知识库中删除【${title}】吗？`)) {
+        documentVault = documentVault.filter((d) => d.id !== docId);
+        saveDocumentVault();
+        container.querySelector("#api-sub-view-root").innerHTML = renderCurrentSubTabHtml();
+        bindSubViewEvents(container);
+      }
+    };
+  });
+
+  // ✨ 补充：文档启用/停用开关绑定
+  container.querySelectorAll("[data-doc-toggle]").forEach((chk) => {
+    chk.onchange = (e) => {
+      const docId = chk.getAttribute("data-doc-toggle");
+      const targetDoc = documentVault.find((d) => d.id === docId);
+      if (targetDoc) {
+        targetDoc.active = e.target.checked;
+        saveDocumentVault();
+        container.querySelector("#api-sub-view-root").innerHTML = renderCurrentSubTabHtml();
+        bindSubViewEvents(container);
+      }
+    };
+  });
+
+  // ✨ 补充：按角色筛选文档标签绑定
+  container.querySelectorAll("[data-doc-filter]").forEach((btn) => {
+    btn.onclick = () => {
+      config.retrieval.selectedCharFilter = btn.getAttribute("data-doc-filter");
+      saveConfig();
+      container.querySelector("#api-sub-view-root").innerHTML = renderCurrentSubTabHtml();
+      bindSubViewEvents(container);
+    };
+  });
+
   // 5. 介绍板块
+   // 5. 介绍板块
   const guideQueryInput = container.querySelector("#guide-query-input");
   const guideAskBtn = container.querySelector("#btn-guide-ask-ai");
 
@@ -1775,6 +1910,15 @@ function bindSubViewEvents(container) {
       renderCurrentSubTabHtml();
     bindSubViewEvents(container);
   };
+
+  // ✨ 核心新增：点击默认快捷问题胶囊，自动填入提问框并即时检索答复
+  container.querySelectorAll("[data-ask-question]").forEach((btn) => {
+    btn.onclick = () => {
+      const q = btn.getAttribute("data-ask-question");
+      if (guideQueryInput) guideQueryInput.value = q;
+      executeGuideAsk(q);
+    };
+  });
 
   if (guideAskBtn && guideQueryInput) {
     guideAskBtn.onclick = () => executeGuideAsk(guideQueryInput.value);
@@ -2173,7 +2317,8 @@ async function requestProjectGuideAI(userQuery) {
     if (preset) targetApi = preset;
   }
 
-  const systemPrompt = `你是由用户搭建的 Mini Phone OS 极简手机系统的【全项目专属 AI 首席指导助手】。请基于全项目架构回答用户问题（禁止 Emoji）。`;
+    const systemPrompt = `你是由用户搭建的 Mini Phone OS 极简手机系统的【全项目专属 AI 首席指导助手】。
+请基于本系统的核心功能（API配置、沙盒记忆、EchoVault、知识库读取、聊天室多气泡/内嵌翻译/时区/重回/引用等）为用户提供详尽、准确的说明（严禁任何 Emoji）。`;
 
   if (targetApi.apiKey && targetApi.baseUrl) {
     try {
@@ -2190,7 +2335,7 @@ async function requestProjectGuideAI(userQuery) {
             { role: "system", content: systemPrompt },
             { role: "user", content: userQuery },
           ],
-          temperature: 0.4,
+          temperature: 0.3,
         }),
       });
 
@@ -2205,26 +2350,121 @@ async function requestProjectGuideAI(userQuery) {
     }
   }
 
-  return `【关于 "${userQuery}" 的项目说明】：\n\n1. API 设置：请在「API」板块填入有效的 API Key 与端点 URL；\n2. 角色沙盒与记忆：每个角色拥有独立沙盒，不串台并支持单角色导出；\n3. 聊天打字：线上短信多气泡输出，发送不自动触发思考，点击续写生成回复。`;
+  // ✨ 内置高精度离线离线知识库解答
+  if (userQuery.includes("API") || userQuery.includes("连接")) {
+    return `【API 连接与配置指南】：\n\n1. 接口地址：在「API」板块的 Base URL 填入你的服务商端点（如 DeepSeek 官方为 https://api.deepseek.com/v1）；\n2. API 密钥：填入 sk-... 开头的密钥；\n3. 模型拉取：点击「拉取模型」或手动输入模型名（如 deepseek-chat）；\n4. 保存预设：点击「测试连接」验证通过后，点击「保存为预设」，在任何对话中即可随时调用。`;
+  } else if (userQuery.includes("读取") || userQuery.includes("文档")) {
+    return `【知识库文档投喂 (读取) 指南】：\n\n1. 上传/粘贴：在「读取」板块直接拖拽 .txt / .md / .json 设定文件，或在下方文本框直接粘贴长篇世界观；\n2. 弹窗预览与命名：点击后会弹出 INS 预览弹窗，可直接修改文档标题，并选择是「全角色共享」还是「仅某 Char 独占认知」；\n3. 聊天联动：入库并激活的文档，在聊天室中会作为第一参考基准被 Char 深度学习认知。`;
+  } else if (userQuery.includes("Echo") || userQuery.includes("原文")) {
+    return `【EchoVault 原生记忆库使用指南】：\n\n1. 核心哲学：存原文、读原文，不 JSON 化、不做生硬摘要；\n2. 日记追加 (Daily)：点击「自动同步今日对话至日记」，自动将当天聊天原文存入 daily 档案，带时间半衰期衰减；\n3. 换窗连续性 (Dream)：每次开启新对话时，Char 自动调取近三天日记原文，绝不失忆；\n4. 永久钉选 (Permanent)：永不衰减的核心设定，放置即永远可见。`;
+  } else if (userQuery.includes("搬家") || userQuery.includes("旧机")) {
+    return `【旧机搬家记忆导入指南】：\n\n1. 选定目标角色：在「记忆」板块顶部下拉菜单选中你要搬入的角色沙盒；\n2. 上传/粘贴历史记录：在「旧机搬家」页面上传旧手机导出的 .json / .txt 对话备份，或直接粘贴聊天记录；\n3. 一键提炼：点击「一键提炼并注入记忆沙盒」，系统会自动解析关键事实与专属羁绊，直接写入该角色的专属大脑中。`;
+  } else if (userQuery.includes("翻译") || userQuery.includes("时区")) {
+    return `【内嵌翻译与现实时区感知使用指南】：\n\n1. 入口：进入角色聊天室，点击右上角「设置」；\n2. 母语与内嵌翻译：选择角色主要语言（如日语/英语/韩语），开启「启用气泡内嵌翻译」，Char 思考回复时会一并生成中文并内嵌在气泡底部；\n3. 现实时间感知：开启后选择角色所在时区（如东京/首尔/伦敦/纽约），Char 会实时感知物理时差与昼夜作息。`;
+  } else if (userQuery.includes("重回") || userQuery.includes("撤回") || userQuery.includes("引用")) {
+    return `【重回、引用与撤回操作指南】：\n\n1. 重回本轮 (Rewind)：在底部「更多」点击「重回」，撤销角色上轮回复，可输入期望的风格导向（如“更傲娇一点”）让角色基于人设重新思考；\n2. 气泡菜单：轻点任意气泡弹出菜单，支持「引用」精准回复、「收藏」以及「多选删除」；\n3. 消息撤回：支持撤回 2 分钟内的自发消息，撤回后生成提示条，Char 会捕捉撤回动作并做出自然情绪反应。`;
+  }
+
+  return `【项目功能说明】：\n\n- API 设置：配置各大模型端点与密钥；\n- 记忆中枢：融合 McpGateway 沙盒与 EchoVault 原生记忆；\n- 聊天室：支持 12 大富媒体交互工具、面对面模式与沉浸式通话。`;
 }
 
-function processUploadedDocFile(file, targetCharSelect, docTitleInput) {
+function processUploadedDocFile(file, targetCharSelect, docTitleInput, container) {
   const reader = new FileReader();
   reader.onload = (evt) => {
     const textContent = evt.target.result;
-    if (!textContent || !textContent.trim()) return;
+    if (!textContent || !textContent.trim()) {
+      alert("文件内容为空，无法读取！");
+      return;
+    }
     const defaultTitle = file.name.replace(/\.[^/.]+$/, "");
     const title = (docTitleInput && docTitleInput.value.trim()) || defaultTitle;
-    const charTarget =
-      (targetCharSelect && targetCharSelect.value) || "__all__";
-    addDocumentToVault(title, textContent, charTarget);
-    const root = document.getElementById("api-sub-view-root");
-    if (root) {
-      root.innerHTML = renderCurrentSubTabHtml();
-      bindSubViewEvents(document.querySelector(".api-app-container"));
-    }
+    const charTarget = (targetCharSelect && targetCharSelect.value) || "__all__";
+
+    // 呼出本轮文件内容预览弹窗
+    openDocPreviewModal(title, textContent, charTarget, container);
   };
   reader.readAsText(file);
+}
+/**
+ * ✨ INS 极简白黑风：文档读取内容展示与即时重命名弹窗
+ */
+function openDocPreviewModal(initialTitle, content, defaultTarget = "__all__", container) {
+  const charCount = content.length;
+  const tokens = Math.ceil(charCount / 1.8);
+  const chunksCount = Math.max(1, Math.ceil(charCount / 400));
+  const chars = userCharList || [];
+
+  const modal = document.createElement("div");
+  modal.className = "ins-modal-overlay active";
+  modal.id = "doc-preview-modal";
+
+  modal.innerHTML = `
+    <div class="ins-modal-card" style="max-width: 350px; max-height: 86vh; display: flex; flex-direction: column; gap: 8px;">
+      <div class="ins-modal-header">
+        <span class="ins-modal-title">文档读取与命名 / INGESTION</span>
+        <button class="ins-modal-close" id="btn-close-doc-preview">×</button>
+      </div>
+
+      <!-- INS 风格元信息与即时重命名卡片 -->
+      <div style="background: #FAFAFA; border: 1px solid var(--line-color); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <label style="font-size: 8.5px; font-weight: 800; color: #888; letter-spacing: 0.5px;">文档名称 / TITLE (可点击修改)</label>
+          <input type="text" class="ins-modal-textarea" id="doc-preview-title-input" value="${initialTitle}" placeholder="给此文档命名..." style="padding: 6px 8px; font-size: 11px; font-weight: 700; background: #FFFFFF;" />
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+            <label style="font-size: 8.5px; font-weight: 800; color: #888;">绑定角色 / TARGET</label>
+            <select class="api-select" id="doc-preview-target-select" style="padding: 4px 6px; font-size: 10px; background: #FFF;">
+              <option value="__all__" ${defaultTarget === "__all__" ? "selected" : ""}>全角色共享 (GLOBAL)</option>
+              ${chars.map(c => `<option value="${c}" ${defaultTarget === c ? "selected" : ""}>仅 ${c} 认知</option>`).join("")}
+            </select>
+          </div>
+          <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 9px; color: #888;">
+            <div>${charCount} 字符</div>
+            <div style="color: #111; font-weight: 700;">~${tokens} Tokens</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 2px;">
+        <span style="font-size: 9.5px; font-weight: 800; color: #111;">已读取文本内容预览 (${chunksCount} 切片)</span>
+      </div>
+      
+      <!-- 原文预览滚动区 -->
+      <div style="flex: 1; max-height: 190px; overflow-y: auto; background: #FFFFFF; border: 1px solid var(--line-color); border-radius: 8px; padding: 8px 10px; font-size: 10px; line-height: 1.45; color: #333; white-space: pre-wrap; font-family: ui-monospace, monospace;">${content}</div>
+
+      <div class="ins-modal-actions" style="margin-top: 4px;">
+        <button class="ins-modal-btn cancel" id="btn-cancel-doc-preview">放弃</button>
+        <button class="ins-modal-btn confirm" id="btn-confirm-doc-preview">确认写入知识库</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const closeModal = () => modal.remove();
+
+  modal.querySelector("#btn-close-doc-preview").onclick = closeModal;
+  modal.querySelector("#btn-cancel-doc-preview").onclick = closeModal;
+
+  modal.querySelector("#btn-confirm-doc-preview").onclick = () => {
+    const finalTitle = modal.querySelector("#doc-preview-title-input")?.value.trim() || initialTitle || "未命名设定";
+    const finalTarget = modal.querySelector("#doc-preview-target-select")?.value || "__all__";
+
+    addDocumentToVault(finalTitle, content, finalTarget);
+    closeModal();
+
+    const manualDocTextarea = document.querySelector("#doc-manual-textarea");
+    if (manualDocTextarea) manualDocTextarea.value = "";
+
+    const root = document.getElementById("api-sub-view-root");
+    const parentContainer = container || document.querySelector(".api-settings-container") || document.body;
+    if (root) {
+      root.innerHTML = renderCurrentSubTabHtml();
+      bindSubViewEvents(parentContainer);
+    }
+  };
 }
 
 function addDocumentToVault(title, content, charTarget) {

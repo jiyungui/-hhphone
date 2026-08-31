@@ -1,24 +1,55 @@
 /**
- * EchoVault 原生记忆引擎与 MCP 桥接器
- * 核心哲学：存原文，读原文。不 JSON 化、不做生硬摘要。
- * 结构：daily (日记衰减) / permanent (永久钉选) / archive (归档)
- * 工具：check / write / recall / dream / comment / archive / trace / remind
+ * EchoVault 原生记忆引擎与 Python MCP 桥接器
+ * 双模运行：优先连接 Python server.py (127.0.0.1:8765)，离线时自动切换本地引擎
  */
 
 export const EchoVault = {
   config: {
     mcpServerUrl: "http://127.0.0.1:8765",
-    useRemoteMcpIfAvailable: true,
     isMcpConnected: false,
+    lastPingTime: null
+  },
+
+  // ════════════ 0. 探测 Python MCP 服务状态 ════════════
+  async pingPythonServer() {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1200);
+      const res = await fetch(`${this.config.mcpServerUrl}/tools`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      this.config.isMcpConnected = res.ok;
+    } catch (e) {
+      this.config.isMcpConnected = false;
+    }
+    this.config.lastPingTime = new Date().toLocaleTimeString();
+    return this.config.isMcpConnected;
+  },
+
+  // 调用 Python MCP 服务的通用工具函数
+  async callPythonTool(toolName, args = {}) {
+    try {
+      const res = await fetch(`${this.config.mcpServerUrl}/call`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: toolName, arguments: args })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return { success: true, data: data.result || data };
+      }
+    } catch (e) {
+      this.config.isMcpConnected = false;
+    }
+    return { success: false };
   },
 
   // ════════════ 1. 本地存储命名空间 ════════════
   getStorageKeys(charName = "default") {
     const safe = encodeURIComponent(charName || "default");
     return {
-      daily: `echo_daily_${safe}`, // 存放日记 Map { "2026-08-31": { meta, content, comments } }
-      permanent: `echo_perm_${safe}`, // 存放钉选 Array [ { title, meta, content } ]
-      archive: `echo_archive_${safe}`, // 存放归档 Array [ { id, originType, data } ]
+      daily: `echo_daily_${safe}`,
+      permanent: `echo_perm_${safe}`,
+      archive: `echo_archive_${safe}`,
     };
   },
 
@@ -66,9 +97,9 @@ export const EchoVault = {
     return Number((imp * decay * bonus).toFixed(2));
   },
 
-  // ════════════ 3. EchoVault 8 大原生工具 ════════════
+  // ════════════ 3. 8 大工具（支持 Python 后端与本地双模） ════════════
 
-  // 工具 1：check —— 查看系统状态与问候语
+  // 工具 1：check
   check(charName) {
     const dailies = this.getDailies(charName);
     const perms = this.getPermanents(charName);
@@ -87,24 +118,24 @@ export const EchoVault = {
       dailyCount,
       permCount,
       greeting,
+      isPythonConnected: this.config.isMcpConnected,
       displayText: `日记: ${dailyCount}篇 | 钉选: ${permCount}条 | ${greeting}`,
     };
   },
 
-  // 工具 2：write —— 存记忆（日记按天追加，钉选永久保留）
-  write(
-    charName,
-    content,
-    type = "daily",
-    importance = 5,
-    tags = "",
-    title = "",
-  ) {
+  // 工具 2：write
+  async write(charName, content, type = "daily", importance = 5, tags = "", title = "") {
     if (!content || !content.trim()) return false;
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 10);
     const timeStr = now.toISOString().slice(0, 19).replace("T", " ");
 
+    // 如果 Python 在线，同步发给 Python 写入真实 .md 文件
+    if (this.config.isMcpConnected) {
+      this.callPythonTool("write", { content, type, importance, tags, title });
+    }
+
+    // 本地缓存双写
     if (type === "daily") {
       const dailies = this.getDailies(charName);
       if (!dailies[dateStr]) {
@@ -120,7 +151,6 @@ export const EchoVault = {
           comments: [],
         };
       } else {
-        // 同一天追加内容，用 --- 分隔
         dailies[dateStr].content += `\n\n---\n\n${content.trim()}`;
         if (importance > dailies[dateStr].meta.importance) {
           dailies[dateStr].meta.importance = importance;
@@ -129,7 +159,6 @@ export const EchoVault = {
       this.saveDailies(charName, dailies);
       return { success: true, date: dateStr, type: "daily" };
     } else {
-      // permanent 钉选
       const perms = this.getPermanents(charName);
       const permItem = {
         id: `perm-${Date.now()}`,
@@ -149,12 +178,11 @@ export const EchoVault = {
     }
   },
 
-  // 工具 3：recall —— 三种检索（空查 5+3 比例 / 按ID查 / 关键词查）
+  // 工具 3：recall
   recall(charName, query = "", id = "") {
     const dailies = this.getDailies(charName);
     const perms = this.getPermanents(charName);
 
-    // 1. 按 ID 查
     if (id) {
       if (dailies[id]) {
         dailies[id].meta.hits = (dailies[id].meta.hits || 0) + 1;
@@ -170,7 +198,6 @@ export const EchoVault = {
       return { found: false, msg: `未找到 ID 为 [${id}] 的记忆` };
     }
 
-    // 2. 关键词搜索
     if (query && query.trim()) {
       const q = query.trim().toLowerCase();
       const matchedPerms = perms.filter(
@@ -192,17 +219,10 @@ export const EchoVault = {
         }
       });
 
-      return {
-        query,
-        matchedPerms,
-        matchedDailies,
-      };
+      return { query, matchedPerms, matchedDailies };
     }
 
-    // 3. 空查：5 条随机钉选 + 3 条带衰减推荐日记（5+3 经典比例）
-    const shuffledPerms = [...perms]
-      .sort(() => 0.5 - Math.random())
-      .slice(0, 5);
+    const shuffledPerms = [...perms].sort(() => 0.5 - Math.random()).slice(0, 5);
 
     const scoredDailies = Object.keys(dailies)
       .map((dKey) => {
@@ -223,7 +243,7 @@ export const EchoVault = {
     };
   },
 
-  // 工具 4：dream —— 换窗连续性必备（回看最近 3 天日记完整原文）
+  // 工具 4：dream
   dream(charName, limit = 3) {
     const dailies = this.getDailies(charName);
     const sortedDates = Object.keys(dailies).sort().reverse().slice(0, limit);
@@ -233,7 +253,7 @@ export const EchoVault = {
     }));
   },
 
-  // 工具 5：comment —— 对过去的日记写批注（上限 10 条）
+  // 工具 5：comment
   comment(charName, dateStr, commentText) {
     if (!commentText || !commentText.trim()) return false;
     const dailies = this.getDailies(charName);
@@ -254,20 +274,15 @@ export const EchoVault = {
     return { success: true, date: dateStr };
   },
 
-  // 工具 6：archive —— 归档与恢复（可逆）
+  // 工具 6：archive
   archive(charName, idOrDate, restore = false) {
     const dailies = this.getDailies(charName);
     const perms = this.getPermanents(charName);
     let archives = this.getArchives(charName);
 
     if (!restore) {
-      // 归档
       if (dailies[idOrDate]) {
-        archives.unshift({
-          id: idOrDate,
-          originType: "daily",
-          data: dailies[idOrDate],
-        });
+        archives.unshift({ id: idOrDate, originType: "daily", data: dailies[idOrDate] });
         delete dailies[idOrDate];
         this.saveDailies(charName, dailies);
         this.saveArchives(charName, archives);
@@ -275,19 +290,14 @@ export const EchoVault = {
       }
       const permIdx = perms.findIndex((p) => p.id === idOrDate);
       if (permIdx >= 0) {
-        archives.unshift({
-          id: idOrDate,
-          originType: "permanent",
-          data: perms[permIdx],
-        });
+        archives.unshift({ id: idOrDate, originType: "permanent", data: perms[permIdx] });
         perms.splice(permIdx, 1);
         this.savePermanents(charName, perms);
         this.saveArchives(charName, archives);
         return { success: true, action: "archived" };
       }
     } else {
-      // 恢复
-      const arcIdx = archives.findIndex((a) => a.id === idOrDate);
+      const arcIdx = archives.findIndex((a => a.id === idOrDate));
       if (arcIdx >= 0) {
         const item = archives[arcIdx];
         if (item.originType === "daily") {
@@ -305,7 +315,7 @@ export const EchoVault = {
     return { success: false };
   },
 
-  // 工具 7：trace —— 修改或直接删除
+  // 工具 7：trace
   trace(charName, idOrDate, newContent = "", isDelete = false) {
     const dailies = this.getDailies(charName);
     const perms = this.getPermanents(charName);
@@ -334,13 +344,12 @@ export const EchoVault = {
     return { success: false };
   },
 
-  // 工具 8：remind —— 漂流瓶（加权捞取最快沉底的旧日记）
+  // 工具 8：remind
   remind(charName) {
     const dailies = this.getDailies(charName);
     const keys = Object.keys(dailies);
     if (keys.length === 0) return null;
 
-    // 按照分数升序（沉得越深的越优先被捡起）
     const list = keys
       .map((k) => {
         const d = dailies[k];
@@ -353,38 +362,33 @@ export const EchoVault = {
       })
       .sort((a, b) => a.score - b.score);
 
-    // 选取前三篇沉底日记中随机捞取一本
     const pool = list.slice(0, 3);
     const picked = pool[Math.floor(Math.random() * pool.length)];
 
-    // 捞起后增加一次 hit 续命
     if (picked) {
-      dailies[picked.date].meta.hits =
-        (dailies[picked.date].meta.hits || 0) + 1;
+      dailies[picked.date].meta.hits = (dailies[picked.date].meta.hits || 0) + 1;
       this.saveDailies(charName, dailies);
     }
 
     return picked;
   },
 
-  // ════════════ 4. 生成供 Prompt 注入的纯原文块 ════════════
+  // 格式化输出给 System Prompt
   getFormattedPromptContext(charName) {
     const dreamLogs = this.dream(charName, 3);
-    const recallData = this.recall(charName, "", ""); // 获取钉选
+    const recallData = this.recall(charName, "", "");
 
     let text = "";
 
-    // 1. 钉选核心记忆（永不磨灭）
     if (recallData.pinned && recallData.pinned.length > 0) {
-      text += `\n【EchoVault 永久钉选记忆（花园里的石头·永不磨灭）】:\n`;
+      text += `\n【EchoVault 永久钉选记忆】:\n`;
       recallData.pinned.forEach((p) => {
         text += `▪ [${p.title}]: ${p.content}\n`;
       });
     }
 
-    // 2. 最近 3 天日记原文（换窗连续性）
     if (dreamLogs && dreamLogs.length > 0) {
-      text += `\n【EchoVault 最近连续日记（近三天真实原文）】:\n`;
+      text += `\n【EchoVault 最近连续日记】:\n`;
       dreamLogs.forEach((d) => {
         text += `[日期: ${d.date}] (${d.meta.tags || "日常"})\n${d.content}\n`;
         if (d.comments && d.comments.length > 0) {
@@ -397,3 +401,6 @@ export const EchoVault = {
     return text.trim();
   },
 };
+
+// 初始化时自动探测一次本地 Python MCP 服务
+EchoVault.pingPythonServer();
