@@ -302,31 +302,12 @@ function calculateStorageMetrics() {
   });
   const memRawKB = Math.round(memRawBytes / 1024);
 
-  const totalRawKB = Math.max(
+   const totalRawKB = Math.max(
     1,
     mediaRawKB + docRawKB + chatRawKB + memRawKB + cfgRawKB,
   );
 
-  // 计算无损优化后大小
-  let mediaFactor = 1.0;
-  if (comp.stripMediaMetadata) mediaFactor *= 0.85;
-  if (comp.assetDeduplication) mediaFactor *= 0.9;
-  const mediaOptKB = Math.round(mediaRawKB * mediaFactor);
-
-  let textFactor = 1.0;
-  if (comp.minifyJsonSchema) textFactor *= 0.7;
-
-  const docOptKB = Math.round(docRawKB * textFactor);
-  const chatOptKB = Math.round(chatRawKB * textFactor);
-  const memOptKB = Math.round(memRawKB * textFactor);
-  const cfgOptKB = Math.round(cfgRawKB * textFactor);
-
-  let subtotalKB = mediaOptKB + docOptKB + chatOptKB + memOptKB + cfgOptKB;
-  if (comp.deflatePackage) subtotalKB = Math.round(subtotalKB * 0.7);
-
-  const totalOptKB = Math.max(1, subtotalKB);
-  const ratio = Math.max(0, Math.round((1 - totalOptKB / totalRawKB) * 100));
-
+  // ✨ 真实物理展示：不自动进行任何强制压缩，展示真实体积
   return {
     raw: {
       mediaKB: mediaRawKB,
@@ -338,14 +319,14 @@ function calculateStorageMetrics() {
       totalMB: (totalRawKB / 1024).toFixed(2),
     },
     optimized: {
-      mediaKB: mediaOptKB,
-      docKB: docOptKB,
-      chatKB: chatOptKB,
-      memKB: memOptKB,
-      cfgKB: cfgOptKB,
-      totalKB: totalOptKB,
-      totalMB: (totalOptKB / 1024).toFixed(2),
-      ratio,
+      mediaKB: mediaRawKB,
+      docKB: docRawKB,
+      chatKB: chatRawKB,
+      memKB: memRawKB,
+      cfgKB: cfgRawKB,
+      totalKB: totalRawKB,
+      totalMB: (totalRawKB / 1024).toFixed(2),
+      ratio: 0,
     },
   };
 }
@@ -2151,14 +2132,43 @@ function bindSubViewEvents(container) {
     };
   }
 
-   // 7. 总结板块
-    const exportFullBtn = container.querySelector("#btn-export-full-project");
+    // 7. 总结板块
+  const exportFullBtn = container.querySelector("#btn-export-full-project");
   if (exportFullBtn) {
     exportFullBtn.onclick = async () => {
       exportFullBtn.innerHTML = `<span>正在打包全系统数据与所有图片...</span>`;
       exportFullBtn.style.opacity = "0.7";
 
-      // 1. 打包全量沙盒记忆、EchoVault 原文与聊天记录（包含聊天发送的照片）
+      // 1. 读取 IndexedDB 中 5 个圆形头像框的原图并打包
+      let indexedDbAvatars = {};
+      try {
+        const dbPromise = new Promise((resolve) => {
+          const req = indexedDB.open("MiniPhoneDB", 1);
+          req.onsuccess = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains("avatars")) return resolve({});
+            const tx = db.transaction("avatars", "readonly");
+            const store = tx.objectStore("avatars");
+            const getAllReq = store.getAll();
+            const getAllKeysReq = store.getAllKeys();
+            tx.oncomplete = () => {
+              const res = {};
+              const keys = getAllKeysReq.result || [];
+              const values = getAllReq.result || [];
+              keys.forEach((k, idx) => {
+                res[k] = values[idx];
+              });
+              resolve(res);
+            };
+          };
+          req.onerror = () => resolve({});
+        });
+        indexedDbAvatars = await dbPromise;
+      } catch (e) {
+        console.warn("读取 IndexedDB 失败:", e);
+      }
+
+      // 2. 打包全量沙盒记忆、EchoVault 原文与聊天记录（包含聊天图片）
       const allCharSandboxes = {};
       const allEchoDailies = {};
       const allEchoPerms = {};
@@ -2176,21 +2186,29 @@ function bindSubViewEvents(container) {
         allChatHistories[c] = JSON.parse(localStorage.getItem(`mini_chat_dialog_history_${safeC}`) || "[]");
       });
 
-      // 2. ✨ 扫描并打包全系统所有图片与主题资产
+      // 3. ✨ 打包所有天气定位、壁纸与全部媒体
       const allCustomMedia = {
         storyAvatars: JSON.parse(localStorage.getItem("mini_story_avatars") || "[]"),
         storySlots: JSON.parse(localStorage.getItem("mini_story_slots") || "[]"),
+        indexedDbAvatars: indexedDbAvatars, // 5 个圆圈真实图片
         themeWallpaper: localStorage.getItem("mini_theme_wallpaper") || "",
         customBackground: localStorage.getItem("mini_custom_background") || ""
       };
 
-      // 3. 导出完整系统镜像包（包含全部 Base64 图片）
+      // 4. 打包天气定位
+      const weatherLocationData = {
+        location: localStorage.getItem("mini_weather_location") || "",
+        city: localStorage.getItem("mini_weather_city") || "",
+        cache: localStorage.getItem("mini_weather_cache") || ""
+      };
+
+      // 5. 导出完整系统镜像包（无损原图、无损原文本、绝不自动压缩）
       const fullProjectBackup = {
         manifest: {
           app: "Mini Phone OS",
-          version: "3.5.0",
+          version: "4.0.0",
           backupAt: new Date().toISOString(),
-          hasMediaPackage: true,
+          uncompressed: true,
           sandboxed: true,
         },
         config: config,
@@ -2201,7 +2219,7 @@ function bindSubViewEvents(container) {
         charactersFull: fullCharList,
         characters: charNames,
         activeChatList: JSON.parse(localStorage.getItem("mini_active_chat_list") || "[]"),
-        storyAvatars: allCustomMedia.storyAvatars,
+        weatherLocation: weatherLocationData,
         customMedia: allCustomMedia,
         chatHistories: allChatHistories,
         charSandboxes: allCharSandboxes,
@@ -2219,7 +2237,7 @@ function bindSubViewEvents(container) {
         `MiniPhone_FullBackup_${new Date().toISOString().slice(0, 10)}.miniphone.json`,
       );
 
-      exportFullBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>全量数据与图片导出成功！</span>`;
+      exportFullBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>全量数据与原图导出成功！</span>`;
       exportFullBtn.style.opacity = "1";
 
       setTimeout(() => {
@@ -2559,59 +2577,42 @@ ${rawTextOrJson.slice(0, 15000)}
     };
   }
 
-     // ✨ 核心：全系统数据与所有上传图片彻底重置
+  // ✨ 核心：全系统数据、图片、IndexedDB 数据库与天气定位彻底物理抹除
   const wipeAllDataBtn = container.querySelector(
     "#btn-wipe-all-system-data",
   );
   if (wipeAllDataBtn) {
-    wipeAllDataBtn.onclick = () => {
+    wipeAllDataBtn.onclick = async () => {
       const firstConfirm = window.confirm(
-        "【第一次确认 · 警告】\n\n确定要清空 Mini Phone OS 的所有本地数据与图片吗？\n\n包括：\n1. 5 个圆形头像框与所有已上传图片\n2. 所有角色头像、人设与沙盒记忆库\n3. 全部聊天图片、转账、礼物与对话记录\n4. EchoVault 原文日记与知识库设定文档\n5. API 端点预设与用户证件照画像"
+        "【第一次确认 · 警告】\n\n确定要清空 Mini Phone OS 的所有本地数据吗？\n\n包括：\n1. 5 个圆形头像框图片 (IndexedDB 数据库物理删除)\n2. 日历栏天气定位与城市数据\n3. 所有角色头像、人设与沙盒记忆库\n4. 全部聊天图片、转账、礼物与对话记录\n5. EchoVault 原文日记与知识库设定文档\n6. API 端点预设与用户证件照画像"
       );
       if (!firstConfirm) return;
 
       const secondConfirm = window.confirm(
-        "【第二次最终确认 · 不可恢复】\n\n所有数据与图片一旦清空将完全无法撤销或找回！\n\n请问您确定要立即彻底恢复出厂设置吗？"
+        "【第二次最终确认 · 不可恢复】\n\n所有数据、图片、数据库与定位一旦抹除将完全无法撤回！\n\n确定立即执行彻底恢复出厂设置吗？"
       );
       if (!secondConfirm) return;
 
-      // 1. 显式将所有图片、头像、槽位、聊天列表重置为空白状态
-      const emptyKeys = [
-        "mini_story_avatars",
-        "mini_story_slots",
-        "mini_active_chat_list",
-        "mini_character_vault_full",
-        "mini_user_characters",
-        "mini_user_personas_full",
-        "mini_user_personas",
-        "mini_mcp_documents",
-        "mini_chat_favorites",
-        "mini_theme_wallpaper",
-        "mini_custom_background"
-      ];
-
-      emptyKeys.forEach(k => localStorage.setItem(k, "[]"));
-
-      // 2. 扫描并清除所有单个角色的独立聊天图片与记忆
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const k = localStorage.key(i);
-        if (k && (
-          k.startsWith("mini_chat_dialog_history_") ||
-          k.startsWith("mini_vault_") ||
-          k.startsWith("mini_character_memories_") ||
-          k.startsWith("echo_daily_") ||
-          k.startsWith("echo_perm_")
-        )) {
-          localStorage.removeItem(k);
-        }
+      // 1. ✨ 核心：物理删除保存 5 个圆圈头像的 IndexedDB 数据库
+      try {
+        indexedDB.deleteDatabase("MiniPhoneDB");
+        indexedDB.deleteDatabase("AvatarDB");
+      } catch (e) {
+        console.warn("删除 IndexedDB 失败:", e);
       }
 
-      // 3. 执行全量物理抹除
+      // 2. 清理全量 LocalStorage 与 SessionStorage
       localStorage.clear();
       sessionStorage.clear();
 
-      alert("全系统数据与所有上传图片已彻底清空并恢复出厂设置！");
-      window.location.href = window.location.pathname; // 强制无缓存刷新重载
+      // 3. 显式置空关键数组防缓存重载
+      localStorage.setItem("mini_active_chat_list", "[]");
+      localStorage.setItem("mini_character_vault_full", "[]");
+      localStorage.setItem("mini_user_personas_full", "[]");
+      localStorage.setItem("mini_weather_location", "");
+
+      alert("🎉 全系统数据、图片数据库与天气定位已彻底物理抹除！系统将立即重载。");
+      window.location.href = window.location.pathname; // 强制无缓存重载
     };
   }
 }

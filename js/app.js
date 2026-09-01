@@ -1,92 +1,136 @@
 import { renderIMessageView } from './modules/imessage.js';
-import { renderMomentsView } from './modules/moments.js';
 import { renderCharactersView } from './modules/characters.js';
 import { renderUserView } from './modules/user.js';
-import { initAppDrawer } from './modules/appDrawer.js';
-import { renderApiSettingsView } from './modules/apiSettings.js'; // ✨引入 API 设置
-
-document.addEventListener('DOMContentLoaded', () => {
-  // 1. 初始化视口与顶部时钟
-  initViewportHeight();
-  updateClock();
-  setInterval(updateClock, 1000 * 15);
-
-  // 2. 初始化系统侧边栏
-  initAppDrawer((targetAppId) => {
-    switchApp(targetAppId);
-  });
-
-  // 3. 初始化 Chat 内部 Dock
-  initChatDock();
-
-  // 4. 默认加载 Chat 应用首页
-  const chatImessagePanel = document.getElementById('view-imessage');
-  renderIMessageView(chatImessagePanel);
-});
+import { renderApiSettingsView } from './modules/apiSettings.js';
 
 /**
- * 全局系统 App 切换总控
+ * 8 大 Dock 项切换与页面渲染
  */
-function switchApp(appId) {
-  const appViews = document.querySelectorAll('.app-view-container');
-  appViews.forEach(view => view.classList.remove('active'));
+export function initDockNavigation() {
+  const dockButtons = document.querySelectorAll('.dock-item');
+  const viewPanels = document.querySelectorAll('.view-panel');
 
-  const targetView = document.getElementById(`${appId}-root`);
-  if (targetView) {
-    targetView.classList.add('active');
+  dockButtons.forEach(btn => {
+    btn.onclick = () => {
+      const target = btn.getAttribute('data-target');
 
-    // 路由分发按需渲染
-    if (appId === 'app-api') {
-      renderApiSettingsView(targetView);
-    }
+      // 1. 切换 Dock 高亮
+      dockButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // 2. 切换内容视图 Panel
+      viewPanels.forEach(p => p.classList.remove('active'));
+      const activePanel = document.getElementById(`view-${target}`);
+      if (activePanel) {
+        activePanel.classList.add('active');
+        renderDockTargetView(target, activePanel);
+      }
+    };
+  });
+
+  // 默认渲染第一个（消息）
+  const defaultPanel = document.getElementById('view-imessage');
+  if (defaultPanel) renderIMessageView(defaultPanel);
+}
+
+function renderDockTargetView(target, panel) {
+  if (target === 'imessage') {
+    renderIMessageView(panel);
+  } else if (target === 'characters') {
+    renderCharactersView(panel);
+  } else if (target === 'user') {
+    renderUserView(panel);
+  } else if (target === 'settings') {
+    renderApiSettingsView(panel); // 直连系统 API、记忆库与总结设置
+  } else if (target === 'stickers') {
+    renderStickersGalleryView(panel); // 表情包库
+  } else if (target === 'theme') {
+    renderThemeCustomView(panel); // 美化中心
+  } else if (target === 'games') {
+    renderGamesCenterView(panel); // 互动游戏
+  } else if (target === 'moments') {
+    renderMomentsView(panel); // 动态
   }
 }
 
-/**
- * Chat 应用专属 Dock 切换
- */
-function initChatDock() {
-  const dockItems = document.querySelectorAll('.dock-item');
-  const panels = {
-    imessage: document.getElementById('view-imessage'),
-    moments: document.getElementById('view-moments'),
-    characters: document.getElementById('view-characters'),
-    user: document.getElementById('view-user')
-  };
+// ════════════ 4 大新增板块的 INS 极简白黑风渲染函数 (绝无 Emoji) ════════════
 
-  dockItems.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = btn.getAttribute('data-target');
-      if (!panels[target]) return;
-
-      dockItems.forEach(i => i.classList.remove('active'));
-      btn.classList.add('active');
-
-      Object.keys(panels).forEach(key => panels[key].classList.remove('active'));
-      panels[target].classList.add('active');
-
-      if (target === 'imessage') renderIMessageView(panels.imessage);
-      if (target === 'moments') renderMomentsView(panels.moments);
-      if (target === 'characters') renderCharactersView(panels.characters);
-      if (target === 'user') renderUserView(panels.user);
-    });
-  });
+// 1. 表情包库视图
+function renderStickersGalleryView(container) {
+  container.innerHTML = `
+    <div class="user-container" style="display:flex; flex-direction:column; height:100%; padding: 0 14px 14px 14px; overflow-y:auto;">
+      <div class="user-header" style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--line-color);">
+        <span class="user-header-title" style="font-size:16px; font-weight:800; color:#111;">Stickers</span>
+        <span class="user-count-badge" style="font-size:9.5px; font-weight:700; color:#888;">STICKER VAULT</span>
+      </div>
+      <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+        <div class="api-card" style="border: 1px solid var(--line-color); border-radius:10px; padding:12px; background:#FFF;">
+          <div style="font-size:11.5px; font-weight:800; color:#111; margin-bottom:4px;">默认表情包预设</div>
+          <span style="font-size:9.5px; color:#888;">聊天中可随时在「更多 ➔ 表情包」中快速发送极简线条表情。</span>
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-top:8px;">
+            <div style="padding:6px; background:#FAFAFA; border:1px solid #EAEAEA; border-radius:6px; text-align:center; font-size:10px; font-weight:700;">[暗中观察]</div>
+            <div style="padding:6px; background:#FAFAFA; border:1px solid #EAEAEA; border-radius:6px; text-align:center; font-size:10px; font-weight:700;">[叹气]</div>
+            <div style="padding:6px; background:#FAFAFA; border:1px solid #EAEAEA; border-radius:6px; text-align:center; font-size:10px; font-weight:700;">[给心心]</div>
+            <div style="padding:6px; background:#FAFAFA; border:1px solid #EAEAEA; border-radius:6px; text-align:center; font-size:10px; font-weight:700;">[问号]</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
-function updateClock() {
-  const timeEl = document.getElementById('current-time');
-  if (!timeEl) return;
-  const now = new Date();
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  timeEl.textContent = `${hours}:${minutes}`;
+// 2. 美化中心视图
+function renderThemeCustomView(container) {
+  container.innerHTML = `
+    <div class="user-container" style="display:flex; flex-direction:column; height:100%; padding: 0 14px 14px 14px; overflow-y:auto;">
+      <div class="user-header" style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--line-color);">
+        <span class="user-header-title" style="font-size:16px; font-weight:800; color:#111;">Theme & Style</span>
+        <span class="user-count-badge" style="font-size:9.5px; font-weight:700; color:#888;">INS LINEAR B&W</span>
+      </div>
+      <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
+        <div class="api-card" style="border: 1px solid var(--line-color); border-radius:10px; padding:12px; background:#FFF;">
+          <div style="font-size:11.5px; font-weight:800; color:#111; margin-bottom:4px;">极简白黑线条风 (当前主题)</div>
+          <span style="font-size:9.5px; color:#888; line-height:1.4;">纯粹白底黑线设计、时间戳外置、连发首条头像、零 Emoji。</span>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
-function initViewportHeight() {
-  const setHeight = () => {
-    document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
-  };
-  setHeight();
-  window.addEventListener('resize', setHeight);
-  window.addEventListener('orientationchange', setHeight);
+// 3. 游戏中心视图
+function renderGamesCenterView(container) {
+  container.innerHTML = `
+    <div class="user-container" style="display:flex; flex-direction:column; height:100%; padding: 0 14px 14px 14px; overflow-y:auto;">
+      <div class="user-header" style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--line-color);">
+        <span class="user-header-title" style="font-size:16px; font-weight:800; color:#111;">Games Hub</span>
+        <span class="user-count-badge" style="font-size:9.5px; font-weight:700; color:#888;">INTERACTION</span>
+      </div>
+      <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+        <div class="api-card" style="border: 1px solid var(--line-color); border-radius:10px; padding:12px; background:#FFF;">
+          <div style="font-size:11.5px; font-weight:800; color:#111; margin-bottom:2px;">双人互动小游戏 (准备就绪)</div>
+          <span style="font-size:9.5px; color:#888;">在聊天中与 Char 发起投骰子、抽塔罗牌或真心话大冒险对决。</span>
+        </div>
+      </div>
+    </div>
+  `;
 }
+
+// 4. 动态广场视图
+function renderMomentsView(container) {
+  container.innerHTML = `
+    <div class="user-container" style="display:flex; flex-direction:column; height:100%; padding: 0 14px 14px 14px; overflow-y:auto;">
+      <div class="user-header" style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--line-color);">
+        <span class="user-header-title" style="font-size:16px; font-weight:800; color:#111;">Moments</span>
+        <span class="user-count-badge" style="font-size:9.5px; font-weight:700; color:#888;">TIMELINE</span>
+      </div>
+      <div style="padding: 40px 0; text-align: center; font-size: 10.5px; color: var(--text-muted);">
+        暂无新动态更新，角色在后台活动时将在此发布生活切片
+      </div>
+    </div>
+  `;
+}
+
+// 页面加载完成后启动
+document.addEventListener('DOMContentLoaded', () => {
+  initDockNavigation();
+});

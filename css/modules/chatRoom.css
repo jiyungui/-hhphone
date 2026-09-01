@@ -2098,3 +2098,942 @@ input:checked + .ins-slider:before {
 .ins-modal-btn:active {
   transform: scale(0.97);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   MINI PHONE OS · 专属头像库全屏独立子页面 (INS B&W FULL SUBVIEW)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 全屏独立内置页面容器 */
+.char-avatar-vault-subview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #FFFFFF;
+  z-index: 75;
+  display: none;
+  flex-direction: column;
+  animation: slideInRight 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.char-avatar-vault-subview.active {
+  display: flex;
+}
+
+/* 导航三栏切换按钮 */
+.ins-vault-scope-bar {
+  display: flex;
+  background: #EFEFEF;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 4px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.ins-scope-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 6px 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: #666666;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.ins-scope-btn.active {
+  background: #FFFFFF;
+  color: #111111;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.ins-vault-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 上传虚线框 */
+.ins-upload-dashed-card {
+  border: 1px dashed #111111;
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ins-upload-dashed-card:active {
+  transform: scale(0.98);
+  background: #F7F7F7;
+}
+
+.ins-upload-icon-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #F4F4F4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111111;
+  margin-bottom: 2px;
+}
+
+.ins-upload-main-text {
+  font-size: 11px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.ins-upload-sub-text {
+  font-size: 8.5px;
+  color: #888888;
+}
+
+/* 头像网格 2 列 */
+.ins-avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding-bottom: 20px;
+}
+
+.ins-avatar-card {
+  background: #FFFFFF;
+  border: 1px solid var(--line-color, #E5E5E5);
+  border-radius: 12px;
+  padding: 10px 8px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.ins-avatar-card.is-active-avatar {
+  border-color: #111111;
+  box-shadow: 0 0 0 1.5px #111111;
+}
+
+.ins-card-avatar-wrap {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-dark, #111111);
+  overflow: hidden;
+  position: relative;
+  background: #F4F4F4;
+}
+
+.ins-card-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ins-active-badge {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.75);
+  color: #FFFFFF;
+  font-size: 7.5px;
+  font-weight: 700;
+  text-align: center;
+  padding: 1px 0;
+}
+
+.ins-card-title-text {
+  font-size: 10px;
+  font-weight: 700;
+  color: #111111;
+  max-width: 110px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ins-card-btns-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.ins-card-action-btn {
+  flex: 1;
+  padding: 5px 0;
+  border-radius: 6px;
+  font-size: 9.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.ins-card-action-btn.use {
+  background: #111111;
+  color: #FFFFFF;
+}
+
+.ins-card-action-btn.del {
+  background: #F4F4F4;
+  color: #888888;
+  border-color: #E5E5E5;
+}
+
+.ins-card-action-btn:active {
+  transform: scale(0.95);
+}
+
+/* 情侣头像卡片 */
+.ins-couple-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 20px;
+}
+
+.ins-couple-card {
+  background: #FFFFFF;
+  border: 1px solid var(--line-color, #E5E5E5);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ins-couple-dual-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.ins-couple-single {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.ins-couple-thumb {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 1.5px solid #111111;
+  object-fit: cover;
+}
+
+.ins-couple-role-tag {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #666666;
+}
+
+.ins-couple-link-symbol {
+  color: #111111;
+  display: flex;
+  align-items: center;
+}
+
+.ins-couple-bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--line-color, #EAEAEA);
+  padding-top: 8px;
+}
+
+.ins-couple-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.ins-couple-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   一笔连画动态 SVG 爱心 (INS CONTINUOUS LINE HEART)
+   ═══════════════════════════════════════════════════════════════ */
+.ins-oneline-heart-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.oneline-heart-svg {
+  display: block;
+}
+
+.oneline-heart-path {
+  stroke-dasharray: 140;
+  stroke-dashoffset: 0;
+  animation: onelineHeartBeat 2.4s ease-in-out infinite;
+}
+
+@keyframes onelineHeartBeat {
+  0% {
+    stroke-dashoffset: 0;
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    stroke-dashoffset: 25;
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    transform: scale(1);
+    opacity: 0.85;
+  }
+}
+
+/* 弹窗内的双图预览排版 */
+.ins-couple-modal-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--bg-sub, #F7F7F7);
+  border: 1px solid var(--line-color, #EAEAEA);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MINI PHONE OS · 气泡每轮连发首条头像 (INS LINEAR AVATAR ALIGN)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 气泡行对齐控制 */
+.msg-bubble-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 90%;
+  margin-bottom: 3px;
+}
+
+.msg-bubble-row.assistant {
+  align-self: flex-start;
+}
+
+.msg-bubble-row.user {
+  align-self: flex-end;
+  flex-direction: row;
+}
+
+/* ═══════════ 气泡头像槽位与通用挂件等比自适应 (标准 32px) ═══════════ */
+.msg-round-avatar-slot {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 气泡里的挂件容器锁定为 100% 贴合，彻底杜绝放大溢出 */
+.msg-round-avatar-slot .ins-avatar-frame-wrap {
+  width: 100% !important;
+  height: 100% !important;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 头像图片精准 32px 圆形裁剪 */
+.msg-round-avatar-slot .msg-round-avatar-img {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  border: 1.2px solid #111111;
+  object-fit: cover;
+  display: block;
+  background: #FFFFFF;
+}
+
+/* 占位文字 (无头像时) */
+.msg-round-avatar-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.2px solid #111111;
+  background: var(--bg-sub, #F5F5F5);
+  font-size: 11px;
+  font-weight: 800;
+  color: #111111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 气泡挂件微光环适配 (等比贴合头像边缘) */
+.msg-round-avatar-slot .ins-avatar-frame-wrap.frame-ring_dual:after {
+  content: "";
+  position: absolute;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  border: 1px solid #111111;
+  border-radius: 50%;
+}
+
+.msg-round-avatar-slot .ins-avatar-frame-wrap.frame-dashed_orbit:after {
+  content: "";
+  position: absolute;
+  top: -2.5px; left: -2.5px; right: -2.5px; bottom: -2.5px;
+  border: 1px dashed #111111;
+  border-radius: 50%;
+  animation: frameOrbitSpin 12s linear infinite;
+}
+
+.msg-round-avatar-slot .ins-avatar-frame-wrap.frame-prism_square:after {
+  content: "";
+  position: absolute;
+  top: -1px; left: -1px; right: -1px; bottom: -1px;
+  border: 1px solid #111111;
+  border-radius: 6px;
+}
+
+/* 本轮连发第 2、3 条气泡占位对齐 */
+.msg-round-avatar-slot.spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MINI PHONE OS · 微信式 INS 语音条与弹窗样式 (INS LINEAR VOICE)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1. 语音气泡卡片 */
+.msg-voice-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.msg-voice-bar-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 16px;
+  transition: all 0.15s ease;
+}
+
+.msg-bubble-row.user .msg-voice-bar-pill {
+  flex-direction: row-reverse;
+}
+
+.msg-voice-bar-pill:active {
+  opacity: 0.8;
+  transform: scale(0.98);
+}
+
+/* 声波动画 */
+.voice-wave-anim-box {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 14px;
+}
+
+.v-wave-bar {
+  width: 2px;
+  height: 8px;
+  background: currentColor;
+  border-radius: 1px;
+  transition: height 0.15s ease;
+}
+
+.voice-wave-anim-box.playing .v-wave-bar:nth-child(1) { animation: wavePulse 0.6s infinite ease-in-out; }
+.voice-wave-anim-box.playing .v-wave-bar:nth-child(2) { animation: wavePulse 0.6s infinite ease-in-out 0.2s; }
+.voice-wave-anim-box.playing .v-wave-bar:nth-child(3) { animation: wavePulse 0.6s infinite ease-in-out 0.4s; }
+
+@keyframes wavePulse {
+  0%, 100% { height: 4px; }
+  50% { height: 14px; }
+}
+
+.voice-duration-label {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+}
+
+/* 语音转文字展开框 */
+.voice-text-trans-box {
+  background: rgba(0, 0, 0, 0.05);
+  border-top: 1px dashed var(--line-color, #EAEAEA);
+  padding: 5px 8px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: fadeIn 0.12s ease;
+}
+
+.msg-bubble-row.user .voice-text-trans-box {
+  background: rgba(255, 255, 255, 0.15);
+  border-top-color: rgba(255, 255, 255, 0.2);
+}
+
+.voice-trans-tag {
+  font-size: 8px;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+.voice-trans-content {
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+
+/* 2. 语音工具悬浮面板 */
+.voice-tool-card {
+  max-width: 330px;
+}
+
+.voice-record-circle-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 1.5px solid #111111;
+  background: #FAFAFA;
+  color: #111111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px auto;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.voice-record-circle-btn.recording {
+  background: #111111;
+  color: #FFFFFF;
+  animation: recPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes recPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0,0,0,0.3); }
+  50% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(0,0,0,0.1); }
+}
+
+.voice-record-hint {
+  font-size: 9.5px;
+  color: #888888;
+}
+
+.voice-real-timer {
+  font-size: 16px;
+  font-weight: 800;
+  font-family: ui-monospace, monospace;
+  color: #111111;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MINI PHONE OS · P2 经典斜纹网格画框 (INS LINEAR PHOTO FRAME)
+   ═══════════════════════════════════════════════════════════════ */
+
+.msg-sim-photo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 175px;
+  max-width: 215px;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* 1. 外层：P2 斜纹网格背景画框 */
+.ins-p2-grid-frame {
+  position: relative;
+  width: 100%;
+  padding: 16px 14px 18px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #111111;
+  background-color: #FFFFFF;
+  /* 纯正 P2 斜向 45 度交叉细网格底纹 */
+  background-image:
+    repeating-linear-gradient(45deg, #E0E0E0 0, #E0E0E0 1px, transparent 0, transparent 7px),
+    repeating-linear-gradient(-45deg, #E0E0E0 0, #E0E0E0 1px, transparent 0, transparent 7px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+  transition: transform 0.15s ease;
+}
+
+.ins-p2-grid-frame:active {
+  transform: scale(0.98);
+}
+
+/* User 发送时的暗色反差适配 */
+.msg-bubble-row.user .ins-p2-grid-frame {
+  background-color: #1E1E1E;
+  border-color: #FFFFFF;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.12) 0, rgba(255, 255, 255, 0.12) 1px, transparent 0, transparent 7px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.12) 0, rgba(255, 255, 255, 0.12) 1px, transparent 0, transparent 7px);
+}
+
+/* 2. 内层：纯白留白画纸内芯 */
+.p2-inner-canvas {
+  width: 100%;
+  min-height: 125px;
+  background: #FFFFFF;
+  border: 1.2px solid #111111;
+  padding: 12px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.msg-bubble-row.user .p2-inner-canvas {
+  background: #FFFFFF;
+  border-color: #111111;
+}
+
+.p2-canvas-text {
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #111111;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.2px;
+}
+
+/* 3. 装饰元素定位 */
+
+/* 右上角三折箭头 */
+.p2-decor-arrow {
+  position: absolute;
+  top: 9px;
+  right: 8px;
+  z-index: 3;
+}
+
+.msg-bubble-row.user .p2-decor-arrow svg {
+  stroke: #FFFFFF;
+}
+
+/* 左下角手绘纸飞机 */
+.p2-decor-plane {
+  position: absolute;
+  bottom: 4px;
+  left: 3px;
+  z-index: 3;
+}
+
+.msg-bubble-row.user .p2-decor-plane svg {
+  stroke: #FFFFFF;
+}
+
+/* 右下角音频声波线条 */
+.p2-decor-wave {
+  position: absolute;
+  bottom: 8px;
+  right: 5px;
+  z-index: 3;
+}
+
+.msg-bubble-row.user .p2-decor-wave svg {
+  stroke: #FFFFFF;
+}
+
+/* 点击展开的详情说明框 */
+.sim-photo-detail-box {
+  background: #F8F8F8;
+  border: 1px solid var(--line-color, #EAEAEA);
+  padding: 6px 8px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: fadeIn 0.12s ease;
+}
+
+.msg-bubble-row.user .sim-photo-detail-box {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.sim-photo-detail-tag {
+  font-size: 8px;
+  font-weight: 800;
+  color: #888888;
+  letter-spacing: 0.5px;
+}
+
+.msg-bubble-row.user .sim-photo-detail-tag {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.sim-photo-detail-content {
+  font-size: 9.5px;
+  line-height: 1.4;
+  color: #333333;
+}
+
+.msg-bubble-row.user .sim-photo-detail-content {
+  color: #FFFFFF;
+}
+
+/* 相机悬浮窗快门按钮 */
+.camera-shutter-btn {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 1.5px solid #111111;
+  background: #FAFAFA;
+  color: #111111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.camera-shutter-btn:active {
+  transform: scale(0.92);
+  background: #111111;
+  color: #FFFFFF;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MINI PHONE OS · 美化定制中心全屏独立子页面 (INS B&W THEME)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 全屏美化子页面 */
+.char-theme-custom-subview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #FFFFFF;
+  z-index: 75;
+  display: none;
+  flex-direction: column;
+  animation: slideInRight 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.char-theme-custom-subview.active {
+  display: flex;
+}
+
+.ins-theme-content-area {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* 头像挂件预览框 */
+.ins-theme-preview-card {
+  background: #FAFAFA;
+  border: 1px solid var(--line-color, #EAEAEA);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ins-frame-preview-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.ins-avatar-frame-wrap {
+  width: 72px;
+  height: 72px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ins-preview-avatar-img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.ins-preview-avatar-placeholder {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #EAEAEA;
+  color: #111;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 挂件样式 */
+.ins-avatar-frame-wrap.frame-ring_dual:after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border: 1.5px solid #111111;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 4.5px #111111;
+}
+
+.ins-avatar-frame-wrap.frame-dashed_orbit:after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border: 1.5px dashed #111111;
+  border-radius: 50%;
+}
+
+.ins-avatar-frame-wrap.frame-prism_square:after {
+  content: "";
+  position: absolute;
+  top: 2px; left: 2px; right: 2px; bottom: 2px;
+  border: 1.5px solid #111111;
+  border-radius: 8px;
+}
+
+/* 美化选项网格与卡片 */
+.ins-theme-grid-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+  padding-bottom: 20px;
+}
+
+.ins-theme-option-card, .ins-bubble-preview-card, .ins-wallpaper-card {
+  background: #FFFFFF;
+  border: 1px solid var(--line-color, #EAEAEA);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.ins-theme-option-card.active, .ins-bubble-preview-card.active, .ins-wallpaper-card.active {
+  border-color: #111111;
+  box-shadow: 0 0 0 1.5px #111111;
+}
+
+.ins-option-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ins-option-name {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.ins-option-tag {
+  font-size: 8px;
+  color: #888888;
+  font-family: ui-monospace, monospace;
+}
+
+/* 气泡样式预览 */
+.sample-bubble-row {
+  margin-top: 4px;
+  display: flex;
+}
+
+.sample-bubble-box {
+  font-size: 9.5px;
+  padding: 5px 10px;
+  background: #111111;
+  color: #FFFFFF;
+}
+
+.sample-bubble-box.default { border-radius: 12px; }
+.sample-bubble-box.capsule { border-radius: 20px; }
+.sample-bubble-box.border_double { border-radius: 8px; border: 1.5px solid #FFFFFF; box-shadow: 0 0 0 1px #111; }
+.sample-bubble-box.square_sharp { border-radius: 3px; }
+
+/* 壁纸缩略图 */
+.wp-thumb-box {
+  width: 100%;
+  height: 60px;
+  border-radius: 6px;
+  border: 1px solid #EAEAEA;
+}
+
+.wp-thumb-box.default { background: #FFFFFF; }
+.wp-thumb-box.grid_p2 {
+  background-color: #FFFFFF;
+  background-image: repeating-linear-gradient(45deg, #E0E0E0 0, #E0E0E0 1px, transparent 0, transparent 6px), repeating-linear-gradient(-45deg, #E0E0E0 0, #E0E0E0 1px, transparent 0, transparent 6px);
+}
+.wp-thumb-box.dots {
+  background-color: #FFFFFF;
+  background-image: radial-gradient(#999999 0.75px, transparent 0.75px);
+  background-size: 8px 8px;
+}
+
+.wp-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #111111;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MINI PHONE OS · 头像挂件 CSS 代码放置区 (INS LINEAR CODE EDITOR)
+   ═══════════════════════════════════════════════════════════════ */
+
+.ins-css-code-editor {
+  width: 100%;
+  background: #111111;
+  color: #F5F5F5;
+  border: 1px solid #111111;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 9.5px;
+  line-height: 1.45;
+  tab-size: 2;
+  resize: vertical;
+  outline: none;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.ins-css-code-editor:focus {
+  border-color: #555555;
+}
