@@ -3037,3 +3037,15 @@ input:checked + .ins-slider:before {
 .ins-css-code-editor:focus {
   border-color: #555555;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   翻译样式控制：内嵌常驻 vs 点击展开/折叠
+   ═══════════════════════════════════════════════════════════════ */
+.msg-bubble-translation-wrap.is-collapsed {
+  display: none !important;
+}
+
+.msg-bubble-translation-wrap.is-expanded {
+  display: flex !important;
+  animation: fadeIn 0.12s ease;
+}

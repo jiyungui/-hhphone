@@ -1,8 +1,8 @@
 import { McpGateway } from "../utils/mcpGateway.js";
 import { EchoVault } from "../utils/echoVault.js";
 import { resolveApiEndpoints } from "./apiSettings.js";
-import { CameraTool } from './cameraTool.js';
-import { VoiceTool } from './voiceTool.js';
+import { CameraTool } from "./cameraTool.js";
+import { VoiceTool } from "./voiceTool.js";
 
 let activeCharInfo = null;
 let chatMessages = [];
@@ -356,6 +356,7 @@ export function openChatRoom(charInfo) {
       fullData.enableTranslation !== undefined
         ? fullData.enableTranslation
         : isForeign,
+    translationStyle: fullData.translationStyle || "inline", // ✨ 'inline' (常驻内嵌) | 'click_toggle' (点击展开折叠)
     targetLang: fullData.targetLang || detectedLang,
     timePerceptionEnabled:
       fullData.timePerceptionEnabled !== undefined
@@ -382,12 +383,11 @@ export function openChatRoom(charInfo) {
     autoExtractTurnInterval: fullData.autoExtractTurnInterval || 20,
     currentTurnCounter: fullData.currentTurnCounter || 0,
     bgAutoActivity:
-      fullData.bgAutoActivity !== undefined
-        ? fullData.bgAutoActivity
-        : false,
+      fullData.bgAutoActivity !== undefined ? fullData.bgAutoActivity : false,
     bgActivityIntervalMinutes: fullData.bgActivityIntervalMinutes || 45,
     // ✨ 专属语音系统配置初始化
-    voiceEnabled: fullData.voiceEnabled !== undefined ? fullData.voiceEnabled : false,
+    voiceEnabled:
+      fullData.voiceEnabled !== undefined ? fullData.voiceEnabled : false,
     voiceSource: fullData.voiceSource || "global", // 'global' | 'custom'
     voiceCustomPlatform: fullData.voiceCustomPlatform || "minimax",
     voiceCustomApiKey: fullData.voiceCustomApiKey || "",
@@ -469,7 +469,7 @@ export function renderChatRoomView(container) {
     container.appendChild(roomEl);
   }
 
-   const globalFrameCss = activeCharInfo.chatTheme?.customFrameCss || '';
+  const globalFrameCss = activeCharInfo.chatTheme?.customFrameCss || "";
 
   roomEl.innerHTML = `
     <!-- ✨ 聊天室全局挂件与形状动态生效样式 -->
@@ -1321,11 +1321,11 @@ function bindAvatarVaultEvents(roomEl, container) {
 function renderChatThemeSubviewHtml() {
   const char = activeCharInfo;
   const themeCfg = char.chatTheme || {
-    avatarFrame: 'default',
-    bubbleStyle: 'default',
-    themeTone: 'default',
-    wallpaper: 'default',
-    customWallpaperUrl: ''
+    avatarFrame: "default",
+    bubbleStyle: "default",
+    themeTone: "default",
+    wallpaper: "default",
+    customWallpaperUrl: "",
   };
 
   return `
@@ -1341,17 +1341,17 @@ function renderChatThemeSubviewHtml() {
     <div class="settings-subview-body">
       <!-- 4 大板块导航栏 -->
       <div class="ins-vault-scope-bar">
-        <button class="ins-scope-btn ${activeChatThemeTab === 'frame' ? 'active' : ''}" data-ttab="frame">头像挂件</button>
-        <button class="ins-scope-btn ${activeChatThemeTab === 'bubble' ? 'active' : ''}" data-ttab="bubble">气泡美化</button>
-        <button class="ins-scope-btn ${activeChatThemeTab === 'theme' ? 'active' : ''}" data-ttab="theme">主题风格</button>
-        <button class="ins-scope-btn ${activeChatThemeTab === 'wallpaper' ? 'active' : ''}" data-ttab="wallpaper">壁纸背景</button>
+        <button class="ins-scope-btn ${activeChatThemeTab === "frame" ? "active" : ""}" data-ttab="frame">头像挂件</button>
+        <button class="ins-scope-btn ${activeChatThemeTab === "bubble" ? "active" : ""}" data-ttab="bubble">气泡美化</button>
+        <button class="ins-scope-btn ${activeChatThemeTab === "theme" ? "active" : ""}" data-ttab="theme">主题风格</button>
+        <button class="ins-scope-btn ${activeChatThemeTab === "wallpaper" ? "active" : ""}" data-ttab="wallpaper">壁纸背景</button>
       </div>
 
       <div class="ins-theme-content-area">
-        ${activeChatThemeTab === 'frame' ? renderAvatarFrameTabHtml(themeCfg, char) : ''}
-        ${activeChatThemeTab === 'bubble' ? renderBubbleStyleTabHtml(themeCfg) : ''}
-        ${activeChatThemeTab === 'theme' ? renderThemeToneTabHtml(themeCfg) : ''}
-        ${activeChatThemeTab === 'wallpaper' ? renderWallpaperTabHtml(themeCfg) : ''}
+        ${activeChatThemeTab === "frame" ? renderAvatarFrameTabHtml(themeCfg, char) : ""}
+        ${activeChatThemeTab === "bubble" ? renderBubbleStyleTabHtml(themeCfg) : ""}
+        ${activeChatThemeTab === "theme" ? renderThemeToneTabHtml(themeCfg) : ""}
+        ${activeChatThemeTab === "wallpaper" ? renderWallpaperTabHtml(themeCfg) : ""}
       </div>
     </div>
   `;
@@ -1360,11 +1360,11 @@ function renderChatThemeSubviewHtml() {
 // 1. 头像挂件板块（支持 Char/User 通用预览、CSS 代码区、已保存预设列表）
 function renderAvatarFrameTabHtml(themeCfg, char) {
   const frames = [
-    { id: 'default', name: '极简无挂件', tag: 'CLASSIC' },
-    { id: 'ring_dual', name: '同心双环', tag: 'DUAL RING' },
-    { id: 'dashed_orbit', name: '虚线轨道', tag: 'DASHED' },
-    { id: 'corner_dots', name: '四角点阵', tag: 'CORNER DOTS' },
-    { id: 'prism_square', name: '极细方框', tag: 'SQUARE LINE' }
+    { id: "default", name: "极简无挂件", tag: "CLASSIC" },
+    { id: "ring_dual", name: "同心双环", tag: "DUAL RING" },
+    { id: "dashed_orbit", name: "虚线轨道", tag: "DASHED" },
+    { id: "corner_dots", name: "四角点阵", tag: "CORNER DOTS" },
+    { id: "prism_square", name: "极细方框", tag: "SQUARE LINE" },
   ];
 
   const defaultSampleCss = `/* ═══════════════════════════════════════
@@ -1408,8 +1408,13 @@ function renderAvatarFrameTabHtml(themeCfg, char) {
   to { transform: rotate(360deg); }
 }`;
 
-  const currentCss = themeCfg.customFrameCss !== undefined ? themeCfg.customFrameCss : defaultSampleCss;
-  const savedPresets = JSON.parse(localStorage.getItem('mini_custom_frame_presets') || '[]');
+  const currentCss =
+    themeCfg.customFrameCss !== undefined
+      ? themeCfg.customFrameCss
+      : defaultSampleCss;
+  const savedPresets = JSON.parse(
+    localStorage.getItem("mini_custom_frame_presets") || "[]",
+  );
 
   return `
     <div class="ins-vault-pane">
@@ -1423,7 +1428,7 @@ function renderAvatarFrameTabHtml(themeCfg, char) {
           <span style="font-size:8px; color:#888; font-family:ui-monospace, monospace;">LIVE PREVIEW</span>
         </div>
         <div class="ins-frame-preview-box" style="padding: 16px 0;">
-          <div class="ins-avatar-frame-wrap frame-${themeCfg.avatarFrame || 'default'}">
+          <div class="ins-avatar-frame-wrap frame-${themeCfg.avatarFrame || "default"}">
             ${char.avatarUrl ? `<img src="${char.avatarUrl}" class="ins-preview-avatar-img" />` : `<div class="ins-preview-avatar-placeholder">${char.name.slice(0, 1)}</div>`}
           </div>
         </div>
@@ -1432,17 +1437,21 @@ function renderAvatarFrameTabHtml(themeCfg, char) {
       <!-- 预设挂件快速选择 -->
       <div style="font-size:9.5px; font-weight:800; color:#111; margin-top:2px;">快速选用通用挂件</div>
       <div class="ins-theme-grid-list">
-        ${frames.map(f => `
-          <div class="ins-theme-option-card ${(themeCfg.avatarFrame || 'default') === f.id ? 'active' : ''}" data-frame-id="${f.id}">
+        ${frames
+          .map(
+            (f) => `
+          <div class="ins-theme-option-card ${(themeCfg.avatarFrame || "default") === f.id ? "active" : ""}" data-frame-id="${f.id}">
             <div class="ins-option-header">
               <span class="ins-option-name">${f.name}</span>
               <span class="ins-option-tag">${f.tag}</span>
             </div>
             <button class="ins-card-action-btn use btn-select-frame" data-id="${f.id}">
-              ${(themeCfg.avatarFrame || 'default') === f.id ? '使用中' : '选用'}
+              ${(themeCfg.avatarFrame || "default") === f.id ? "使用中" : "选用"}
             </button>
           </div>
-        `).join('')}
+        `,
+          )
+          .join("")}
       </div>
 
       <!-- CSS 代码放置区 -->
@@ -1469,12 +1478,14 @@ function renderAvatarFrameTabHtml(themeCfg, char) {
         </div>
         
         <div class="ins-saved-presets-list" id="ins-saved-presets-container" style="display:flex; flex-direction:column; gap:6px;">
-          ${savedPresets.length === 0 ? `<div class="ins-empty-hint" style="padding:15px 0;">暂无保存的挂件预设，编写代码后点击上方保存即可存入</div>` : ''}
-          ${savedPresets.map(p => `
+          ${savedPresets.length === 0 ? `<div class="ins-empty-hint" style="padding:15px 0;">暂无保存的挂件预设，编写代码后点击上方保存即可存入</div>` : ""}
+          ${savedPresets
+            .map(
+              (p) => `
             <div class="ins-saved-preset-item" style="background:#FAFAFA; border:1px solid #EAEAEA; border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center;">
               <div style="display:flex; flex-direction:column; gap:2px; flex:1; min-width:0;">
                 <span style="font-size:11px; font-weight:800; color:#111;">${escapeHtml(p.name)}</span>
-                <span style="font-size:8px; color:#888; font-family:ui-monospace, monospace;">${p.createdAt || '预设'}</span>
+                <span style="font-size:8px; color:#888; font-family:ui-monospace, monospace;">${p.createdAt || "预设"}</span>
               </div>
               <div style="display:flex; gap:4px; flex-shrink:0;">
                 <button class="ins-card-action-btn use btn-apply-saved-preset" data-pid="${p.id}" style="padding:3px 8px; font-size:9px;">应用</button>
@@ -1482,7 +1493,9 @@ function renderAvatarFrameTabHtml(themeCfg, char) {
                 <button class="ins-card-action-btn del btn-del-saved-preset" data-pid="${p.id}" style="padding:3px 6px; font-size:9px;">×</button>
               </div>
             </div>
-          `).join('')}
+          `,
+            )
+            .join("")}
         </div>
       </div>
     </div>
@@ -1492,24 +1505,26 @@ function renderAvatarFrameTabHtml(themeCfg, char) {
 // 2. 气泡美化板块
 function renderBubbleStyleTabHtml(themeCfg) {
   const bubbles = [
-    { id: 'default', name: '经典圆角线条', desc: '纯正极简白黑圆角' },
-    { id: 'capsule', name: '优雅药丸胶囊', desc: '全大圆角流线气泡' },
-    { id: 'border_double', name: '双层细线框', desc: '内嵌双线利落边缘' },
-    { id: 'square_sharp', name: '硬朗方块质感', desc: '4px 现代工业硬角' }
+    { id: "default", name: "经典圆角线条", desc: "纯正极简白黑圆角" },
+    { id: "capsule", name: "优雅药丸胶囊", desc: "全大圆角流线气泡" },
+    { id: "border_double", name: "双层细线框", desc: "内嵌双线利落边缘" },
+    { id: "square_sharp", name: "硬朗方块质感", desc: "4px 现代工业硬角" },
   ];
 
   return `
     <div class="ins-vault-pane">
       <div class="ins-theme-grid-list" style="grid-template-columns: 1fr;">
-        ${bubbles.map(b => `
-          <div class="ins-bubble-preview-card ${(themeCfg.bubbleStyle || 'default') === b.id ? 'active' : ''}" data-bubble-id="${b.id}">
+        ${bubbles
+          .map(
+            (b) => `
+          <div class="ins-bubble-preview-card ${(themeCfg.bubbleStyle || "default") === b.id ? "active" : ""}" data-bubble-id="${b.id}">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
                 <div style="font-size:11px; font-weight:800; color:#111;">${b.name}</div>
                 <div style="font-size:8.5px; color:#888;">${b.desc}</div>
               </div>
               <button class="ins-card-action-btn use btn-select-bubble" data-id="${b.id}" style="width:70px;">
-                ${(themeCfg.bubbleStyle || 'default') === b.id ? '使用中' : '选用'}
+                ${(themeCfg.bubbleStyle || "default") === b.id ? "使用中" : "选用"}
               </button>
             </div>
             <!-- 气泡样例预览 -->
@@ -1517,7 +1532,9 @@ function renderBubbleStyleTabHtml(themeCfg) {
               <div class="sample-bubble-box ${b.id}">Hello, 这是一条气泡样例</div>
             </div>
           </div>
-        `).join('')}
+        `,
+          )
+          .join("")}
       </div>
     </div>
   `;
@@ -1526,27 +1543,43 @@ function renderBubbleStyleTabHtml(themeCfg) {
 // 3. 主题风格板块
 function renderThemeToneTabHtml(themeCfg) {
   const themes = [
-    { id: 'default', name: '纯正极简白 (Classic White)', desc: '标准白底黑线高对比' },
-    { id: 'cool_gray', name: '现代冷灰调 (Cool Gray)', desc: '微冷灰质感低眩光' },
-    { id: 'dark_contrast', name: '暗夜反差黑 (Dark Contrast)', desc: '深色高反差利落质感' }
+    {
+      id: "default",
+      name: "纯正极简白 (Classic White)",
+      desc: "标准白底黑线高对比",
+    },
+    {
+      id: "cool_gray",
+      name: "现代冷灰调 (Cool Gray)",
+      desc: "微冷灰质感低眩光",
+    },
+    {
+      id: "dark_contrast",
+      name: "暗夜反差黑 (Dark Contrast)",
+      desc: "深色高反差利落质感",
+    },
   ];
 
   return `
     <div class="ins-vault-pane">
       <div class="ins-theme-grid-list" style="grid-template-columns: 1fr;">
-        ${themes.map(t => `
-          <div class="ins-theme-option-card ${(themeCfg.themeTone || 'default') === t.id ? 'active' : ''}" data-tone-id="${t.id}">
+        ${themes
+          .map(
+            (t) => `
+          <div class="ins-theme-option-card ${(themeCfg.themeTone || "default") === t.id ? "active" : ""}" data-tone-id="${t.id}">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
                 <div style="font-size:11px; font-weight:800; color:#111;">${t.name}</div>
                 <div style="font-size:8.5px; color:#888;">${t.desc}</div>
               </div>
               <button class="ins-card-action-btn use btn-select-tone" data-id="${t.id}" style="width:70px;">
-                ${(themeCfg.themeTone || 'default') === t.id ? '使用中' : '选用'}
+                ${(themeCfg.themeTone || "default") === t.id ? "使用中" : "选用"}
               </button>
             </div>
           </div>
-        `).join('')}
+        `,
+          )
+          .join("")}
       </div>
     </div>
   `;
@@ -1567,17 +1600,17 @@ function renderWallpaperTabHtml(themeCfg) {
 
       <div style="font-size:9.5px; font-weight:800; color:#111; margin-top:4px;">预设纹理背景</div>
       <div class="ins-theme-grid-list">
-        <div class="ins-wallpaper-card ${(themeCfg.wallpaper || 'default') === 'default' ? 'active' : ''}" data-wp-id="default">
+        <div class="ins-wallpaper-card ${(themeCfg.wallpaper || "default") === "default" ? "active" : ""}" data-wp-id="default">
           <div class="wp-thumb-box default"></div>
           <span class="wp-title">默认留白</span>
           <button class="ins-card-action-btn use btn-select-wp" data-id="default">选用</button>
         </div>
-        <div class="ins-wallpaper-card ${themeCfg.wallpaper === 'grid_p2' ? 'active' : ''}" data-wp-id="grid_p2">
+        <div class="ins-wallpaper-card ${themeCfg.wallpaper === "grid_p2" ? "active" : ""}" data-wp-id="grid_p2">
           <div class="wp-thumb-box grid_p2"></div>
           <span class="wp-title">P2 斜纹细网格</span>
           <button class="ins-card-action-btn use btn-select-wp" data-id="grid_p2">选用</button>
         </div>
-        <div class="ins-wallpaper-card ${themeCfg.wallpaper === 'dots' ? 'active' : ''}" data-wp-id="dots">
+        <div class="ins-wallpaper-card ${themeCfg.wallpaper === "dots" ? "active" : ""}" data-wp-id="dots">
           <div class="wp-thumb-box dots"></div>
           <span class="wp-title">极简细点阵</span>
           <button class="ins-card-action-btn use btn-select-wp" data-id="dots">选用</button>
@@ -1589,7 +1622,7 @@ function renderWallpaperTabHtml(themeCfg) {
 
 // ════════════ ✨ 美化定制事件绑定与局部无感刷新 ════════════
 function refreshChatThemeView(roomEl, container) {
-  const subview = roomEl.querySelector('#char-theme-custom-subview');
+  const subview = roomEl.querySelector("#char-theme-custom-subview");
   if (subview) {
     subview.innerHTML = renderChatThemeSubviewHtml();
     bindChatThemeEvents(roomEl, container);
@@ -1599,48 +1632,56 @@ function refreshChatThemeView(roomEl, container) {
 function bindChatThemeEvents(roomEl, container) {
   const char = activeCharInfo;
   if (!char.chatTheme) {
-    char.chatTheme = { avatarFrame: 'default', bubbleStyle: 'default', themeTone: 'default', wallpaper: 'default', customWallpaperUrl: '' };
+    char.chatTheme = {
+      avatarFrame: "default",
+      bubbleStyle: "default",
+      themeTone: "default",
+      wallpaper: "default",
+      customWallpaperUrl: "",
+    };
   }
 
   // 关闭返回按钮
-  const closeBtn = roomEl.querySelector('#btn-close-chat-theme');
+  const closeBtn = roomEl.querySelector("#btn-close-chat-theme");
   if (closeBtn) {
     closeBtn.onclick = () => {
       isChatThemeOpen = false;
-      const subview = roomEl.querySelector('#char-theme-custom-subview');
-      if (subview) subview.classList.remove('active');
+      const subview = roomEl.querySelector("#char-theme-custom-subview");
+      if (subview) subview.classList.remove("active");
     };
   }
 
   // 四栏切换
-  roomEl.querySelectorAll('[data-ttab]').forEach(btn => {
+  roomEl.querySelectorAll("[data-ttab]").forEach((btn) => {
     btn.onclick = () => {
-      activeChatThemeTab = btn.getAttribute('data-ttab');
+      activeChatThemeTab = btn.getAttribute("data-ttab");
       refreshChatThemeView(roomEl, container);
     };
   });
 
-     // 1. 选用预设通用挂件（实时同步至聊天室）
-  roomEl.querySelectorAll('.btn-select-frame').forEach(btn => {
+  // 1. 选用预设通用挂件（实时同步至聊天室）
+  roomEl.querySelectorAll(".btn-select-frame").forEach((btn) => {
     btn.onclick = () => {
-      const fId = btn.getAttribute('data-id');
+      const fId = btn.getAttribute("data-id");
       char.chatTheme.avatarFrame = fId;
       updateFullCharData(char);
       refreshChatThemeView(roomEl, container);
-      
+
       // 同步刷新聊天室气泡头像类名
-      const chatSlotAvatars = roomEl.querySelectorAll('.msg-round-avatar-slot .ins-avatar-frame-wrap');
-      chatSlotAvatars.forEach(el => {
+      const chatSlotAvatars = roomEl.querySelectorAll(
+        ".msg-round-avatar-slot .ins-avatar-frame-wrap",
+      );
+      chatSlotAvatars.forEach((el) => {
         el.className = `ins-avatar-frame-wrap frame-${fId}`;
       });
 
-      showInsToast('已选用该通用挂件，聊天室已同步生效');
+      showInsToast("已选用该通用挂件，聊天室已同步生效");
     };
   });
 
   // 2. CSS 代码区实时输入打字预览
-  const cssTextarea = roomEl.querySelector('#input-custom-frame-css');
-  const styleTag = roomEl.querySelector('#dynamic-avatar-frame-style');
+  const cssTextarea = roomEl.querySelector("#input-custom-frame-css");
+  const styleTag = roomEl.querySelector("#dynamic-avatar-frame-style");
   if (cssTextarea && styleTag) {
     cssTextarea.oninput = () => {
       styleTag.textContent = cssTextarea.value;
@@ -1648,12 +1689,12 @@ function bindChatThemeEvents(roomEl, container) {
   }
 
   // ✨ 3. 点击保存：弹出双选项弹窗 (① 直接应用 / ② 保存预设并应用)
-  const openSaveCssBtn = roomEl.querySelector('#btn-open-save-css-dialog');
+  const openSaveCssBtn = roomEl.querySelector("#btn-open-save-css-dialog");
   if (openSaveCssBtn && cssTextarea) {
     openSaveCssBtn.onclick = () => {
       const cssCode = cssTextarea.value.trim();
       if (!cssCode) {
-        alert('CSS 代码不能为空！');
+        alert("CSS 代码不能为空！");
         return;
       }
       openSaveCssOptionModal(cssCode, (actionType, presetName) => {
@@ -1661,21 +1702,28 @@ function bindChatThemeEvents(roomEl, container) {
         updateFullCharData(char);
 
         // 同步更新聊天室全局 CSS
-        const chatGlobalStyle = document.querySelector('#chat-global-active-frame-css');
+        const chatGlobalStyle = document.querySelector(
+          "#chat-global-active-frame-css",
+        );
         if (chatGlobalStyle) chatGlobalStyle.textContent = cssCode;
 
-        if (actionType === 'save_preset') {
-          let presets = JSON.parse(localStorage.getItem('mini_custom_frame_presets') || '[]');
+        if (actionType === "save_preset") {
+          let presets = JSON.parse(
+            localStorage.getItem("mini_custom_frame_presets") || "[]",
+          );
           presets.unshift({
             id: `fp-${Date.now()}`,
             name: presetName || `挂件预设 ${presets.length + 1}`,
             css: cssCode,
-            createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+            createdAt: new Date().toISOString().slice(0, 16).replace("T", " "),
           });
-          localStorage.setItem('mini_custom_frame_presets', JSON.stringify(presets));
+          localStorage.setItem(
+            "mini_custom_frame_presets",
+            JSON.stringify(presets),
+          );
           showInsToast(`已保存预设「${presetName}」并成功应用！`);
         } else {
-          showInsToast('自定义 CSS 挂件已直接应用至聊天室！');
+          showInsToast("自定义 CSS 挂件已直接应用至聊天室！");
         }
 
         refreshChatThemeView(roomEl, container);
@@ -1684,26 +1732,30 @@ function bindChatThemeEvents(roomEl, container) {
   }
 
   // 4. 重置模板
-  const resetCssBtn = roomEl.querySelector('#btn-reset-frame-css');
+  const resetCssBtn = roomEl.querySelector("#btn-reset-frame-css");
   if (resetCssBtn) {
     resetCssBtn.onclick = () => {
       char.chatTheme.customFrameCss = undefined;
       updateFullCharData(char);
       refreshChatThemeView(roomEl, container);
-      showInsToast('已重置为默认 CSS 挂件模板');
+      showInsToast("已重置为默认 CSS 挂件模板");
     };
   }
 
   // 5. 预设列表操作：应用
-  roomEl.querySelectorAll('.btn-apply-saved-preset').forEach(btn => {
+  roomEl.querySelectorAll(".btn-apply-saved-preset").forEach((btn) => {
     btn.onclick = () => {
-      const pid = btn.getAttribute('data-pid');
-      const presets = JSON.parse(localStorage.getItem('mini_custom_frame_presets') || '[]');
-      const target = presets.find(p => p.id === pid);
+      const pid = btn.getAttribute("data-pid");
+      const presets = JSON.parse(
+        localStorage.getItem("mini_custom_frame_presets") || "[]",
+      );
+      const target = presets.find((p) => p.id === pid);
       if (target) {
         char.chatTheme.customFrameCss = target.css;
         updateFullCharData(char);
-        const chatGlobalStyle = document.querySelector('#chat-global-active-frame-css');
+        const chatGlobalStyle = document.querySelector(
+          "#chat-global-active-frame-css",
+        );
         if (chatGlobalStyle) chatGlobalStyle.textContent = target.css;
         refreshChatThemeView(roomEl, container);
         showInsToast(`已应用预设挂件：「${target.name}」`);
@@ -1712,11 +1764,13 @@ function bindChatThemeEvents(roomEl, container) {
   });
 
   // 6. 预设列表操作：载入代码到编辑框
-  roomEl.querySelectorAll('.btn-load-saved-preset').forEach(btn => {
+  roomEl.querySelectorAll(".btn-load-saved-preset").forEach((btn) => {
     btn.onclick = () => {
-      const pid = btn.getAttribute('data-pid');
-      const presets = JSON.parse(localStorage.getItem('mini_custom_frame_presets') || '[]');
-      const target = presets.find(p => p.id === pid);
+      const pid = btn.getAttribute("data-pid");
+      const presets = JSON.parse(
+        localStorage.getItem("mini_custom_frame_presets") || "[]",
+      );
+      const target = presets.find((p) => p.id === pid);
       if (target && cssTextarea) {
         cssTextarea.value = target.css;
         if (styleTag) styleTag.textContent = target.css;
@@ -1726,24 +1780,29 @@ function bindChatThemeEvents(roomEl, container) {
   });
 
   // 7. 预设列表操作：删除
-  roomEl.querySelectorAll('.btn-del-saved-preset').forEach(btn => {
+  roomEl.querySelectorAll(".btn-del-saved-preset").forEach((btn) => {
     btn.onclick = () => {
-      const pid = btn.getAttribute('data-pid');
-      let presets = JSON.parse(localStorage.getItem('mini_custom_frame_presets') || '[]');
-      presets = presets.filter(p => p.id !== pid);
-      localStorage.setItem('mini_custom_frame_presets', JSON.stringify(presets));
+      const pid = btn.getAttribute("data-pid");
+      let presets = JSON.parse(
+        localStorage.getItem("mini_custom_frame_presets") || "[]",
+      );
+      presets = presets.filter((p) => p.id !== pid);
+      localStorage.setItem(
+        "mini_custom_frame_presets",
+        JSON.stringify(presets),
+      );
       refreshChatThemeView(roomEl, container);
-      showInsToast('已删除该挂件预设');
+      showInsToast("已删除该挂件预设");
     };
   });
 
   // ✨ INS 弹窗：保存自定义 CSS 双选项
-function openSaveCssOptionModal(cssCode, onConfirm) {
-  const modal = document.createElement('div');
-  modal.className = 'ins-modal-overlay active';
-  modal.style.zIndex = '90';
+  function openSaveCssOptionModal(cssCode, onConfirm) {
+    const modal = document.createElement("div");
+    modal.className = "ins-modal-overlay active";
+    modal.style.zIndex = "90";
 
-  modal.innerHTML = `
+    modal.innerHTML = `
     <div class="ins-modal-card" style="max-width: 320px; gap: 10px;">
       <div class="ins-modal-header">
         <span class="ins-modal-title">应用挂件 / APPLY FRAME CSS</span>
@@ -1767,71 +1826,76 @@ function openSaveCssOptionModal(cssCode, onConfirm) {
     </div>
   `;
 
-  document.body.appendChild(modal);
+    document.body.appendChild(modal);
 
-  const close = () => modal.remove();
-  modal.querySelector('#btn-close-save-option').onclick = close;
+    const close = () => modal.remove();
+    modal.querySelector("#btn-close-save-option").onclick = close;
 
-  // 选项 1：直接应用
-  modal.querySelector('#btn-apply-only-now').onclick = () => {
-    onConfirm('apply_only', '');
-    close();
-  };
+    // 选项 1：直接应用
+    modal.querySelector("#btn-apply-only-now").onclick = () => {
+      onConfirm("apply_only", "");
+      close();
+    };
 
-  // 选项 2：保存预设并应用
-  modal.querySelector('#btn-save-preset-and-apply').onclick = () => {
-    const nameVal = modal.querySelector('#input-preset-custom-name')?.value.trim() || '新挂件样式';
-    onConfirm('save_preset', nameVal);
-    close();
-  };
-}
+    // 选项 2：保存预设并应用
+    modal.querySelector("#btn-save-preset-and-apply").onclick = () => {
+      const nameVal =
+        modal.querySelector("#input-preset-custom-name")?.value.trim() ||
+        "新挂件样式";
+      onConfirm("save_preset", nameVal);
+      close();
+    };
+  }
 
   // 2. 选用气泡样式
-  roomEl.querySelectorAll('.btn-select-bubble').forEach(btn => {
+  roomEl.querySelectorAll(".btn-select-bubble").forEach((btn) => {
     btn.onclick = () => {
-      const bId = btn.getAttribute('data-id');
+      const bId = btn.getAttribute("data-id");
       char.chatTheme.bubbleStyle = bId;
       updateFullCharData(char);
       refreshChatThemeView(roomEl, container);
-      showInsToast('已应用气泡样式');
+      showInsToast("已应用气泡样式");
     };
   });
 
   // 3. 选用主题色调
-  roomEl.querySelectorAll('.btn-select-tone').forEach(btn => {
+  roomEl.querySelectorAll(".btn-select-tone").forEach((btn) => {
     btn.onclick = () => {
-      const tId = btn.getAttribute('data-id');
+      const tId = btn.getAttribute("data-id");
       char.chatTheme.themeTone = tId;
       updateFullCharData(char);
       refreshChatThemeView(roomEl, container);
-      showInsToast('已切换主题风格');
+      showInsToast("已切换主题风格");
     };
   });
 
   // 4. 选用预设壁纸
-  roomEl.querySelectorAll('.btn-select-wp').forEach(btn => {
+  roomEl.querySelectorAll(".btn-select-wp").forEach((btn) => {
     btn.onclick = () => {
-      const wpId = btn.getAttribute('data-id');
+      const wpId = btn.getAttribute("data-id");
       char.chatTheme.wallpaper = wpId;
-      char.chatTheme.customWallpaperUrl = '';
+      char.chatTheme.customWallpaperUrl = "";
       updateFullCharData(char);
       refreshChatThemeView(roomEl, container);
-      showInsToast('已应用背景壁纸');
+      showInsToast("已应用背景壁纸");
     };
   });
 
   // 上传自定义壁纸
-  const upWpBtn = roomEl.querySelector('#btn-upload-custom-wallpaper');
-  const upWpInput = roomEl.querySelector('#input-chat-wallpaper-file');
+  const upWpBtn = roomEl.querySelector("#btn-upload-custom-wallpaper");
+  const upWpInput = roomEl.querySelector("#input-chat-wallpaper-file");
   if (upWpBtn && upWpInput) {
-    upWpBtn.onclick = () => { upWpInput.value = ''; upWpInput.click(); };
+    upWpBtn.onclick = () => {
+      upWpInput.value = "";
+      upWpInput.click();
+    };
     upWpInput.onchange = (e) => {
       handleAvatarFile(e.target.files[0], (dataUrl) => {
-        char.chatTheme.wallpaper = 'custom';
+        char.chatTheme.wallpaper = "custom";
         char.chatTheme.customWallpaperUrl = dataUrl;
         updateFullCharData(char);
         refreshChatThemeView(roomEl, container);
-        showInsToast('已设置自定义壁纸');
+        showInsToast("已设置自定义壁纸");
       });
     };
   }
@@ -1948,7 +2012,7 @@ function renderMessagesHtml(messages) {
           <div class="rich-card-amount" style="font-size:13px;">通话时长 ${escapeHtml(m.durationStr)}</div>
         </div>
       `;
-         } else if (m.cardType === "offline") {
+      } else if (m.cardType === "offline") {
         mainBubbleBody = `
         <div class="msg-rich-card offline">
           <div class="rich-card-top">
@@ -1962,15 +2026,17 @@ function renderMessagesHtml(messages) {
       } else if (m.cardType === "voice") {
         // ✨ 微信式 INS 语音条气泡
         const isVoiceUser = m.role === "user";
-        const dur = m.durationSeconds || Math.max(1, Math.min(60, Math.ceil((m.content || "").length / 3.2)));
+        const dur =
+          m.durationSeconds ||
+          Math.max(1, Math.min(60, Math.ceil((m.content || "").length / 3.2)));
         const barWidth = Math.min(180, Math.max(75, 75 + dur * 2.5));
 
-               mainBubbleBody = `
+        mainBubbleBody = `
           <div class="msg-voice-card ${isVoiceUser ? "user-voice" : "char-voice"}" data-voice-msg-idx="${idx}">
             ...
           </div>
         `;
-          } else if (m.cardType === "sim_photo") {
+      } else if (m.cardType === "sim_photo") {
         // ✨ 还原 P2 风格：斜纹网格画框 + 纸飞机 + 声波 + 箭头元素
         mainBubbleBody = `
           <div class="msg-sim-photo-card" data-sim-photo-idx="${idx}">
@@ -2028,11 +2094,13 @@ function renderMessagesHtml(messages) {
         mainBubbleBody = `<div class="msg-text-content">${escapeHtml(m.content)}</div>`;
       }
 
-         // ✨ 构造头像 HTML（Char 与 User 通用挂件包裹器）
+      // ✨ 构造头像 HTML（Char 与 User 通用挂件包裹器）
       const isUser = m.role === "user";
       const targetAvatarUrl = isUser ? userAvatar : charAvatar;
       const currentTheme = activeCharInfo.chatTheme || {};
-      const frameClass = currentTheme.avatarFrame ? `frame-${currentTheme.avatarFrame}` : 'frame-default';
+      const frameClass = currentTheme.avatarFrame
+        ? `frame-${currentTheme.avatarFrame}`
+        : "frame-default";
 
       const avatarElementHtml = `
       <div class="msg-round-avatar-slot ${isFirstInSequence ? "show" : "spacer"}">
@@ -2093,16 +2161,16 @@ function renderMessagesHtml(messages) {
 
             ${mainBubbleBody}
             
-            ${
-              m.translation
-                ? `
-              <div class="msg-bubble-translation-wrap">
+                       ${
+                         m.translation
+                           ? `
+              <div class="msg-bubble-translation-wrap ${activeCharInfo.translationStyle === "click_toggle" && !m.isTransExpanded ? "is-collapsed" : "is-expanded"}">
                 <div class="msg-trans-line-divider"></div>
                 <div class="msg-trans-text">${escapeHtml(m.translation)}</div>
               </div>
             `
-                : ""
-            }
+                           : ""
+                       }
           </div>
           <span class="msg-time-outside">${m.time || ""}</span>
         </div>
@@ -2183,15 +2251,24 @@ function renderSettingsContentHtml() {
           </select>
         </div>
 
-               <div class="ins-setting-toggle-row">
+                     <div class="ins-setting-toggle-row">
           <div class="toggle-left-info">
-            <span class="toggle-main-title">启用气泡内嵌翻译</span>
-            <span class="toggle-sub-desc">外语角色在单次思考中一并生成中文翻译，直接内嵌于对应气泡底部</span>
+            <span class="toggle-main-title">启用双语翻译 (单次一并思考)</span>
+            <span class="toggle-sub-desc">外语角色在思考回复时一并生成中文翻译，无需二次等待。</span>
           </div>
           <label class="ins-switch">
             <input type="checkbox" id="toggle-translation-switch" ${char.enableTranslation ? "checked" : ""} />
             <span class="ins-slider"></span>
           </label>
+        </div>
+
+        <!-- ✨ 开启后展示二选一样式切换栏 -->
+        <div class="ins-field-group" id="wrap-trans-style-selector" style="margin-top: 8px; display: ${char.enableTranslation ? "flex" : "none"};">
+          <label class="ins-field-label">气泡翻译展示样式 (二选一)</label>
+          <div class="ins-vault-scope-bar" style="margin-bottom: 0;">
+            <button class="ins-scope-btn ${(char.translationStyle || "inline") === "inline" ? "active" : ""}" data-tstyle="inline">气泡内嵌常驻</button>
+            <button class="ins-scope-btn ${char.translationStyle === "click_toggle" ? "active" : ""}" data-tstyle="click_toggle">点击气泡展开/折叠</button>
+          </div>
         </div>
       </section>
 
@@ -2321,39 +2398,39 @@ function renderSettingsContentHtml() {
           <div class="ins-field-group">
             <label class="ins-field-label">语音配置来源</label>
             <div class="ins-vault-scope-bar" style="margin-bottom: 0;">
-              <button class="ins-scope-btn ${(char.voiceSource || 'global') === 'global' ? 'active' : ''}" data-vsource="global">直接使用全局 API 语音</button>
-              <button class="ins-scope-btn ${char.voiceSource === 'custom' ? 'active' : ''}" data-vsource="custom">重新单独设置</button>
+              <button class="ins-scope-btn ${(char.voiceSource || "global") === "global" ? "active" : ""}" data-vsource="global">直接使用全局 API 语音</button>
+              <button class="ins-scope-btn ${char.voiceSource === "custom" ? "active" : ""}" data-vsource="custom">重新单独设置</button>
             </div>
           </div>
 
           <!-- 选项 1：直接使用全局设置说明 -->
-          <div id="voice-source-global-desc" style="display: ${(char.voiceSource || 'global') === 'global' ? 'block' : 'none'}; background: var(--bg-sub); border: 1px solid var(--line-color); border-radius: 8px; padding: 8px 10px; font-size: 9.5px; color: var(--text-muted); line-height: 1.4;">
+          <div id="voice-source-global-desc" style="display: ${(char.voiceSource || "global") === "global" ? "block" : "none"}; background: var(--bg-sub); border: 1px solid var(--line-color); border-radius: 8px; padding: 8px 10px; font-size: 9.5px; color: var(--text-muted); line-height: 1.4;">
             当前将直接使用你在<strong>「系统设置 -> 语音」</strong>板块中配置好的 MiniMax 或 ElevenLabs 密钥与音色。
           </div>
 
           <!-- 选项 2：重新单独设置展开面板 -->
-          <div id="voice-source-custom-pane" style="display: ${char.voiceSource === 'custom' ? 'flex' : 'none'}; flex-direction: column; gap: 6px;">
+          <div id="voice-source-custom-pane" style="display: ${char.voiceSource === "custom" ? "flex" : "none"}; flex-direction: column; gap: 6px;">
             <div class="ins-field-group">
               <label class="ins-field-label">语音服务商</label>
               <select class="ins-select-input" id="char-voice-custom-platform">
-                <option value="minimax" ${(char.voiceCustomPlatform || 'minimax') === 'minimax' ? 'selected' : ''}>MiniMax (海螺语音)</option>
-                <option value="elevenlabs" ${char.voiceCustomPlatform === 'elevenlabs' ? 'selected' : ''}>ElevenLabs</option>
+                <option value="minimax" ${(char.voiceCustomPlatform || "minimax") === "minimax" ? "selected" : ""}>MiniMax (海螺语音)</option>
+                <option value="elevenlabs" ${char.voiceCustomPlatform === "elevenlabs" ? "selected" : ""}>ElevenLabs</option>
               </select>
             </div>
             
             <div class="ins-field-group">
               <label class="ins-field-label">专属 API Key</label>
-              <input type="password" class="ins-input-text" id="char-voice-custom-apikey" value="${escapeHtml(char.voiceCustomApiKey || '')}" placeholder="sk-... 或 Bearer token" />
+              <input type="password" class="ins-input-text" id="char-voice-custom-apikey" value="${escapeHtml(char.voiceCustomApiKey || "")}" placeholder="sk-... 或 Bearer token" />
             </div>
 
-            <div class="ins-field-group" id="wrap-custom-groupid" style="display: ${(char.voiceCustomPlatform || 'minimax') === 'minimax' ? 'flex' : 'none'};">
+            <div class="ins-field-group" id="wrap-custom-groupid" style="display: ${(char.voiceCustomPlatform || "minimax") === "minimax" ? "flex" : "none"};">
               <label class="ins-field-label">MiniMax Group ID</label>
-              <input type="text" class="ins-input-text" id="char-voice-custom-groupid" value="${escapeHtml(char.voiceCustomGroupId || '')}" placeholder="输入 Group ID..." />
+              <input type="text" class="ins-input-text" id="char-voice-custom-groupid" value="${escapeHtml(char.voiceCustomGroupId || "")}" placeholder="输入 Group ID..." />
             </div>
 
             <div class="ins-field-group">
               <label class="ins-field-label">专属 Voice ID / 音色</label>
-              <input type="text" class="ins-input-text" id="char-voice-custom-voiceid" value="${escapeHtml(char.voiceCustomVoiceId || 'female-yujie')}" placeholder="如 female-yujie 或 克隆 Voice ID" />
+              <input type="text" class="ins-input-text" id="char-voice-custom-voiceid" value="${escapeHtml(char.voiceCustomVoiceId || "female-yujie")}" placeholder="如 female-yujie 或 克隆 Voice ID" />
             </div>
           </div>
         </div>
@@ -2683,7 +2760,7 @@ function bindChatRoomEvents(roomEl, container) {
     };
   }
 
-   // 2. ✨ 语音：打开三合一语音发送面板 (手打模拟 / STT / 原声录音)
+  // 2. ✨ 语音：打开三合一语音发送面板 (手打模拟 / STT / 原声录音)
   const ttsTool = roomEl.querySelector("#tool-tts-speak");
   if (ttsTool) {
     ttsTool.onclick = () => {
@@ -2694,7 +2771,7 @@ function bindChatRoomEvents(roomEl, container) {
     };
   }
 
-    // 3. ✨ 相机：打开双板块相机悬浮窗 (实时拍照 / 文字模拟照片)
+  // 3. ✨ 相机：打开双板块相机悬浮窗 (实时拍照 / 文字模拟照片)
   const cameraTool = roomEl.querySelector("#tool-open-camera");
   if (cameraTool) {
     cameraTool.onclick = () => {
@@ -2916,10 +2993,13 @@ function bindChatRoomEvents(roomEl, container) {
         }
       }
 
-            // ✨ 点击模拟照片卡片：展开/收起画面详情
+      // ✨ 点击模拟照片卡片：展开/收起画面详情
       const simPhotoCard = e.target.closest(".msg-sim-photo-card");
       if (simPhotoCard) {
-        const pIdx = parseInt(simPhotoCard.getAttribute("data-sim-photo-idx"), 10);
+        const pIdx = parseInt(
+          simPhotoCard.getAttribute("data-sim-photo-idx"),
+          10,
+        );
         const targetPhotoMsg = chatMessages[pIdx];
         if (targetPhotoMsg) {
           targetPhotoMsg.isTextVisible = !targetPhotoMsg.isTextVisible;
@@ -2936,7 +3016,7 @@ function bindChatRoomEvents(roomEl, container) {
         }
       }
 
-                  // ✨ 核心交互：语音条单击展文/播放 vs 双击呼出气泡菜单
+      // ✨ 核心交互：语音条单击展文/播放 vs 双击呼出气泡菜单
       const voiceCard = e.target.closest(".msg-voice-card");
       if (voiceCard) {
         const vIdx = parseInt(voiceCard.getAttribute("data-voice-msg-idx"), 10);
@@ -2945,7 +3025,7 @@ function bindChatRoomEvents(roomEl, container) {
         const now = Date.now();
 
         // ⚡ 1. 双击判定（300ms 内同一语音条连续点击两次）➔ 呼出气泡菜单
-        if (lastVoiceClickIdx === vIdx && (now - lastVoiceClickTime) < 300) {
+        if (lastVoiceClickIdx === vIdx && now - lastVoiceClickTime < 300) {
           if (voiceClickTimer) {
             clearTimeout(voiceClickTimer);
             voiceClickTimer = null;
@@ -2973,7 +3053,10 @@ function bindChatRoomEvents(roomEl, container) {
 
           const waveBox = roomEl.querySelector(`#voice-anim-${vIdx}`);
 
-          if (targetVoiceMsg.audioDataUrl || targetVoiceMsg.role === "assistant") {
+          if (
+            targetVoiceMsg.audioDataUrl ||
+            targetVoiceMsg.role === "assistant"
+          ) {
             if (waveBox) waveBox.classList.add("playing");
             VoiceTool.playVoiceBarAudio(targetVoiceMsg, activeCharInfo, () => {
               if (waveBox) waveBox.classList.remove("playing");
@@ -2994,9 +3077,24 @@ function bindChatRoomEvents(roomEl, container) {
         return;
       }
 
+           // ✨ 普通文本气泡点击监听：支持「点击展开/折叠翻译」与「呼出气泡菜单」
       const bubbleEl = e.target.closest(".msg-bubble");
       if (bubbleEl) {
         const idx = parseInt(bubbleEl.getAttribute("data-bubble-idx"), 10);
+        const targetMsg = chatMessages[idx];
+
+        // 1. 若当前角色设置为【点击气泡展开/折叠翻译】模式，且该消息包含翻译
+        if (targetMsg && targetMsg.translation && activeCharInfo.translationStyle === "click_toggle") {
+          targetMsg.isTransExpanded = !targetMsg.isTransExpanded;
+          const transWrap = bubbleEl.querySelector(".msg-bubble-translation-wrap");
+          if (transWrap) {
+            transWrap.classList.toggle("is-expanded", targetMsg.isTransExpanded);
+            transWrap.classList.toggle("is-collapsed", !targetMsg.isTransExpanded);
+          }
+          return;
+        }
+
+        // 2. 正常呼出/关闭气泡菜单
         if (activeMenuMsgIdx === idx) {
           closeBubblePopover();
         } else {
@@ -3170,8 +3268,12 @@ function sendCustomMediaMessage(cardType, payload, container) {
   // ✨ 核心修复：发图片局部插入，0 闪屏
   const scrollArea = document.querySelector("#chat-messages-scroll-area");
   if (scrollArea) {
-    scrollArea.innerHTML = `<div class="chat-handoff-pill">[沙盒已连接] ${escapeHtml(activeCharInfo.name)} · 实时交互通道</div>` + renderMessagesHtml(chatMessages);
-    setTimeout(() => { scrollArea.scrollTop = scrollArea.scrollHeight; }, 20);
+    scrollArea.innerHTML =
+      `<div class="chat-handoff-pill">[沙盒已连接] ${escapeHtml(activeCharInfo.name)} · 实时交互通道</div>` +
+      renderMessagesHtml(chatMessages);
+    setTimeout(() => {
+      scrollArea.scrollTop = scrollArea.scrollHeight;
+    }, 20);
   } else {
     renderChatRoomView(container);
   }
@@ -3285,8 +3387,8 @@ function bindSettingsEvents(roomEl, container) {
     };
   }
 
-    // ✨ 打开美化定制独立内置子页面
-  const openChatThemeBtn = roomEl.querySelector('#btn-open-chat-theme-subview');
+  // ✨ 打开美化定制独立内置子页面
+  const openChatThemeBtn = roomEl.querySelector("#btn-open-chat-theme-subview");
   if (openChatThemeBtn) {
     openChatThemeBtn.onclick = () => {
       isChatThemeOpen = true;
@@ -3294,10 +3396,8 @@ function bindSettingsEvents(roomEl, container) {
     };
   }
 
-   // ✨ 自主换备注开关即时同步
-  const autoRemarkToggle = roomEl.querySelector(
-    "#toggle-auto-remark-change",
-  );
+  // ✨ 自主换备注开关即时同步
+  const autoRemarkToggle = roomEl.querySelector("#toggle-auto-remark-change");
   if (autoRemarkToggle) {
     autoRemarkToggle.onchange = (e) => {
       activeCharInfo.autoChangeRemark = e.target.checked;
@@ -3307,6 +3407,37 @@ function bindSettingsEvents(roomEl, container) {
       });
     };
   }
+
+  // 翻译开关显隐控制
+  const transToggle = roomEl.querySelector("#toggle-translation-switch");
+  const transStyleWrap = roomEl.querySelector("#wrap-trans-style-selector");
+  if (transToggle && transStyleWrap) {
+    transToggle.onchange = (e) => {
+      transStyleWrap.style.display = e.target.checked ? "flex" : "none";
+      activeCharInfo.enableTranslation = e.target.checked;
+      updateFullCharData({
+        name: activeCharInfo.name,
+        enableTranslation: e.target.checked,
+      });
+    };
+  }
+
+  // 翻译展示样式二选一切换
+  roomEl.querySelectorAll("[data-tstyle]").forEach((btn) => {
+    btn.onclick = () => {
+      const styleType = btn.getAttribute("data-tstyle");
+      activeCharInfo.translationStyle = styleType;
+      updateFullCharData({
+        name: activeCharInfo.name,
+        translationStyle: styleType,
+      });
+
+      roomEl
+        .querySelectorAll("[data-tstyle]")
+        .forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+    };
+  });
 
   // ✨ 语音系统开关显隐控制
   const voiceEnableToggle = roomEl.querySelector("#toggle-char-voice-enable");
@@ -3329,22 +3460,29 @@ function bindSettingsEvents(roomEl, container) {
       activeCharInfo.voiceSource = source;
       updateFullCharData({ name: activeCharInfo.name, voiceSource: source });
 
-      roomEl.querySelectorAll("[data-vsource]").forEach((b) => b.classList.remove("active"));
+      roomEl
+        .querySelectorAll("[data-vsource]")
+        .forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
 
       const globalDesc = roomEl.querySelector("#voice-source-global-desc");
       const customPane = roomEl.querySelector("#voice-source-custom-pane");
-      if (globalDesc) globalDesc.style.display = source === "global" ? "block" : "none";
-      if (customPane) customPane.style.display = source === "custom" ? "flex" : "none";
+      if (globalDesc)
+        globalDesc.style.display = source === "global" ? "block" : "none";
+      if (customPane)
+        customPane.style.display = source === "custom" ? "flex" : "none";
     };
   });
 
   // 独立语音服务商切换
-  const customPlatformSelect = roomEl.querySelector("#char-voice-custom-platform");
+  const customPlatformSelect = roomEl.querySelector(
+    "#char-voice-custom-platform",
+  );
   const customGroupIdWrap = roomEl.querySelector("#wrap-custom-groupid");
   if (customPlatformSelect && customGroupIdWrap) {
     customPlatformSelect.onchange = (e) => {
-      customGroupIdWrap.style.display = e.target.value === "minimax" ? "flex" : "none";
+      customGroupIdWrap.style.display =
+        e.target.value === "minimax" ? "flex" : "none";
     };
   }
 
@@ -3356,21 +3494,17 @@ function bindSettingsEvents(roomEl, container) {
       const remarkVal =
         roomEl.querySelector("#input-char-remark")?.value.trim() || "";
       const enableTrans =
-        roomEl.querySelector("#toggle-translation-switch")?.checked ||
-        false;
+        roomEl.querySelector("#toggle-translation-switch")?.checked || false;
       const langVal =
         roomEl.querySelector("#select-char-lang")?.value || "中文";
       const timePerceptionVal =
         roomEl.querySelector("#toggle-time-perception")?.checked !== false;
       const timezoneVal =
-        roomEl.querySelector("#select-char-timezone")?.value ||
-        "Asia/Tokyo";
+        roomEl.querySelector("#select-char-timezone")?.value || "Asia/Tokyo";
       const autoAvatarVal =
-        roomEl.querySelector("#toggle-auto-avatar-change")?.checked ||
-        false;
+        roomEl.querySelector("#toggle-auto-avatar-change")?.checked || false;
       const darkroomAutoVal =
-        roomEl.querySelector("#toggle-darkroom-autorefresh")?.checked ||
-        false;
+        roomEl.querySelector("#toggle-darkroom-autorefresh")?.checked || false;
 
       activeCharInfo.remark = remarkVal;
       activeCharInfo.enableTranslation = enableTrans;
@@ -3423,9 +3557,7 @@ function bindSettingsEvents(roomEl, container) {
 
   const addManualMemBtn = roomEl.querySelector("#btn-add-manual-memory");
   const manualMemInput = roomEl.querySelector("#input-manual-memory");
-  const manualMemTypeInput = roomEl.querySelector(
-    "#input-manual-memory-type",
-  );
+  const manualMemTypeInput = roomEl.querySelector("#input-manual-memory-type");
   if (addManualMemBtn && manualMemInput) {
     const handleAddMem = () => {
       const text = manualMemInput.value.trim();
@@ -3453,18 +3585,10 @@ function bindSettingsEvents(roomEl, container) {
   });
 
   // ✨ 记忆记录开关显隐控制与即时暂存
-  const autoExtractMemToggle = roomEl.querySelector(
-    "#toggle-auto-extract-mem",
-  );
-  const extractTurnWrap = roomEl.querySelector(
-    "#wrap-extract-turn-interval",
-  );
-  const extractTurnRange = roomEl.querySelector(
-    "#range-extract-turn-interval",
-  );
-  const extractTurnLabel = roomEl.querySelector(
-    "#label-extract-turn-val",
-  );
+  const autoExtractMemToggle = roomEl.querySelector("#toggle-auto-extract-mem");
+  const extractTurnWrap = roomEl.querySelector("#wrap-extract-turn-interval");
+  const extractTurnRange = roomEl.querySelector("#range-extract-turn-interval");
+  const extractTurnLabel = roomEl.querySelector("#label-extract-turn-val");
 
   if (autoExtractMemToggle && extractTurnWrap) {
     autoExtractMemToggle.onchange = (e) => {
@@ -3506,9 +3630,7 @@ function bindSettingsEvents(roomEl, container) {
   }
 
   // ✨ 记忆记录：手动即时提取记忆
-  const manualExtractBtn = roomEl.querySelector(
-    "#btn-manual-extract-memories",
-  );
+  const manualExtractBtn = roomEl.querySelector("#btn-manual-extract-memories");
   if (manualExtractBtn) {
     manualExtractBtn.onclick = async () => {
       if (chatMessages.length === 0) {
@@ -3533,29 +3655,24 @@ function bindSettingsEvents(roomEl, container) {
       const remarkVal =
         roomEl.querySelector("#input-char-remark")?.value.trim() || "";
       const enableTrans =
-        roomEl.querySelector("#toggle-translation-switch")?.checked ||
-        false;
+        roomEl.querySelector("#toggle-translation-switch")?.checked || false;
       const langVal =
         roomEl.querySelector("#select-char-lang")?.value || "中文";
       const timePerceptionVal =
         roomEl.querySelector("#toggle-time-perception")?.checked !== false;
       const autoRemarkVal =
-        roomEl.querySelector("#toggle-auto-remark-change")?.checked ||
-        false;
+        roomEl.querySelector("#toggle-auto-remark-change")?.checked || false;
       const timezoneVal =
-        roomEl.querySelector("#select-char-timezone")?.value ||
-        "Asia/Tokyo";
+        roomEl.querySelector("#select-char-timezone")?.value || "Asia/Tokyo";
 
       const darkroomAutoVal =
-        roomEl.querySelector("#toggle-darkroom-autorefresh")?.checked ||
-        false;
+        roomEl.querySelector("#toggle-darkroom-autorefresh")?.checked || false;
       const darkroomIntervalVal = parseInt(
         roomEl.querySelector("#select-darkroom-interval")?.value || 60,
         10,
       );
       const autoAvatarVal =
-        roomEl.querySelector("#toggle-auto-avatar-change")?.checked ||
-        false;
+        roomEl.querySelector("#toggle-auto-avatar-change")?.checked || false;
 
       // ✨ 收集专属语音系统配置
       const voiceEnabledVal =
@@ -3568,17 +3685,16 @@ function bindSettingsEvents(roomEl, container) {
       const voiceGroupIdVal =
         roomEl.querySelector("#char-voice-custom-groupid")?.value.trim() || "";
       const voiceVoiceIdVal =
-        roomEl.querySelector("#char-voice-custom-voiceid")?.value.trim() || "female-yujie";
+        roomEl.querySelector("#char-voice-custom-voiceid")?.value.trim() ||
+        "female-yujie";
 
       const scheduleRows = roomEl.querySelectorAll(
         "#ins-schedule-container .ins-schedule-item",
       );
       const updatedSchedules = [];
       scheduleRows.forEach((row) => {
-        const t =
-          row.querySelector(".ins-schedule-time")?.value.trim() || "";
-        const x =
-          row.querySelector(".ins-schedule-text")?.value.trim() || "";
+        const t = row.querySelector(".ins-schedule-time")?.value.trim() || "";
+        const x = row.querySelector(".ins-schedule-text")?.value.trim() || "";
         if (t || x) updatedSchedules.push({ time: t, text: x });
       });
 
@@ -3600,6 +3716,9 @@ function bindSettingsEvents(roomEl, container) {
 
       activeCharInfo.remark = remarkVal;
       activeCharInfo.enableTranslation = enableTrans;
+      activeCharInfo.translationStyle =
+        activeCharInfo.translationStyle || "inline";
+
       activeCharInfo.targetLang = langVal;
       activeCharInfo.timePerceptionEnabled = timePerceptionVal;
       activeCharInfo.perceivedTimezone = timezoneVal;
@@ -3622,9 +3741,7 @@ function bindSettingsEvents(roomEl, container) {
       // 双向写入全局数据库
       updateFullCharData(activeCharInfo);
 
-      const safeChar = encodeURIComponent(
-        activeCharInfo.name || "default",
-      );
+      const safeChar = encodeURIComponent(activeCharInfo.name || "default");
       localStorage.setItem(
         `mini_char_auto_avatar_${safeChar}`,
         autoAvatarVal ? "true" : "false",
@@ -3956,8 +4073,12 @@ function handleUserSendMessageOnly(userText, container) {
   // ✨ 核心修复：局部刷新消息流 DOM，绝不重建全屏，0 闪屏
   const scrollArea = document.querySelector("#chat-messages-scroll-area");
   if (scrollArea) {
-    scrollArea.innerHTML = `<div class="chat-handoff-pill">[沙盒已连接] ${escapeHtml(activeCharInfo.name)} · 实时交互通道</div>` + renderMessagesHtml(chatMessages);
-    setTimeout(() => { scrollArea.scrollTop = scrollArea.scrollHeight; }, 20);
+    scrollArea.innerHTML =
+      `<div class="chat-handoff-pill">[沙盒已连接] ${escapeHtml(activeCharInfo.name)} · 实时交互通道</div>` +
+      renderMessagesHtml(chatMessages);
+    setTimeout(() => {
+      scrollArea.scrollTop = scrollArea.scrollHeight;
+    }, 20);
   } else {
     renderChatRoomView(container);
   }
@@ -4101,9 +4222,9 @@ ${fullChar.detailedInfo || "有血有肉有主见的独立人类"}
 
 # 对话对象【${activeUserName}】档案（你正在聊天的对象）
 - 名字：${activeUserName}
-- 对方职业/身份：${currentUserObj.occupation || '日常生活'}
-- 对方喜恶偏好（潜意识尊重）：${currentUserObj.likesAndDislikes || '暂无'}
-- 对方当前头像状态：【${currentUserObj.avatarUrl ? '对方当前已换上了最新头像，不要再说对方还在找头像' : '默认头像'}】
+- 对方职业/身份：${currentUserObj.occupation || "日常生活"}
+- 对方喜恶偏好（潜意识尊重）：${currentUserObj.likesAndDislikes || "暂无"}
+- 对方当前头像状态：【${currentUserObj.avatarUrl ? "对方当前已换上了最新头像，不要再说对方还在找头像" : "默认头像"}】
 - 两人羁绊状态：${weather.status} (${weather.weatherText})
 
 ════════ ⏰ 现实时空锚点 ════════
@@ -4200,7 +4321,7 @@ ${
         return { role: "system", content: `[提示: ${m.content}]` };
       }
 
-                    let formattedContent = m.content || "";
+      let formattedContent = m.content || "";
       if (m.cardType === "image")
         formattedContent = `[用户向你发送了一张真实照片]`;
       else if (m.cardType === "sim_photo")
@@ -4252,10 +4373,16 @@ ${
       const lib = getCharAvatarLibrary(charName);
       const title = (collect.title || "新收录形象").trim();
 
-            if (collect.target === 'user') {
-        const isExist = lib.userAvatars.some(a => a.url === lastImageMsg.mediaUrl);
+      if (collect.target === "user") {
+        const isExist = lib.userAvatars.some(
+          (a) => a.url === lastImageMsg.mediaUrl,
+        );
         if (!isExist) {
-          lib.userAvatars.unshift({ id: `uav-${Date.now()}`, title: title, url: lastImageMsg.mediaUrl });
+          lib.userAvatars.unshift({
+            id: `uav-${Date.now()}`,
+            title: title,
+            url: lastImageMsg.mediaUrl,
+          });
           saveCharAvatarLibrary(charName, lib);
           showInsToast(`已自动识别并收录至 User 头像库：「${title}」`);
         }
@@ -4367,8 +4494,9 @@ ${
     });
   });
 
-   saveChatMessages(charName, chatMessages);
-  const lastBubbleText = result.bubbles[result.bubbles.length - 1]?.orig || '...';
+  saveChatMessages(charName, chatMessages);
+  const lastBubbleText =
+    result.bubbles[result.bubbles.length - 1]?.orig || "...";
   updateActiveChatListSummary(charName, lastBubbleText, tzInfo.timeStr);
 
   // ✨ 核心修复：检查当前用户是否正处于聊天室界面
@@ -4385,7 +4513,9 @@ ${
     }, 30);
   } else {
     // ✨ 用户已切换去其他板块（如角色库/设置/User）：静默写入后台，绝不强行跳转切屏！
-    console.log(`[Background Message Received] 【${charName}】回复完成，已静默存入历史，未打扰用户当前操作。`);
+    console.log(
+      `[Background Message Received] 【${charName}】回复完成，已静默存入历史，未打扰用户当前操作。`,
+    );
   }
 
   if (autoSavedNotice) {
@@ -4419,7 +4549,10 @@ function parseComprehensiveReply(rawReply, char, needTranslation = false) {
 
   try {
     // 1. 优先清洗剥离 ```json 和 ``` 外壳
-    let cleanJsonStr = rawReply.replace(/```json/gi, "").replace(/```/g, "").trim();
+    let cleanJsonStr = rawReply
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .trim();
     const objMatch = cleanJsonStr.match(/\{[\s\S]*\}/);
     if (objMatch) {
       const parsed = JSON.parse(objMatch[0]);
@@ -4448,7 +4581,13 @@ function parseComprehensiveReply(rawReply, char, needTranslation = false) {
             return {
               orig: origText,
               trans: transText,
-              quote: r.quote && r.quote.content ? { sender: r.quote.sender || 'User', content: r.quote.content } : null
+              quote:
+                r.quote && r.quote.content
+                  ? {
+                      sender: r.quote.sender || "User",
+                      content: r.quote.content,
+                    }
+                  : null,
             };
           })
           .filter((b) => Boolean(b.orig));
@@ -4474,8 +4613,7 @@ function parseComprehensiveReply(rawReply, char, needTranslation = false) {
               ? parsed.extractedSchedule
               : null,
           extractedMemory:
-            parsed.extractedMemory &&
-            typeof parsed.extractedMemory === "string"
+            parsed.extractedMemory && typeof parsed.extractedMemory === "string"
               ? parsed.extractedMemory.trim()
               : null,
         };
@@ -4533,7 +4671,10 @@ function parseComprehensiveReply(rawReply, char, needTranslation = false) {
     avatarAction: null,
     avatarAutoCollect: null,
     remarkAction: null,
-    bubbles: bubbles.slice(0, 4).length > 0 ? bubbles.slice(0, 4) : defaultFallback.bubbles,
+    bubbles:
+      bubbles.slice(0, 4).length > 0
+        ? bubbles.slice(0, 4)
+        : defaultFallback.bubbles,
     extractedSchedule: null,
     extractedMemory: null,
   };
@@ -4541,21 +4682,26 @@ function parseComprehensiveReply(rawReply, char, needTranslation = false) {
 
 function sanitizeOnlineChatReply(rawText) {
   if (!rawText) return "";
-  return rawText
-    .replace(/\*[^*]+\*/g, "")
-    // 物理强力抹除开头的各种口癖傻笑 (ふふっ、呵呵、呵呵呵、クスクス等)
-    .replace(/^(?:ふふっ[、，。\s…~]*|呵呵[、，。\s…~]*|呵呵呵[、，。\s…~]*|クスクス[、，。\s…~]*|フフッ[、，。\s…~]*)+/gi, "")
-    .replace(
-      /（[^）]*(?:看|笑|叹|走|想|低头|抬头|眼神|神情|动作|心里|沉默|坐|站|摸|抓|愣|眨|摇|息|声|目|手|指)[^）]*）/g,
-      "",
-    )
-    .replace(
-      /\([^)]*(?:smile|sigh|look|think|action|gaze|nod|laugh)[^)]*\)/gi,
-      "",
-    )
-    .replace(/^["'“”‘’]/g, "")
-    .replace(/["'“”‘’]$/g, "")
-    .trim();
+  return (
+    rawText
+      .replace(/\*[^*]+\*/g, "")
+      // 物理强力抹除开头的各种口癖傻笑 (ふふっ、呵呵、呵呵呵、クスクス等)
+      .replace(
+        /^(?:ふふっ[、，。\s…~]*|呵呵[、，。\s…~]*|呵呵呵[、，。\s…~]*|クスクス[、，。\s…~]*|フフッ[、，。\s…~]*)+/gi,
+        "",
+      )
+      .replace(
+        /（[^）]*(?:看|笑|叹|走|想|低头|抬头|眼神|神情|动作|心里|沉默|坐|站|摸|抓|愣|眨|摇|息|声|目|手|指)[^）]*）/g,
+        "",
+      )
+      .replace(
+        /\([^)]*(?:smile|sigh|look|think|action|gaze|nod|laugh)[^)]*\)/gi,
+        "",
+      )
+      .replace(/^["'“”‘’]/g, "")
+      .replace(/["'“”‘’]$/g, "")
+      .trim()
+  );
 }
 
 function showInsToast(msg) {
