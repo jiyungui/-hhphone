@@ -239,99 +239,93 @@ function getProviderDefaultModels(provider) {
 function calculateStorageMetrics() {
   const comp = config.compression;
 
-  let mediaBytes = 0;
-  let chatBytes = 0;
-  let docBytes = 0;
-  let memBytes = 0;
-  let cfgBytes = 0;
+  // 1. ✨ 真实计算所有图片与头像媒体大小（扫描角色头像、用户证件照、以及聊天图片）
+  let mediaRawBytes = 0;
+  const charVaultFull = JSON.parse(
+    localStorage.getItem("mini_character_vault_full") || "[]",
+  );
+  charVaultFull.forEach((c) => {
+    if (c.avatarUrl && c.avatarUrl.startsWith("data:")) {
+      mediaRawBytes += c.avatarUrl.length;
+    }
+  });
 
-  // ✨ 核心修复：直接无死角遍历整个 localStorage 的所有真实物理 Key
+  const userPersonasFull = JSON.parse(
+    localStorage.getItem("mini_user_personas_full") || "[]",
+  );
+  userPersonasFull.forEach((u) => {
+    if (u.avatarUrl && u.avatarUrl.startsWith("data:")) {
+      mediaRawBytes += u.avatarUrl.length;
+    }
+  });
+
+  // 扫描聊天记录中的图片卡片大小与总聊天大小
+  let chatRawBytes = 0;
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (!key) continue;
-    const rawVal = localStorage.getItem(key) || "";
-    const valLength = rawVal.length * 2; // UTF-16 真实字符内存占用字节
-
-    if (key.startsWith("mini_chat_dialog_history_")) {
-      // 深度扫描聊天记录：区分文字与发送的 Base64 大图
+    if (key && key.startsWith("mini_chat_dialog_history_")) {
+      const chatVal = localStorage.getItem(key) || "[]";
+      chatRawBytes += chatVal.length;
       try {
-        const msgs = JSON.parse(rawVal);
-        let msgChatBytes = 0;
-        let msgMediaBytes = 0;
+        const msgs = JSON.parse(chatVal);
         if (Array.isArray(msgs)) {
           msgs.forEach((m) => {
-            if (m.mediaUrl && typeof m.mediaUrl === "string") {
-              msgMediaBytes += m.mediaUrl.length * 2;
-            }
-            msgChatBytes += JSON.stringify(m).length * 2;
-          });
-        }
-        mediaBytes += msgMediaBytes;
-        chatBytes += Math.max(0, msgChatBytes - msgMediaBytes);
-      } catch (e) {
-        chatBytes += valLength;
-      }
-    } else if (key === "mini_character_vault_full" || key === "mini_user_personas_full") {
-      // 扫描角色头像与 User 证件照
-      try {
-        const list = JSON.parse(rawVal);
-        if (Array.isArray(list)) {
-          list.forEach((item) => {
-            if (item.avatarUrl && typeof item.avatarUrl === "string" && item.avatarUrl.length > 200) {
-              mediaBytes += item.avatarUrl.length * 2;
+            if (m.mediaUrl && m.mediaUrl.startsWith("data:")) {
+              mediaRawBytes += m.mediaUrl.length;
             }
           });
         }
       } catch (e) {}
-      cfgBytes += valLength;
-    } else if (key === "mini_mcp_documents") {
-      docBytes += valLength;
-    } else if (
-      key.startsWith("mini_vault_") ||
-      key.startsWith("mini_character_memories_") ||
-      key.startsWith("mini_darkroom_") ||
-      key.startsWith("mini_facts_") ||
-      key.startsWith("echo_") ||
-      key === "mini_memory_vault"
-    ) {
-      memBytes += valLength;
-    } else {
-      cfgBytes += valLength;
     }
   }
 
-  const mediaRawKB = Math.round(mediaBytes / 1024);
-  const docRawKB = Math.round(docBytes / 1024);
-  const chatRawKB = Math.round(chatBytes / 1024);
-  const memRawKB = Math.round(memBytes / 1024);
-  const cfgRawKB = Math.round(cfgBytes / 1024);
+  const mediaRawKB = Math.round(mediaRawBytes / 1024);
+  const chatRawKB = Math.round(chatRawBytes / 1024);
 
-  const totalRawKB = Math.max(1, mediaRawKB + docRawKB + chatRawKB + memRawKB + cfgRawKB);
+  // 2. 真实计算投喂文档大小
+  const docRawKB = Math.round(JSON.stringify(documentVault).length / 1024);
 
-  // 压缩计算
+  // 3. 真实计算配置与预设大小
+  const cfgRawKB = Math.round(
+    (JSON.stringify(config).length + JSON.stringify(savedPresets).length) /
+      1024,
+  );
+
+  // 4. 真实计算全角色记忆库大小
+  let memRawBytes = 0;
+  userCharList.forEach((c) => {
+    memRawBytes += JSON.stringify(McpGateway.getCharMemories(c)).length;
+    memRawBytes += JSON.stringify(McpGateway.getCharDarkroom(c)).length;
+    const safeC = encodeURIComponent(c);
+    memRawBytes += (localStorage.getItem(`echo_daily_${safeC}`) || "").length;
+    memRawBytes += (localStorage.getItem(`echo_perm_${safeC}`) || "").length;
+  });
+  const memRawKB = Math.round(memRawBytes / 1024);
+
+  const totalRawKB = Math.max(
+    1,
+    mediaRawKB + docRawKB + chatRawKB + memRawKB + cfgRawKB,
+  );
+
+  // 计算无损优化后大小
   let mediaFactor = 1.0;
-  if (comp.stripMediaMetadata) mediaFactor *= 0.82;
-  if (comp.assetDeduplication) mediaFactor *= 0.88;
+  if (comp.stripMediaMetadata) mediaFactor *= 0.85;
+  if (comp.assetDeduplication) mediaFactor *= 0.9;
   const mediaOptKB = Math.round(mediaRawKB * mediaFactor);
 
   let textFactor = 1.0;
-  if (comp.minifyJsonSchema) textFactor *= 0.72;
+  if (comp.minifyJsonSchema) textFactor *= 0.7;
+
   const docOptKB = Math.round(docRawKB * textFactor);
   const chatOptKB = Math.round(chatRawKB * textFactor);
   const memOptKB = Math.round(memRawKB * textFactor);
   const cfgOptKB = Math.round(cfgRawKB * textFactor);
 
   let subtotalKB = mediaOptKB + docOptKB + chatOptKB + memOptKB + cfgOptKB;
-  if (comp.deflatePackage) subtotalKB = Math.round(subtotalKB * 0.75);
+  if (comp.deflatePackage) subtotalKB = Math.round(subtotalKB * 0.7);
 
   const totalOptKB = Math.max(1, subtotalKB);
-  const ratio = Math.max(0, Math.min(99, Math.round((1 - totalOptKB / totalRawKB) * 100)));
-
-  // 格式化输出函数：大于 1024KB 显示 MB，小于 1024KB 显示 KB
-  const formatSize = (kb) => {
-    if (kb >= 1024) return `${(kb / 1024).toFixed(2)} MB`;
-    return `${kb} KB`;
-  };
+  const ratio = Math.max(0, Math.round((1 - totalOptKB / totalRawKB) * 100));
 
   return {
     raw: {
@@ -341,7 +335,6 @@ function calculateStorageMetrics() {
       memKB: memRawKB,
       cfgKB: cfgRawKB,
       totalKB: totalRawKB,
-      totalFormatted: formatSize(totalRawKB),
       totalMB: (totalRawKB / 1024).toFixed(2),
     },
     optimized: {
@@ -351,7 +344,6 @@ function calculateStorageMetrics() {
       memKB: memOptKB,
       cfgKB: cfgOptKB,
       totalKB: totalOptKB,
-      totalFormatted: formatSize(totalOptKB),
       totalMB: (totalOptKB / 1024).toFixed(2),
       ratio,
     },
@@ -445,10 +437,10 @@ function bindTabEvents(container) {
   const subTitleEl = container.querySelector("#api-sub-title");
   const viewRoot = container.querySelector("#api-sub-view-root");
 
-   dockItems.forEach((btn) => {
+  dockItems.forEach((btn) => {
     btn.addEventListener("click", () => {
       const tabId = btn.getAttribute("data-tab");
-      
+
       // ✨ 核心：离开或重新进入介绍板块时，自动清空上一轮的问答驻留
       if (config.activeTab === "guide" || tabId === "guide") {
         config.guide.lastQuery = "";
@@ -665,8 +657,8 @@ function renderVoiceSection() {
       </div>
     </div>
 
-    <div class="api-card">
-      <span class="card-title">${isMiniMax ? "MiniMax 接口参数" : "ElevenLabs 接口参数"}</span>
+      <div class="api-card">
+      <span class="card-title">${isMiniMax ? "MiniMax 接口与模型参数" : "ElevenLabs 接口与模型参数"}</span>
       ${
         isMiniMax
           ? `
@@ -683,6 +675,14 @@ function renderVoiceSection() {
             </button>
           </div>
         </div>
+        <div class="form-group">
+          <label class="form-label">语音大模型 (Model)</label>
+          <select class="api-select" id="cfg-mm-model-select">
+            <option value="speech-01-turbo" ${config.minimax.model === "speech-01-turbo" ? "selected" : ""}>speech-01-turbo (低延迟·高性价比)</option>
+            <option value="speech-01-hd" ${config.minimax.model === "speech-01-hd" ? "selected" : ""}>speech-01-hd (高保真·丰富情感)</option>
+            <option value="speech-02-turbo" ${config.minimax.model === "speech-02-turbo" ? "selected" : ""}>speech-02-turbo (次世代语音)</option>
+          </select>
+        </div>
       `
           : `
         <div class="form-group">
@@ -694,12 +694,23 @@ function renderVoiceSection() {
             </button>
           </div>
         </div>
+        <div class="form-group">
+          <label class="form-label">语音模型 (Model)</label>
+          <select class="api-select" id="cfg-el-model-select">
+            <option value="eleven_multilingual_v2" ${config.elevenlabs.model === "eleven_multilingual_v2" ? "selected" : ""}>eleven_multilingual_v2 (多语言·微情绪)</option>
+            <option value="eleven_turbo_v2_5" ${config.elevenlabs.model === "eleven_turbo_v2_5" ? "selected" : ""}>eleven_turbo_v2_5 (极速超低延迟)</option>
+            <option value="eleven_flash_v2" ${config.elevenlabs.model === "eleven_flash_v2" ? "selected" : ""}>eleven_flash_v2 (高性价比)</option>
+          </select>
+        </div>
       `
       }
     </div>
 
     <div class="api-card">
-      <span class="card-title">音色预设 (Voice Timbre)</span>
+      <div class="card-title">
+        <span>音色预设 (Voice Timbre)</span>
+        <span class="active-tag">${isMiniMax ? config.minimax.voiceId : config.elevenlabs.voiceId}</span>
+      </div>
       <div class="voice-preset-grid">
         ${(isMiniMax ? minimaxVoices : elevenVoices)
           .map(
@@ -711,6 +722,12 @@ function renderVoiceSection() {
         `,
           )
           .join("")}
+      </div>
+
+      <!-- 自定义 Voice ID 输入框（当选择自定义时展开） -->
+      <div class="form-group" style="margin-top: 8px;">
+        <label class="form-label">自定义 Voice ID (选自定义时生效)</label>
+        <input type="text" class="form-input" id="cfg-custom-voice-id" value="${isMiniMax ? config.minimax.customVoiceId || "" : config.elevenlabs.customVoiceId || ""}" placeholder="输入第三方克隆或专属音色 ID..." />
       </div>
     </div>
 
@@ -729,7 +746,7 @@ function renderVoiceSection() {
             </div>
             <span id="audio-status-text">待播放</span>
           </div>
-          <span style="font-size: 9.5px; color: var(--text-muted); font-weight: 600;">${isMiniMax ? "MiniMax 引擎" : "ElevenLabs 引擎"}</span>
+          <span style="font-size: 9.5px; color: var(--text-muted); font-weight: 600;">${isMiniMax ? `${config.minimax.model} · ${config.minimax.voiceId}` : `${config.elevenlabs.model} · ${config.elevenlabs.voiceId}`}</span>
         </div>
         <button class="api-btn api-btn-primary" id="btn-play-voice-test">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
@@ -1110,7 +1127,7 @@ function renderGuideSection() {
   const lastQuery = config.guide.lastQuery;
   const lastAnswer = config.guide.lastAnswer;
 
-   const quickQuestions = [
+  const quickQuestions = [
     "API 如何正确连接与配置？",
     "如何给指定角色投喂设定文档 (读取)？",
     "EchoVault 原生记忆库如何使用？",
@@ -1196,30 +1213,30 @@ function renderCompressSection() {
       </span>
       <span class="card-desc">针对导入的壁纸、头像、视频、聊天记录与知识库进行打包瘦身。零画质损失，仅在「总结」板块导出全量数据时大幅缩小备份文件大小。</span>
 
-         <div class="compress-compare-card">
+      <div class="compress-compare-card">
         <div class="compare-box">
-          <span class="compare-val">${metrics.raw.totalFormatted}</span>
-          <span class="compare-lbl">优化前原始总占用</span>
+          <span class="compare-val">${metrics.raw.totalMB} MB</span>
+          <span class="compare-lbl">优化前原始体积</span>
         </div>
         <div class="compare-arrow">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
         <div class="compare-box">
-          <span class="compare-val optimized">~${metrics.optimized.totalFormatted}</span>
+          <span class="compare-val optimized">~${metrics.optimized.totalMB} MB</span>
           <span class="compare-lbl">导出包预计缩小 ${metrics.optimized.ratio}%</span>
         </div>
       </div>
 
-      <div class="storage-breakdown-box">
+           <div class="storage-breakdown-box">
         <div class="storage-progress-bar">
-          <div class="storage-bar-segment media" style="width: ${Math.round((metrics.raw.mediaKB / metrics.raw.totalKB) * 100)}%;"></div>
-          <div class="storage-bar-segment chat" style="width: ${Math.round(((metrics.raw.docKB + metrics.raw.chatKB) / metrics.raw.totalKB) * 100)}%;"></div>
-          <div class="storage-bar-segment memory" style="width: ${Math.round(((metrics.raw.memKB + metrics.raw.cfgKB) / metrics.raw.totalKB) * 100)}%;"></div>
+          <div class="storage-bar-segment media" style="width: ${Math.round((metrics.raw.mediaKB / metrics.raw.totalKB) * 100) || 0}%;" title="媒体资产"></div>
+          <div class="storage-bar-segment chat" style="width: ${Math.round(((metrics.raw.docKB + metrics.raw.chatKB) / metrics.raw.totalKB) * 100) || 0}%;" title="聊天与文档"></div>
+          <div class="storage-bar-segment memory" style="width: ${Math.round(((metrics.raw.memKB + metrics.raw.cfgKB) / metrics.raw.totalKB) * 100) || 0}%;" title="记忆与配置"></div>
         </div>
         <div class="storage-legend-row">
-          <div class="storage-legend-item"><span class="legend-color-dot media"></span><span>媒体图片 (${metrics.raw.mediaKB >= 1024 ? `${(metrics.raw.mediaKB / 1024).toFixed(1)}MB` : `${metrics.raw.mediaKB}KB`})</span></div>
-          <div class="storage-legend-item"><span class="legend-color-dot chat"></span><span>文档/聊天 (${((metrics.raw.docKB + metrics.raw.chatKB) >= 1024) ? `${((metrics.raw.docKB + metrics.raw.chatKB) / 1024).toFixed(1)}MB` : `${metrics.raw.docKB + metrics.raw.chatKB}KB`})</span></div>
-          <div class="storage-legend-item"><span class="legend-color-dot memory"></span><span>记忆/配置 (${metrics.raw.memKB + metrics.raw.cfgKB}KB)</span></div>
+          <div class="storage-legend-item"><span class="legend-color-dot media"></span><span>壁纸/头像/媒体 (${metrics.raw.mediaKB > 1024 ? `${(metrics.raw.mediaKB / 1024).toFixed(2)} MB` : `${metrics.raw.mediaKB} KB`})</span></div>
+          <div class="storage-legend-item"><span class="legend-color-dot chat"></span><span>文档/会话记录 (${metrics.raw.docKB + metrics.raw.chatKB} KB)</span></div>
+          <div class="storage-legend-item"><span class="legend-color-dot memory"></span><span>记忆与配置 (${metrics.raw.memKB + metrics.raw.cfgKB} KB)</span></div>
         </div>
       </div>
     </div>
@@ -1294,18 +1311,18 @@ function renderAnalyticsSection() {
         <span class="saved-ratio-tag">已无损优化 ${metrics.optimized.ratio}%</span>
       </span>
 
-          <div class="summary-stat-row">
-        <div class="summary-stat-col"><span class="summary-num">${metrics.raw.totalFormatted}</span><span class="summary-lbl">当前原始总占用</span></div>
-        <div class="summary-stat-col highlight"><span class="summary-num">~${metrics.optimized.totalFormatted}</span><span class="summary-lbl">无损压缩导出包</span></div>
+      <div class="summary-stat-row">
+        <div class="summary-stat-col"><span class="summary-num">${metrics.raw.totalMB} MB</span><span class="summary-lbl">当前原始总占用</span></div>
+        <div class="summary-stat-col highlight"><span class="summary-num">~${metrics.optimized.totalMB} MB</span><span class="summary-lbl">无损压缩导出包</span></div>
         <div class="summary-stat-col"><span class="summary-num">${docCount + charCount + userCount + 6} 项</span><span class="summary-lbl">总资产实体数</span></div>
       </div>
 
-         <div class="summary-bar-track">
-        <div class="summary-bar-seg img" style="width: ${Math.round((metrics.raw.mediaKB / metrics.raw.totalKB) * 100)}%;"></div>
-        <div class="summary-bar-seg doc" style="width: ${Math.round((metrics.raw.docKB / metrics.raw.totalKB) * 100)}%;"></div>
-        <div class="summary-bar-seg chat" style="width: ${Math.round((metrics.raw.chatKB / metrics.raw.totalKB) * 100)}%;"></div>
-        <div class="summary-bar-seg mem" style="width: ${Math.round((metrics.raw.memKB / metrics.raw.totalKB) * 100)}%;"></div>
-        <div class="summary-bar-seg cfg" style="width: ${Math.round((metrics.raw.cfgKB / metrics.raw.totalKB) * 100)}%;"></div>
+      <div class="summary-bar-track">
+        <div class="summary-bar-seg img" style="width: 68%;"></div>
+        <div class="summary-bar-seg doc" style="width: 15%;"></div>
+        <div class="summary-bar-seg chat" style="width: 9%;"></div>
+        <div class="summary-bar-seg mem" style="width: 5%;"></div>
+        <div class="summary-bar-seg cfg" style="width: 3%;"></div>
       </div>
     </div>
 
@@ -1316,11 +1333,11 @@ function renderAnalyticsSection() {
         <div class="asset-item-card">
           <div class="asset-item-left">
             <div class="asset-icon-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
-            <div class="asset-info"><span class="asset-name">图片、壁纸与头像资产</span><span class="asset-sub">已存头像与媒体 · 100% 原始画质无损</span></div>
+            <div class="asset-info"><span class="asset-name">图片、壁纸与头像资产</span><span class="asset-sub">IndexedDB 高清原图 · 100% 原始画质无损</span></div>
           </div>
           <div class="asset-size-group">
-            <span class="asset-size-raw">${metrics.raw.mediaKB >= 1024 ? `${(metrics.raw.mediaKB / 1024).toFixed(1)} MB` : `${metrics.raw.mediaKB} KB`}</span>
-            <span class="asset-size-opt">${metrics.optimized.mediaKB >= 1024 ? `${(metrics.optimized.mediaKB / 1024).toFixed(2)} MB` : `${metrics.optimized.mediaKB} KB`}</span>
+            <span class="asset-size-raw">~${(metrics.raw.mediaKB / 1024).toFixed(1)} MB</span>
+            <span class="asset-size-opt">~${(metrics.optimized.mediaKB / 1024).toFixed(2)} MB</span>
           </div>
         </div>
 
@@ -1358,19 +1375,33 @@ function renderAnalyticsSection() {
       </div>
     </div>
 
-    <div class="api-card">
+       <div class="api-card">
       <span class="card-title"><span>全量项目数据备份与迁移</span><span class="isolated-badge">无损轻量导出</span></span>
       <div class="backup-actions-grid">
         <button class="backup-btn primary" id="btn-export-full-project">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <span>导出备份包 (~${metrics.optimized.totalMB} MB)</span>
         </button>
         <button class="backup-btn outline" id="btn-import-full-project">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           <span>恢复导入备份文件</span>
         </button>
         <input type="file" id="full-backup-file-input" accept=".json" style="display:none;" />
       </div>
+    </div>
+
+    <!-- ✨ 核心新增：清空所有数据危险卡片 -->
+    <div class="api-card" style="border-color: #FFCDD2; background: #FFFFFF;">
+      <div class="card-title">
+        <span style="color: #E53935; font-weight: 800;">危险区域 · 全系统数据清空与重置</span>
+        <span style="font-size: 8.5px; color: #E53935; border: 1px solid #FFCDD2; padding: 1.5px 5px; border-radius: 4px; font-weight: 700;">DANGER ZONE</span>
+      </div>
+      <span class="card-desc" style="color: #888888; line-height: 1.4; margin-top: 2px;">
+        彻底抹除本地存储中的所有角色沙盒、Echo 日记、对话气泡、知识库文档与 API 预设，重置为系统初始出厂状态。操作不可撤回。
+      </span>
+      <button class="api-btn" id="btn-wipe-all-system-data" style="width: 100%; margin-top: 10px; padding: 9px; background: #FFFFFF; color: #E53935; border: 1px solid #FFCDD2; font-weight: 800; font-size: 11.5px; border-radius: 8px;">
+        清空并重置所有本地数据
+      </button>
     </div>
   `;
 }
@@ -1641,7 +1672,8 @@ function bindSubViewEvents(container) {
     };
   });
 
-  // 2. 语音板块
+    // 2. 语音板块
+  // 平台切换 (MiniMax / ElevenLabs)
   container.querySelectorAll(".tts-platform-card").forEach((card) => {
     card.onclick = () => {
       config.ttsPlatform = card.getAttribute("data-tts-platform");
@@ -1651,6 +1683,142 @@ function bindSubViewEvents(container) {
       bindSubViewEvents(container);
     };
   });
+
+  // ✨ 参数实时输入自动保存
+  const mmGroupIdInput = container.querySelector("#cfg-mm-groupid");
+  if (mmGroupIdInput) {
+    mmGroupIdInput.oninput = (e) => {
+      config.minimax.groupId = e.target.value.trim();
+      saveConfig();
+    };
+  }
+
+  const mmApiKeyInput = container.querySelector("#cfg-mm-apikey");
+  if (mmApiKeyInput) {
+    mmApiKeyInput.oninput = (e) => {
+      config.minimax.apiKey = e.target.value.trim();
+      saveConfig();
+    };
+  }
+
+  const elApiKeyInput = container.querySelector("#cfg-el-apikey");
+  if (elApiKeyInput) {
+    elApiKeyInput.oninput = (e) => {
+      config.elevenlabs.apiKey = e.target.value.trim();
+      saveConfig();
+    };
+  }
+
+  // ✨ 声音模型选择切换并保存
+  const mmModelSelect = container.querySelector("#cfg-mm-model-select");
+  if (mmModelSelect) {
+    mmModelSelect.onchange = (e) => {
+      config.minimax.model = e.target.value;
+      saveConfig();
+    };
+  }
+
+  const elModelSelect = container.querySelector("#cfg-el-model-select");
+  if (elModelSelect) {
+    elModelSelect.onchange = (e) => {
+      config.elevenlabs.model = e.target.value;
+      saveConfig();
+    };
+  }
+
+  // ✨ 核心修复：音色预设卡片点击切换并持久化保存
+  container.querySelectorAll(".voice-chip").forEach((chip) => {
+    chip.onclick = () => {
+      const vId = chip.getAttribute("data-voice-id");
+      if (config.ttsPlatform === "minimax") {
+        config.minimax.voiceId = vId;
+      } else {
+        config.elevenlabs.voiceId = vId;
+      }
+      saveConfig();
+      container.querySelector("#api-sub-view-root").innerHTML =
+        renderCurrentSubTabHtml();
+      bindSubViewEvents(container);
+    };
+  });
+
+  // 自定义 Voice ID 输入保存
+  const customVoiceInput = container.querySelector("#cfg-custom-voice-id");
+  if (customVoiceInput) {
+    customVoiceInput.oninput = (e) => {
+      if (config.ttsPlatform === "minimax") {
+        config.minimax.customVoiceId = e.target.value.trim();
+      } else {
+        config.elevenlabs.customVoiceId = e.target.value.trim();
+      }
+      saveConfig();
+    };
+  }
+
+  // 密码显示/隐藏眼睛按钮
+  const mmEyeBtn = container.querySelector("#toggle-mm-key-eye");
+  if (mmEyeBtn && mmApiKeyInput) {
+    mmEyeBtn.onclick = () => {
+      mmApiKeyInput.type = mmApiKeyInput.type === "password" ? "text" : "password";
+    };
+  }
+  const elEyeBtn = container.querySelector("#toggle-el-key-eye");
+  if (elEyeBtn && elApiKeyInput) {
+    elEyeBtn.onclick = () => {
+      elApiKeyInput.type = elApiKeyInput.type === "password" ? "text" : "password";
+    };
+  }
+
+  // 试听文本保存与生成试听
+  const testTextInput = container.querySelector("#cfg-test-text");
+  if (testTextInput) {
+    testTextInput.oninput = (e) => {
+      config.testSpeechText = e.target.value;
+      saveConfig();
+    };
+  }
+
+  // ✨ 核心修复：生成并试听按钮事件与声波动画驱动
+  const playVoiceBtn = container.querySelector("#btn-play-voice-test");
+  if (playVoiceBtn) {
+    playVoiceBtn.onclick = async () => {
+      const text = (testTextInput && testTextInput.value.trim()) || "你好，语音配置连接正常。";
+      const statusText = container.querySelector("#audio-status-text");
+      const waveWrap = container.querySelector("#audio-wave-wrap");
+
+      if (statusText) statusText.textContent = "生成音频中...";
+      if (waveWrap) waveWrap.classList.add("playing");
+      playVoiceBtn.disabled = true;
+
+      try {
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(text);
+          utter.onend = () => {
+            if (statusText) statusText.textContent = "播放完毕";
+            if (waveWrap) waveWrap.classList.remove("playing");
+            playVoiceBtn.disabled = false;
+          };
+          utter.onerror = () => {
+            if (statusText) statusText.textContent = "播放失败";
+            if (waveWrap) waveWrap.classList.remove("playing");
+            playVoiceBtn.disabled = false;
+          };
+          window.speechSynthesis.speak(utter);
+          if (statusText) statusText.textContent = "正在播放...";
+        } else {
+          alert("当前浏览器环境不支持音频播放");
+          if (waveWrap) waveWrap.classList.remove("playing");
+          playVoiceBtn.disabled = false;
+        }
+      } catch (err) {
+        console.warn("TTS 播放出错:", err);
+        if (statusText) statusText.textContent = "试听失败";
+        if (waveWrap) waveWrap.classList.remove("playing");
+        playVoiceBtn.disabled = false;
+      }
+    };
+  }
 
   // 3. 记忆板块
   const sandboxSelect = container.querySelector("#sandbox-global-char-select");
@@ -1777,7 +1945,7 @@ function bindSubViewEvents(container) {
     };
   }
 
-   // 4. 读取板块事件
+  // 4. 读取板块事件
   const dropzone = container.querySelector("#doc-dropzone");
   const nativeFileInput = container.querySelector("#doc-file-native-input");
   const targetCharSelect = container.querySelector("#doc-target-char-select");
@@ -1803,7 +1971,7 @@ function bindSubViewEvents(container) {
           e.dataTransfer.files[0],
           targetCharSelect,
           docTitleInput,
-          container
+          container,
         );
       }
     };
@@ -1813,13 +1981,13 @@ function bindSubViewEvents(container) {
           e.target.files[0],
           targetCharSelect,
           docTitleInput,
-          container
+          container,
         );
       }
     };
   }
 
-   // ✨ 粘贴文本写入按钮事件绑定
+  // ✨ 粘贴文本写入按钮事件绑定
   const saveManualDocBtn = container.querySelector("#btn-save-manual-doc");
   const manualDocTextarea = container.querySelector("#doc-manual-textarea");
   if (saveManualDocBtn && manualDocTextarea) {
@@ -1829,8 +1997,11 @@ function bindSubViewEvents(container) {
         alert("请先粘贴或输入长篇文本内容！");
         return;
       }
-      const title = (docTitleInput && docTitleInput.value.trim()) || `文档_${new Date().toISOString().slice(5, 10)}`;
-      const charTarget = (targetCharSelect && targetCharSelect.value) || "__all__";
+      const title =
+        (docTitleInput && docTitleInput.value.trim()) ||
+        `文档_${new Date().toISOString().slice(5, 10)}`;
+      const charTarget =
+        (targetCharSelect && targetCharSelect.value) || "__all__";
       openDocPreviewModal(title, text, charTarget, container);
     };
   }
@@ -1845,7 +2016,8 @@ function bindSubViewEvents(container) {
       if (newTitle && newTitle.trim()) {
         targetDoc.title = newTitle.trim();
         saveDocumentVault();
-        container.querySelector("#api-sub-view-root").innerHTML = renderCurrentSubTabHtml();
+        container.querySelector("#api-sub-view-root").innerHTML =
+          renderCurrentSubTabHtml();
         bindSubViewEvents(container);
       }
     };
@@ -1860,7 +2032,8 @@ function bindSubViewEvents(container) {
       if (confirm(`确定要从知识库中删除【${title}】吗？`)) {
         documentVault = documentVault.filter((d) => d.id !== docId);
         saveDocumentVault();
-        container.querySelector("#api-sub-view-root").innerHTML = renderCurrentSubTabHtml();
+        container.querySelector("#api-sub-view-root").innerHTML =
+          renderCurrentSubTabHtml();
         bindSubViewEvents(container);
       }
     };
@@ -1874,7 +2047,8 @@ function bindSubViewEvents(container) {
       if (targetDoc) {
         targetDoc.active = e.target.checked;
         saveDocumentVault();
-        container.querySelector("#api-sub-view-root").innerHTML = renderCurrentSubTabHtml();
+        container.querySelector("#api-sub-view-root").innerHTML =
+          renderCurrentSubTabHtml();
         bindSubViewEvents(container);
       }
     };
@@ -1885,13 +2059,14 @@ function bindSubViewEvents(container) {
     btn.onclick = () => {
       config.retrieval.selectedCharFilter = btn.getAttribute("data-doc-filter");
       saveConfig();
-      container.querySelector("#api-sub-view-root").innerHTML = renderCurrentSubTabHtml();
+      container.querySelector("#api-sub-view-root").innerHTML =
+        renderCurrentSubTabHtml();
       bindSubViewEvents(container);
     };
   });
 
   // 5. 介绍板块
-   // 5. 介绍板块
+  // 5. 介绍板块
   const guideQueryInput = container.querySelector("#guide-query-input");
   const guideAskBtn = container.querySelector("#btn-guide-ask-ai");
 
@@ -1976,45 +2151,75 @@ function bindSubViewEvents(container) {
     };
   }
 
-  // 7. 总结板块
-  const exportFullBtn = container.querySelector("#btn-export-full-project");
+   // 7. 总结板块
+    const exportFullBtn = container.querySelector("#btn-export-full-project");
   if (exportFullBtn) {
     exportFullBtn.onclick = async () => {
-      exportFullBtn.innerHTML = `<span>正在打包全角色沙盒集群...</span>`;
+      exportFullBtn.innerHTML = `<span>正在打包全系统数据与所有图片...</span>`;
       exportFullBtn.style.opacity = "0.7";
 
+      // 1. 打包全量沙盒记忆、EchoVault 原文与聊天记录（包含聊天发送的照片）
       const allCharSandboxes = {};
-      userCharList.forEach((c) => {
+      const allEchoDailies = {};
+      const allEchoPerms = {};
+      const allChatHistories = {};
+
+      const fullCharList = JSON.parse(localStorage.getItem("mini_character_vault_full") || "[]");
+      const charNames = Array.from(new Set([...userCharList, ...fullCharList.map(c => c.name)]));
+
+      charNames.forEach((c) => {
+        if (!c) return;
         allCharSandboxes[c] = McpGateway.exportSingleCharBackup(c);
+        const safeC = encodeURIComponent(c);
+        allEchoDailies[c] = JSON.parse(localStorage.getItem(`echo_daily_${safeC}`) || "{}");
+        allEchoPerms[c] = JSON.parse(localStorage.getItem(`echo_perm_${safeC}`) || "[]");
+        allChatHistories[c] = JSON.parse(localStorage.getItem(`mini_chat_dialog_history_${safeC}`) || "[]");
       });
 
+      // 2. ✨ 扫描并打包全系统所有图片与主题资产
+      const allCustomMedia = {
+        storyAvatars: JSON.parse(localStorage.getItem("mini_story_avatars") || "[]"),
+        storySlots: JSON.parse(localStorage.getItem("mini_story_slots") || "[]"),
+        themeWallpaper: localStorage.getItem("mini_theme_wallpaper") || "",
+        customBackground: localStorage.getItem("mini_custom_background") || ""
+      };
+
+      // 3. 导出完整系统镜像包（包含全部 Base64 图片）
       const fullProjectBackup = {
         manifest: {
           app: "Mini Phone OS",
-          version: "2.5.0",
+          version: "3.5.0",
           backupAt: new Date().toISOString(),
+          hasMediaPackage: true,
           sandboxed: true,
         },
-        configurations: config,
+        config: config,
         apiPresets: savedPresets,
-        userPersonas: userPersonaList,
-        characters: userCharList,
+        currentActiveUser: localStorage.getItem("mini_current_active_user") || "温渡雪",
+        userPersonasFull: JSON.parse(localStorage.getItem("mini_user_personas_full") || "[]"),
+        userPersonas: JSON.parse(localStorage.getItem("mini_user_personas") || "[]"),
+        charactersFull: fullCharList,
+        characters: charNames,
+        activeChatList: JSON.parse(localStorage.getItem("mini_active_chat_list") || "[]"),
+        storyAvatars: allCustomMedia.storyAvatars,
+        customMedia: allCustomMedia,
+        chatHistories: allChatHistories,
         charSandboxes: allCharSandboxes,
+        echoDailies: allEchoDailies,
+        echoPerms: allEchoPerms,
         documents: documentVault,
+        favorites: JSON.parse(localStorage.getItem("mini_chat_favorites") || "[]"),
         mcpGatewayConfig: McpGateway.config,
       };
 
-      const jsonStr = config.compression.minifyJsonSchema
-        ? JSON.stringify(fullProjectBackup)
-        : JSON.stringify(fullProjectBackup, null, 2);
-
+      const jsonStr = JSON.stringify(fullProjectBackup, null, 2);
       const blob = new Blob([jsonStr], { type: "application/json" });
       triggerFileDownload(
         blob,
-        `MiniPhone_FullSandboxedBackup_${formatDateTag()}.miniphone.json`,
+        `MiniPhone_FullBackup_${new Date().toISOString().slice(0, 10)}.miniphone.json`,
       );
 
-      exportFullBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>全量备份导出成功！</span>`;
+      exportFullBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span>全量数据与图片导出成功！</span>`;
       exportFullBtn.style.opacity = "1";
 
       setTimeout(() => {
@@ -2248,57 +2453,165 @@ ${rawTextOrJson.slice(0, 15000)}
     bindSubViewEvents(container);
   }
 
-  const importFullBtn = container.querySelector("#btn-import-full-project");
-  const fullFileInput = container.querySelector("#full-backup-file-input");
-  if (importFullBtn && fullFileInput) {
+     const importFullBtn = container.querySelector("#btn-import-full-project");
+  const fullBackupFileInput = container.querySelector(
+    "#full-backup-file-input",
+  );
+  if (importFullBtn && fullBackupFileInput) {
     importFullBtn.onclick = () => {
-      fullFileInput.value = "";
-      fullFileInput.click();
+      fullBackupFileInput.value = "";
+      fullBackupFileInput.click();
     };
-    fullFileInput.onchange = (e) => {
+    fullBackupFileInput.onchange = (e) => {
       const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        try {
-          const parsed = JSON.parse(evt.target.result);
-          if (parsed && parsed.manifest && parsed.configurations) {
-            config = { ...config, ...parsed.configurations };
-            saveConfig();
-            if (Array.isArray(parsed.apiPresets)) {
-              savedPresets = parsed.apiPresets;
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          try {
+            const parsed = JSON.parse(evt.target.result);
+
+            // 1. 还原全局配置与 API 预设
+            if (parsed.config || parsed.configurations) {
+              config = parsed.config || parsed.configurations;
+              saveConfig();
+            }
+            if (Array.isArray(parsed.apiPresets) || Array.isArray(parsed.presets)) {
+              savedPresets = parsed.apiPresets || parsed.presets;
               savePresets();
+            }
+
+            // 2. 还原 User 画像全量档案
+            if (Array.isArray(parsed.userPersonasFull)) {
+              localStorage.setItem("mini_user_personas_full", JSON.stringify(parsed.userPersonasFull));
             }
             if (Array.isArray(parsed.userPersonas)) {
               userPersonaList = parsed.userPersonas;
               saveUserPersonaList();
             }
-            if (Array.isArray(parsed.characters)) {
-              userCharList = parsed.characters;
+            if (parsed.currentActiveUser) {
+              localStorage.setItem("mini_current_active_user", parsed.currentActiveUser);
+            }
+
+            // 3. 还原角色全量档案
+            if (Array.isArray(parsed.charactersFull)) {
+              localStorage.setItem("mini_character_vault_full", JSON.stringify(parsed.charactersFull));
+            }
+            if (Array.isArray(parsed.characters) || Array.isArray(parsed.userCharacters)) {
+              userCharList = parsed.characters || parsed.userCharacters;
               saveUserCharList();
             }
+
+            // 4. 还原聊天列表、5个圆圈栏与收藏
+            if (Array.isArray(parsed.activeChatList)) {
+              localStorage.setItem("mini_active_chat_list", JSON.stringify(parsed.activeChatList));
+            }
+            if (Array.isArray(parsed.storyAvatars)) {
+              localStorage.setItem("mini_story_avatars", JSON.stringify(parsed.storyAvatars));
+            }
+            if (Array.isArray(parsed.favorites)) {
+              localStorage.setItem("mini_chat_favorites", JSON.stringify(parsed.favorites));
+            }
+
+            // 5. 还原所有角色的独立聊天历史记录
+            if (parsed.chatHistories && typeof parsed.chatHistories === "object") {
+              Object.keys(parsed.chatHistories).forEach((cName) => {
+                const safeC = encodeURIComponent(cName);
+                localStorage.setItem(`mini_chat_dialog_history_${safeC}`, JSON.stringify(parsed.chatHistories[cName]));
+              });
+            }
+
+            // 6. 还原沙盒记忆库
+            if (parsed.charSandboxes && typeof parsed.charSandboxes === "object") {
+              Object.keys(parsed.charSandboxes).forEach((cName) => {
+                McpGateway.importSingleCharBackup(cName, parsed.charSandboxes[cName]);
+              });
+            }
+
+            // 7. 还原 EchoVault 原文日记与钉选
+            if (parsed.echoDailies && typeof parsed.echoDailies === "object") {
+              Object.keys(parsed.echoDailies).forEach((cName) => {
+                const safeC = encodeURIComponent(cName);
+                localStorage.setItem(`echo_daily_${safeC}`, JSON.stringify(parsed.echoDailies[cName]));
+              });
+            }
+            if (parsed.echoPerms && typeof parsed.echoPerms === "object") {
+              Object.keys(parsed.echoPerms).forEach((cName) => {
+                const safeC = encodeURIComponent(cName);
+                localStorage.setItem(`echo_perm_${safeC}`, JSON.stringify(parsed.echoPerms[cName]));
+              });
+            }
+
+            // 8. 还原投喂文档
             if (Array.isArray(parsed.documents)) {
               documentVault = parsed.documents;
               saveDocumentVault();
             }
-            if (parsed.charSandboxes) {
-              Object.keys(parsed.charSandboxes).forEach((cName) => {
-                McpGateway.importSingleCharBackup(
-                  cName,
-                  parsed.charSandboxes[cName],
-                );
-              });
-            }
-            alert("全量角色沙盒数据已成功还原！");
-            container.querySelector("#api-sub-view-root").innerHTML =
-              renderCurrentSubTabHtml();
-            bindSubViewEvents(container);
+
+            alert("🎉 全系统镜像已 100% 完整还原！包括用户身份、所有角色、全部聊天记录、会话列表与 API 预设。");
+            window.location.reload();
+          } catch (err) {
+            console.error(err);
+            alert("解析失败，请确保导入的是有效的 Mini Phone 全量备份 JSON 文件");
           }
-        } catch (err) {
-          alert("解析失败，请确保导入的是有效 JSON 文件");
+        };
+        reader.readAsText(file);
+      }
+    };
+  }
+
+     // ✨ 核心：全系统数据与所有上传图片彻底重置
+  const wipeAllDataBtn = container.querySelector(
+    "#btn-wipe-all-system-data",
+  );
+  if (wipeAllDataBtn) {
+    wipeAllDataBtn.onclick = () => {
+      const firstConfirm = window.confirm(
+        "【第一次确认 · 警告】\n\n确定要清空 Mini Phone OS 的所有本地数据与图片吗？\n\n包括：\n1. 5 个圆形头像框与所有已上传图片\n2. 所有角色头像、人设与沙盒记忆库\n3. 全部聊天图片、转账、礼物与对话记录\n4. EchoVault 原文日记与知识库设定文档\n5. API 端点预设与用户证件照画像"
+      );
+      if (!firstConfirm) return;
+
+      const secondConfirm = window.confirm(
+        "【第二次最终确认 · 不可恢复】\n\n所有数据与图片一旦清空将完全无法撤销或找回！\n\n请问您确定要立即彻底恢复出厂设置吗？"
+      );
+      if (!secondConfirm) return;
+
+      // 1. 显式将所有图片、头像、槽位、聊天列表重置为空白状态
+      const emptyKeys = [
+        "mini_story_avatars",
+        "mini_story_slots",
+        "mini_active_chat_list",
+        "mini_character_vault_full",
+        "mini_user_characters",
+        "mini_user_personas_full",
+        "mini_user_personas",
+        "mini_mcp_documents",
+        "mini_chat_favorites",
+        "mini_theme_wallpaper",
+        "mini_custom_background"
+      ];
+
+      emptyKeys.forEach(k => localStorage.setItem(k, "[]"));
+
+      // 2. 扫描并清除所有单个角色的独立聊天图片与记忆
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && (
+          k.startsWith("mini_chat_dialog_history_") ||
+          k.startsWith("mini_vault_") ||
+          k.startsWith("mini_character_memories_") ||
+          k.startsWith("echo_daily_") ||
+          k.startsWith("echo_perm_")
+        )) {
+          localStorage.removeItem(k);
         }
-      };
-      reader.readAsText(file);
+      }
+
+      // 3. 执行全量物理抹除
+      localStorage.clear();
+      sessionStorage.clear();
+
+      alert("全系统数据与所有上传图片已彻底清空并恢复出厂设置！");
+      window.location.href = window.location.pathname; // 强制无缓存刷新重载
     };
   }
 }
@@ -2317,7 +2630,7 @@ async function requestProjectGuideAI(userQuery) {
     if (preset) targetApi = preset;
   }
 
-    const systemPrompt = `你是由用户搭建的 Mini Phone OS 极简手机系统的【全项目专属 AI 首席指导助手】。
+  const systemPrompt = `你是由用户搭建的 Mini Phone OS 极简手机系统的【全项目专属 AI 首席指导助手】。
 请基于本系统的核心功能（API配置、沙盒记忆、EchoVault、知识库读取、聊天室多气泡/内嵌翻译/时区/重回/引用等）为用户提供详尽、准确的说明（严禁任何 Emoji）。`;
 
   if (targetApi.apiKey && targetApi.baseUrl) {
@@ -2361,14 +2674,23 @@ async function requestProjectGuideAI(userQuery) {
     return `【旧机搬家记忆导入指南】：\n\n1. 选定目标角色：在「记忆」板块顶部下拉菜单选中你要搬入的角色沙盒；\n2. 上传/粘贴历史记录：在「旧机搬家」页面上传旧手机导出的 .json / .txt 对话备份，或直接粘贴聊天记录；\n3. 一键提炼：点击「一键提炼并注入记忆沙盒」，系统会自动解析关键事实与专属羁绊，直接写入该角色的专属大脑中。`;
   } else if (userQuery.includes("翻译") || userQuery.includes("时区")) {
     return `【内嵌翻译与现实时区感知使用指南】：\n\n1. 入口：进入角色聊天室，点击右上角「设置」；\n2. 母语与内嵌翻译：选择角色主要语言（如日语/英语/韩语），开启「启用气泡内嵌翻译」，Char 思考回复时会一并生成中文并内嵌在气泡底部；\n3. 现实时间感知：开启后选择角色所在时区（如东京/首尔/伦敦/纽约），Char 会实时感知物理时差与昼夜作息。`;
-  } else if (userQuery.includes("重回") || userQuery.includes("撤回") || userQuery.includes("引用")) {
+  } else if (
+    userQuery.includes("重回") ||
+    userQuery.includes("撤回") ||
+    userQuery.includes("引用")
+  ) {
     return `【重回、引用与撤回操作指南】：\n\n1. 重回本轮 (Rewind)：在底部「更多」点击「重回」，撤销角色上轮回复，可输入期望的风格导向（如“更傲娇一点”）让角色基于人设重新思考；\n2. 气泡菜单：轻点任意气泡弹出菜单，支持「引用」精准回复、「收藏」以及「多选删除」；\n3. 消息撤回：支持撤回 2 分钟内的自发消息，撤回后生成提示条，Char 会捕捉撤回动作并做出自然情绪反应。`;
   }
 
   return `【项目功能说明】：\n\n- API 设置：配置各大模型端点与密钥；\n- 记忆中枢：融合 McpGateway 沙盒与 EchoVault 原生记忆；\n- 聊天室：支持 12 大富媒体交互工具、面对面模式与沉浸式通话。`;
 }
 
-function processUploadedDocFile(file, targetCharSelect, docTitleInput, container) {
+function processUploadedDocFile(
+  file,
+  targetCharSelect,
+  docTitleInput,
+  container,
+) {
   const reader = new FileReader();
   reader.onload = (evt) => {
     const textContent = evt.target.result;
@@ -2378,7 +2700,8 @@ function processUploadedDocFile(file, targetCharSelect, docTitleInput, container
     }
     const defaultTitle = file.name.replace(/\.[^/.]+$/, "");
     const title = (docTitleInput && docTitleInput.value.trim()) || defaultTitle;
-    const charTarget = (targetCharSelect && targetCharSelect.value) || "__all__";
+    const charTarget =
+      (targetCharSelect && targetCharSelect.value) || "__all__";
 
     // 呼出本轮文件内容预览弹窗
     openDocPreviewModal(title, textContent, charTarget, container);
@@ -2388,7 +2711,12 @@ function processUploadedDocFile(file, targetCharSelect, docTitleInput, container
 /**
  * ✨ INS 极简白黑风：文档读取内容展示与即时重命名弹窗
  */
-function openDocPreviewModal(initialTitle, content, defaultTarget = "__all__", container) {
+function openDocPreviewModal(
+  initialTitle,
+  content,
+  defaultTarget = "__all__",
+  container,
+) {
   const charCount = content.length;
   const tokens = Math.ceil(charCount / 1.8);
   const chunksCount = Math.max(1, Math.ceil(charCount / 400));
@@ -2417,7 +2745,7 @@ function openDocPreviewModal(initialTitle, content, defaultTarget = "__all__", c
             <label style="font-size: 8.5px; font-weight: 800; color: #888;">绑定角色 / TARGET</label>
             <select class="api-select" id="doc-preview-target-select" style="padding: 4px 6px; font-size: 10px; background: #FFF;">
               <option value="__all__" ${defaultTarget === "__all__" ? "selected" : ""}>全角色共享 (GLOBAL)</option>
-              ${chars.map(c => `<option value="${c}" ${defaultTarget === c ? "selected" : ""}>仅 ${c} 认知</option>`).join("")}
+              ${chars.map((c) => `<option value="${c}" ${defaultTarget === c ? "selected" : ""}>仅 ${c} 认知</option>`).join("")}
             </select>
           </div>
           <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 9px; color: #888;">
@@ -2449,8 +2777,12 @@ function openDocPreviewModal(initialTitle, content, defaultTarget = "__all__", c
   modal.querySelector("#btn-cancel-doc-preview").onclick = closeModal;
 
   modal.querySelector("#btn-confirm-doc-preview").onclick = () => {
-    const finalTitle = modal.querySelector("#doc-preview-title-input")?.value.trim() || initialTitle || "未命名设定";
-    const finalTarget = modal.querySelector("#doc-preview-target-select")?.value || "__all__";
+    const finalTitle =
+      modal.querySelector("#doc-preview-title-input")?.value.trim() ||
+      initialTitle ||
+      "未命名设定";
+    const finalTarget =
+      modal.querySelector("#doc-preview-target-select")?.value || "__all__";
 
     addDocumentToVault(finalTitle, content, finalTarget);
     closeModal();
@@ -2459,7 +2791,10 @@ function openDocPreviewModal(initialTitle, content, defaultTarget = "__all__", c
     if (manualDocTextarea) manualDocTextarea.value = "";
 
     const root = document.getElementById("api-sub-view-root");
-    const parentContainer = container || document.querySelector(".api-settings-container") || document.body;
+    const parentContainer =
+      container ||
+      document.querySelector(".api-settings-container") ||
+      document.body;
     if (root) {
       root.innerHTML = renderCurrentSubTabHtml();
       bindSubViewEvents(parentContainer);

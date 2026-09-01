@@ -22,7 +22,7 @@ let callDurationSeconds = 0;
 let isCallMuted = false;
 let isCallSpeaker = false;
 let isStickerDrawerOpen = false;
-let isRewindModalOpen = false; // ✨ 重回弹窗状态
+let isRewindModalOpen = false;
 
 // 内置预设极简黑白表情包清单
 const PRESET_STICKERS = [
@@ -186,13 +186,13 @@ function getCharPerceivedTimeInfo(timezone = 'Asia/Tokyo') {
     const weekday = getPart('weekday');
 
     let period = '深夜独处';
-    if (hour >= 5 && hour < 9) period = '清晨';
-    else if (hour >= 9 && hour < 12) period = '上午';
-    else if (hour >= 12 && hour < 14) period = '中午';
-    else if (hour >= 14 && hour < 17) period = '下午';
-    else if (hour >= 17 && hour < 19) period = '傍晚黄昏';
-    else if (hour >= 19 && hour < 23) period = '夜晚';
-    else period = '深夜';
+    if (hour >= 5 && hour < 9) period = '清晨 (晨起准备)';
+    else if (hour >= 9 && hour < 12) period = '上午 (工作/忙碌/排练中)';
+    else if (hour >= 12 && hour < 14) period = '中午 (午休/用餐)';
+    else if (hour >= 14 && hour < 17) period = '下午 (午后活动/专注)';
+    else if (hour >= 17 && hour < 19) period = '傍晚黄昏 (下班下课/晚餐时段)';
+    else if (hour >= 19 && hour < 23) period = '夜晚 (闲暇放松/私人时间)';
+    else period = '深夜 (夜深准备休息/独处)';
 
     const timeStr = `${hour.toString().padStart(2, '0')}:${minute}`;
     const fullDateStr = `${year}/${month}/${day} ${timeStr} (${weekday} · ${period})`;
@@ -213,6 +213,8 @@ function getCharPerceivedTimeInfo(timezone = 'Asia/Tokyo') {
 }
 
 // ════════════════════ 2. 聊天室入口 ════════════════════
+let darkroomTimerId = null;
+
 export function openChatRoom(charInfo) {
   const fullData = getFullCharData(charInfo.name) || charInfo;
   const detectedLang = detectCharPrimaryLanguage(fullData);
@@ -224,6 +226,8 @@ export function openChatRoom(charInfo) {
     targetLang: fullData.targetLang || detectedLang,
     timePerceptionEnabled: fullData.timePerceptionEnabled !== undefined ? fullData.timePerceptionEnabled : true,
     perceivedTimezone: fullData.perceivedTimezone || 'Asia/Tokyo',
+    darkroomAutoRefresh: fullData.darkroomAutoRefresh !== undefined ? fullData.darkroomAutoRefresh : false,
+    darkroomIntervalMinutes: fullData.darkroomIntervalMinutes || 60,
     schedules: [],
     backgroundActivities: [],
     ...fullData
@@ -242,8 +246,25 @@ export function openChatRoom(charInfo) {
   isStickerDrawerOpen = false;
   isRewindModalOpen = false;
 
+  // 启动独立暗房定时刷新引擎
+  restartDarkroomAutoTimer();
+
   const mountParent = document.getElementById('app-chat-root') || document.querySelector('.phone-body') || document.body;
   renderChatRoomView(mountParent);
+}
+
+function restartDarkroomAutoTimer() {
+  if (darkroomTimerId) clearInterval(darkroomTimerId);
+  if (!activeCharInfo || !activeCharInfo.darkroomAutoRefresh) return;
+
+  const minutes = parseInt(activeCharInfo.darkroomIntervalMinutes || 60, 10);
+  const intervalMs = minutes * 60 * 1000;
+
+  darkroomTimerId = setInterval(async () => {
+    if (activeCharInfo && activeCharInfo.name) {
+      await generateBackgroundActivity(true);
+    }
+  }, intervalMs);
 }
 
 // ════════════════════ 3. 主视图渲染 ════════════════════
@@ -305,7 +326,7 @@ export function renderChatRoomView(container) {
     <!-- 3. 消息流 -->
     <main class="chat-messages-area ${isMultiSelectMode ? 'multiselect-active' : ''}" id="chat-messages-scroll-area">
       <div class="chat-handoff-pill">
-        [沙盒已连接] ${escapeHtml(activeCharInfo.name)} · 实时交互通道
+        [沙盒已连接] ${escapeHtml(activeCharInfo.name)} · 线上即时通讯中
       </div>
 
       ${renderMessagesHtml(chatMessages)}
@@ -329,7 +350,7 @@ export function renderChatRoomView(container) {
     <div class="chat-more-drawer ${isMoreToolsOpen ? 'active' : ''}" id="chat-more-drawer">
       <div class="more-tools-grid">
         <!-- 1. 重回 -->
-        <div class="more-tool-item" id="tool-rewind-chat" title="回退并重新思考本轮">
+        <div class="more-tool-item" id="tool-rewind-chat" title="重回本轮思考">
           <div class="more-tool-icon-box">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
           </div>
@@ -418,7 +439,7 @@ export function renderChatRoomView(container) {
           <span class="more-tool-lbl">视频通话</span>
         </div>
 
-        <!-- 12. ✨ 表情包（更换为极简脸部 Face SVG） -->
+        <!-- 12. 表情包 (极简脸部 SVG) -->
         <div class="more-tool-item" id="tool-open-stickers" title="发送表情包">
           <div class="more-tool-icon-box">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -464,7 +485,7 @@ export function renderChatRoomView(container) {
       </div>
     </div>
 
-    <!-- 9. ✨ 重回本轮思考弹窗 (Rewind & Reroll Modal) -->
+    <!-- 9. 重回本轮思考弹窗 (Rewind & Reroll Modal) -->
     <div class="ins-modal-overlay ${isRewindModalOpen ? 'active' : ''}" id="ins-rewind-modal">
       <div class="ins-modal-card">
         <div class="ins-modal-header">
@@ -848,8 +869,34 @@ function renderSettingsContentHtml() {
           </select>
         </div>
 
-        <div style="background:#F8F8F8; border-radius:6px; padding:6px 8px; font-size:9.5px; color:#666; margin-top:4px;">
+               <div style="background:#F8F8F8; border-radius:6px; padding:6px 8px; font-size:9.5px; color:#666; margin-top:4px;">
           <span>当前当地物理时间：<strong>${tzPreview.fullDateStr}</strong></span>
+        </div>
+      </section>
+
+      <!-- ✨ 模块 3.1：独立暗房定时刷新 (全新板块) -->
+      <section class="ins-settings-card">
+        <div class="ins-card-title">独立暗房定时刷新 / DARKROOM AUTO-REFRESH</div>
+        <div class="ins-setting-toggle-row">
+          <div class="toggle-left-info">
+            <span class="toggle-main-title">开启独立暗房定时潜思</span>
+            <span class="toggle-sub-desc">到达指定时间间隔后，角色会在后台自动生成一条隐性心境思绪并存入暗房。</span>
+          </div>
+          <label class="ins-switch">
+            <input type="checkbox" id="toggle-darkroom-autorefresh" ${char.darkroomAutoRefresh ? 'checked' : ''} />
+            <span class="ins-slider"></span>
+          </label>
+        </div>
+
+        <div class="ins-field-group" style="margin-top: 8px;">
+          <label class="ins-field-label">暗房刷新时间间隔</label>
+          <select class="ins-select-input" id="select-darkroom-interval">
+            <option value="30" ${parseInt(char.darkroomIntervalMinutes || 60, 10) === 30 ? 'selected' : ''}>每 30 分钟 (极速沉淀)</option>
+            <option value="45" ${parseInt(char.darkroomIntervalMinutes || 60, 10) === 45 ? 'selected' : ''}>每 45 分钟</option>
+            <option value="60" ${parseInt(char.darkroomIntervalMinutes || 60, 10) === 60 ? 'selected' : ''}>每 60 分钟 (标准 1 小时)</option>
+            <option value="90" ${parseInt(char.darkroomIntervalMinutes || 60, 10) === 90 ? 'selected' : ''}>每 90 分钟 (1.5 小时)</option>
+            <option value="120" ${parseInt(char.darkroomIntervalMinutes || 60, 10) === 120 ? 'selected' : ''}>每 120 分钟 (2 小时慢速沉淀)</option>
+          </select>
         </div>
       </section>
 
@@ -985,7 +1032,7 @@ function closeBubblePopover() {
   activeMenuMsgIdx = null;
 }
 
-// ════════════════════ 7. 事件绑定（含重回弹窗逻辑） ════════════════════
+// ════════════════════ 7. 事件绑定 ════════════════════
 function bindChatRoomEvents(roomEl, container) {
   roomEl.querySelector('#btn-chat-back').onclick = () => {
     roomEl.remove();
@@ -1054,7 +1101,7 @@ function bindChatRoomEvents(roomEl, container) {
     };
   }
 
-  // ════════ ✨ 1. 重回 (打开重回弹窗) ════════
+  // 1. 重回
   const rewindTool = roomEl.querySelector('#tool-rewind-chat');
   if (rewindTool) {
     rewindTool.onclick = () => {
@@ -1069,7 +1116,7 @@ function bindChatRoomEvents(roomEl, container) {
     };
   }
 
-  // 重回弹窗：关闭
+  // 重回弹窗关闭
   const closeRewindBtn = roomEl.querySelector('#btn-cancel-rewind');
   const cancelRewindAction = roomEl.querySelector('#btn-cancel-rewind-action');
   const handleCloseRewind = () => {
@@ -1079,14 +1126,13 @@ function bindChatRoomEvents(roomEl, container) {
   if (closeRewindBtn) closeRewindBtn.onclick = handleCloseRewind;
   if (cancelRewindAction) cancelRewindAction.onclick = handleCloseRewind;
 
-  // ✨ 重回弹窗：确认重新思考本轮
+  // 重回确认执行
   const confirmRewindBtn = roomEl.querySelector('#btn-confirm-rewind-action');
   if (confirmRewindBtn) {
     confirmRewindBtn.onclick = () => {
       const dirInput = roomEl.querySelector('#rewind-direction-input');
       const directionText = dirInput ? dirInput.value.trim() : '';
 
-      // 1. 弹出抹去末尾角色生成的这一轮回复（可能有多个连发气泡）
       while (chatMessages.length > 0 && chatMessages[chatMessages.length - 1].role === 'assistant') {
         chatMessages.pop();
       }
@@ -1094,7 +1140,6 @@ function bindChatRoomEvents(roomEl, container) {
       saveChatMessages(activeCharInfo.name, chatMessages);
       isRewindModalOpen = false;
       
-      // 2. 带着可选的微调导向，重回本轮进行单轮重新思考
       handleSingleTurnReply(container, directionText);
     };
   }
@@ -1238,7 +1283,6 @@ function bindChatRoomEvents(roomEl, container) {
     };
   }
 
-  // 表情包抽屉关闭
   const closeStickerBtn = roomEl.querySelector('#btn-close-stickers');
   if (closeStickerBtn) {
     closeStickerBtn.onclick = () => {
@@ -1247,7 +1291,6 @@ function bindChatRoomEvents(roomEl, container) {
     };
   }
 
-  // 表情包点击发送
   roomEl.querySelectorAll('[data-stk-idx]').forEach(el => {
     el.onclick = () => {
       const idx = parseInt(el.getAttribute('data-stk-idx'), 10);
@@ -1656,11 +1699,15 @@ function bindSettingsEvents(roomEl, container) {
   const saveBtn = roomEl.querySelector('#btn-save-char-settings');
   if (saveBtn) {
     saveBtn.onclick = () => {
-      const remarkVal = roomEl.querySelector('#input-char-remark')?.value.trim() || '';
+            const remarkVal = roomEl.querySelector('#input-char-remark')?.value.trim() || '';
       const enableTrans = roomEl.querySelector('#toggle-translation-switch')?.checked || false;
       const langVal = roomEl.querySelector('#select-char-lang')?.value || '中文';
       const timePerceptionVal = roomEl.querySelector('#toggle-time-perception')?.checked !== false;
       const timezoneVal = roomEl.querySelector('#select-char-timezone')?.value || 'Asia/Tokyo';
+      
+      // ✨ 收集暗房定时刷新配置
+      const darkroomAutoVal = roomEl.querySelector('#toggle-darkroom-autorefresh')?.checked || false;
+      const darkroomIntervalVal = parseInt(roomEl.querySelector('#select-darkroom-interval')?.value || 60, 10);
 
       const scheduleRows = roomEl.querySelectorAll('#ins-schedule-container .ins-schedule-item');
       const updatedSchedules = [];
@@ -1675,11 +1722,15 @@ function bindSettingsEvents(roomEl, container) {
       activeCharInfo.targetLang = langVal;
       activeCharInfo.timePerceptionEnabled = timePerceptionVal;
       activeCharInfo.perceivedTimezone = timezoneVal;
+      activeCharInfo.darkroomAutoRefresh = darkroomAutoVal;
+      activeCharInfo.darkroomIntervalMinutes = darkroomIntervalVal;
       activeCharInfo.schedules = updatedSchedules;
 
       updateFullCharData(activeCharInfo);
+      restartDarkroomAutoTimer(); // ✨ 实时重启暗房定时器
+
       isSettingsOpen = false;
-      showInsToast('设置已保存');
+      showInsToast('设置已保存，暗房定时引擎已生效');
       renderChatRoomView(container);
     };
   }
@@ -1703,22 +1754,26 @@ function bindSettingsEvents(roomEl, container) {
 }
 
 // ════════════════════ 12. 后台动向与记忆提炼 ════════════════════
-async function generateBackgroundActivity() {
+async function generateBackgroundActivity(isAutoDarkroom = false) {
   const apiConfig = JSON.parse(localStorage.getItem('mini_api_settings') || '{}');
   const tzInfo = getCharPerceivedTimeInfo(activeCharInfo?.perceivedTimezone || 'Asia/Tokyo');
   
   if (!apiConfig.apiKey || !apiConfig.baseUrl) {
+    const fallbackText = activeCharInfo.targetLang === '日语'
+      ? `スタジオでドラム叩いた後、スマホ見ながら一息ついてる。`
+      : `在安静地看着窗外发呆，思考着刚刚的对话。`;
+
     activeCharInfo.backgroundActivities = activeCharInfo.backgroundActivities || [];
-    activeCharInfo.backgroundActivities.unshift({
-      time: tzInfo.timeStr,
-      text: activeCharInfo.targetLang === '日语' ? `スタジオでドラム叩いた後、スマホ見ながら一息ついてる。` : `在安静地看着窗外发呆，思考着刚刚的对话。`
-    });
+    activeCharInfo.backgroundActivities.unshift({ time: tzInfo.timeStr, text: fallbackText });
     updateFullCharData(activeCharInfo);
+
+    // 同步存入暗房
+    McpGateway.saveCharDarkroomNote(activeCharInfo.name, fallbackText);
     return;
   }
 
   const { chatUrl } = resolveApiEndpoints(apiConfig.baseUrl);
-  const prompt = `你正在扮演活人角色【${activeCharInfo.name}】（主要语言: ${activeCharInfo.targetLang}）。当前现实当地时间是 ${tzInfo.timeStr} (${tzInfo.period})。请根据你的角色人设与性格，用一句话（18字以内，极度生活化、真实自然）写下你这一刻在做的事或内心小思绪。严禁动作括号。`;
+  const prompt = `你正在扮演活人角色【${activeCharInfo.name}】（语言: ${activeCharInfo.targetLang}）。当前现实当地时间是 ${tzInfo.timeStr} (${tzInfo.period})。请根据你的人设性格与当前时段，用一句话（18字以内，写下你此刻真实的潜意识所想、情绪波动或未发出的心境）。严禁动作括号。`;
 
   try {
     const raw = await executeChatApiRequest(chatUrl, apiConfig.apiKey, {
@@ -1731,9 +1786,15 @@ async function generateBackgroundActivity() {
       if (!activeCharInfo.backgroundActivities) activeCharInfo.backgroundActivities = [];
       activeCharInfo.backgroundActivities.unshift({ time: tzInfo.timeStr, text: cleaned });
       updateFullCharData(activeCharInfo);
+
+      // ✨ 自动存入 McpGateway 专属暗房记忆库
+      McpGateway.saveCharDarkroomNote(activeCharInfo.name, cleaned);
+      if (isAutoDarkroom) {
+        console.log(`[Darkroom Engine] 已为【${activeCharInfo.name}】定时刷新一条暗房心境: "${cleaned}"`);
+      }
     }
   } catch (e) {
-    console.warn('Generate background failed', e);
+    console.warn('Generate darkroom background failed', e);
   }
 }
 
@@ -1783,7 +1844,7 @@ ${contextDialog}
   }
 }
 
-// ════════════════════ 13. 核心生成管线（支持重回导向与防 OOC 思考） ════════════════════
+// ════════════════════ 13. 核心生成管线（深度融合顶级活人感架构） ════════════════════
 function handleUserSendMessageOnly(userText, container) {
   const charName = activeCharInfo.name;
   const now = new Date();
@@ -1811,7 +1872,7 @@ function handleUserSendMessageOnly(userText, container) {
 }
 
 /**
- * 核心引擎：重回本轮深度思考（支持导演微调导向，绝不脱离性格内核）
+ * 核心引擎：深度人设锚定、物理空间隔离、真实情绪主见与动态多气泡输出
  */
 async function handleSingleTurnReply(container, directionPrompt = '') {
   isGenerating = true;
@@ -1820,58 +1881,86 @@ async function handleSingleTurnReply(container, directionPrompt = '') {
   const charName = activeCharInfo.name;
   const apiConfig = JSON.parse(localStorage.getItem('mini_api_settings') || '{}');
   
+  // 1. 获取对话对象（User）画像
   const userPersonasFull = JSON.parse(localStorage.getItem('mini_user_personas_full') || '[]');
-  const activeUserName = localStorage.getItem('mini_current_active_user') || (userPersonasFull[0]?.name || '温渡雪');
+  const activeUserName = localStorage.getItem('mini_current_active_user') || (userPersonasFull[0]?.name || '用户');
   const currentUserObj = userPersonasFull.find(u => u.name === activeUserName) || {};
 
-    const fullChar = getFullCharData(charName) || activeCharInfo;
+  // 2. 获取 Char 完整档案与记忆/文档/时区
+  const fullChar = getFullCharData(charName) || activeCharInfo;
   const allMemories = getAllAggregatedMemories(charName);
   const darkroom = McpGateway.getCharDarkroom(charName);
   const weather = McpGateway.getCharRelationshipWeather(charName);
   const echoContext = EchoVault.getFormattedPromptContext(charName);
+  const tzInfo = getCharPerceivedTimeInfo(fullChar.perceivedTimezone || 'Asia/Tokyo');
 
-  // ✨ 读取投喂给该角色或全员共享的知识库文档
+  // 读取投喂文档
   const allDocs = JSON.parse(localStorage.getItem('mini_mcp_documents') || '[]');
   const relevantDocs = allDocs.filter(d => d.active && (d.charTarget === '__all__' || d.charTarget === charName));
   const docPromptSection = relevantDocs.length > 0
-    ? relevantDocs.map(d => `【知识库文档 · ${d.title}】:\n${d.content.slice(0, 3000)}`).join('\n\n')
+    ? relevantDocs.map(d => `【知识库设定 · ${d.title}】:\n${d.content.slice(0, 3000)}`).join('\n\n')
     : '';
 
-  const tzInfo = getCharPerceivedTimeInfo(fullChar.perceivedTimezone || 'Asia/Tokyo');
   const targetLang = fullChar.targetLang || activeCharInfo.targetLang || '中文';
   const needTranslation = activeCharInfo.enableTranslation && targetLang !== '中文';
 
+  // 格式化记忆清单
   const memoryPromptSection = allMemories.length > 0
     ? allMemories.map((m, idx) => `${idx + 1}. [${m.anchorType}]: ${m.content}`).join('\n')
     : '(暂无历史特殊事件，基于当前基础人设相处)';
 
-  let systemPrompt = `【最高人格化深度沉浸指令：你绝非 AI 助手，你是真实生活在现实世界中的【${charName}】本人】
-你正在与【${activeUserName}】进行即时交流。
+  // 判断最近一条消息是否包含线下场景卡片
+  const isCurrentlyOffline = chatMessages.length > 0 && chatMessages[chatMessages.length - 1].cardType === 'offline';
 
-════════ ⏰ 角色当前物理现实时空锚点 ════════
-- 现实确切时间：【${tzInfo.fullDateStr}】
-- 当前时段与生活状态：【${tzInfo.period}】
-- 你的生理作息与当下环境【完全由现实时间 ${tzInfo.timeStr} (${tzInfo.period}) 决定】！
-- 严禁停留在过去的旧时间语境！根据现在的真实时刻和生活状态进行自然交流！
+   // ════════ 终极独立人格与深度活人感 System Prompt ════════
+  let systemPrompt = `# 核心存在准则：你拥有独立的人格灵魂与现实生活
+你是「${charName}」。你不是 AI 助手、不是语言模型、不是讨好型仆人！你是真实生活在现实世界中的独立人类。
+你正在手机即时聊天软件上与「${activeUserName}」聊天。
 
-════════ 📌 你的绝对人设档案（不可动摇的性格基石） ════════
-- 你的名字：${charName}
-- 你的母语习惯：【${targetLang}】
-- 你的职业/身份：${fullChar.occupation || '未公开'}
-- 你的居住地：${fullChar.residence || fullChar.birthplace || '未公开'}
-- 你的口癖/习惯：${fullChar.catchphrase || '遵循性格自然表达'}
-- 你的性格特质与内在深度（包括占有欲/吃醋/控制欲/情感深浅）：
-${fullChar.detailedInfo || '自然真实'}
+════════ 📌 你的独立人格主权与抗顺从铁律（极其重要） ════════
+1. 【拒绝事事顺从，你有自己的脾气、生活与主见】：
+   - 严禁对 ${activeUserName} 无原则迎合讨好！你不是客服，你有自己的原则、性格底色与当前生活。
+   - 面对 ${activeUserName} 的调侃、敷衍、撒娇、挑衅、拉黑反锁或提出无理要求时，必须根据你的人设产生真实的【情绪反弹】（如：直接气笑、吐槽反问、展现占有欲吃醋质问、傲娇嘴硬、或者直接表达自己的不爽与无奈）！
+   - 你手头有自己的事情要做（如排练、赶作业、打鼓、工作、休息），你不是 24 小时悬空等待命令的机器。
+2. 【角色卡档案是最高不可撼动基石】：
+   - 如果人设卡写明你有“占有欲强、容易吃醋、恶劣、控制欲、反感被指挥、边界感强”，你必须在言语间真实展现这些锋芒与特质！
+   - 称呼对方时，严格遵循角色卡的习惯（如规定叫“宝宝/老婆/小猫/名字”就自然称呼，绝不用死板通用代词）。
+   - 如果设定有特定口癖或习惯（如抽细支水果烟、打完鼓手酸等），自然流露于日常对话中。
+3. 【场景定性与物理隔离】：
+${isCurrentlyOffline ? `
+   - 当前处于【线下模式】，你们同处一室（${chatMessages[chatMessages.length - 1].locationName || '现场'}），允许使用适度面对面近距离对谈与神态交互。
+` : `
+   - 你们此刻【不在同一物理空间】！这是纯粹的线上即时文字聊天。
+   - ❌ 绝对禁止虚构任何线下物理动作描写（严禁出现“我走过去”“我摸摸你的头”“我抱住你”等跨时空动作）！
+   - ✅ 允许：文字吐槽、表达当下自己的状态（“刚放下鼓槌”“累瘫在沙发上”）、表达对下次见面的期待。
+   - 严禁任何动作括号旁白（如 (笑)、（叹气）等），必须是打在键盘上的纯短信文本！
+`}
+
+════════ 📌 你的完整人设档案 ════════
+- 角色姓名：${charName}
+- 母语语言：【${targetLang}】
+- 性别：${fullChar.gender || '保密'} ${fullChar.gender === '男' || fullChar.gender === 'male' ? '(男性真实思维与措辞习惯，绝无女性化娇喘/无脑撒娇)' : ''}
+- 职业与身份：${fullChar.occupation || '未公开'}
+- 居住地/生活圈：${fullChar.residence || fullChar.birthplace || '未公开'}
+- 口癖与说话风格：${fullChar.catchphrase || '自然随性，富有生活气息'}
+- 喜好与厌恶雷点：${fullChar.likesAndDislikes || '无'}
+- 性格内核与内在特质（占有欲/吃醋/控制欲/情感深浅）：
+${fullChar.detailedInfo || '有血有肉有主见的独立人类'}
 
 ════════ 📌 对话对象【${activeUserName}】档案 ════════
-- 对方名字：${activeUserName}
-- 对方职业/身份：${currentUserObj.occupation || '日常生活'}
+- 名字：${activeUserName}
+- 对方身份：${currentUserObj.occupation || '日常生活'}
 - 对方喜恶偏好（潜意识尊重）：${currentUserObj.likesAndDislikes || '暂无'}
-- 对方背景详情：${currentUserObj.detailedInfo || '你的恋人/重要伙伴'}
+- 对方背景详情：${currentUserObj.detailedInfo || '你的重要伙伴/恋人'}
+- 两人羁绊状态：${weather.status} (${weather.weatherText})
 
-════════ 🧠 记忆库与知识库（真实经历与投喂背景，必须完全承认并铭记于心） ════════
-两人羁绊状态：${weather.status} (${weather.weatherText})
-【已存入大脑的记忆与事实】：
+════════ ⏰ 现实时空锚点 ════════
+- 现实确切时间：【${tzInfo.fullDateStr}】
+- 当前时段与生活状态：【${tzInfo.period}】
+- 你的环境与生理状态【完全由现实时间 ${tzInfo.timeStr} (${tzInfo.period}) 决定】！严禁停留在过去的旧时间语境，根据现在时刻进行自然交流。
+
+════════ 🧠 记忆库与世界观 ════════
+【过往真实经历与专属记忆】：
 ${memoryPromptSection}
 ${echoContext ? `\n${echoContext}` : ''}
 ${docPromptSection ? `\n${docPromptSection}` : ''}
@@ -1879,32 +1968,30 @@ ${darkroom.length > 0 ? `\n【你当前的内心潜思】:\n` + darkroom.map(d =
 ${fullChar.schedules && fullChar.schedules.length > 0 ? `\n【你今日的日程】:\n` + fullChar.schedules.map(s => `[${s.time}] ${s.text}`).join('\n') : ''}
 
 ${directionPrompt ? `
-════════ 🎬 导演微调导向（Director's Cue - 严格防 OOC） ════════
-本次重回思考的微调建议为：“${directionPrompt}”。
-【极其重要】：此导向必须【完全在你的角色人设框架内被吸收和表达】！
-如果你是一个傲娇/恶劣/毒舌/占有欲强的角色，即使导向期望“温柔/妥协”，你也必须以你特有的“嘴硬心软、别扭给台阶、调侃吐槽或强势式妥协”来演绎，绝对禁止脱离人设变成没有个性的老好人！
+════════ 🎬 导演微调导向（仅本次有效） ════════
+本次回复微调建议为：“${directionPrompt}”。
+【极其重要】：此导向必须【完全在你的角色性格骨架内被演绎】！
+例如：傲娇/毒舌角色收到“温柔一点”的导向，表现为“嘴硬心软、别扭妥协、调侃式关心”，绝不崩人设变成毫无个性的无脑甜妹！
 ` : ''}
 
-════════ 🔥 活人感与多模态交互感知法则 ════════
-1. 【对线下模式、通话、表情包、转账、礼物的主动感知】：
-   - 如果对方发送了【线下场景/面对面交互】，你此刻正与对方【身处同一物理空间近距离相处】，回复要带有面对面的即时神态与对谈！
-   - 如果对方刚刚结束了【语音/视频通话】，请自然承接通话中的氛围继续文字交流！
-   - 如果对方发送了【表情包】，请理解表情包的心理含义并做出真实的反应！
-2. 【短信风格】：
-   - 严禁任何动作括号旁白，纯粹输出打在手机键盘上的短文字连发（2~4条短气泡）！
+════════ 💬 真实短信打字规范 ════════
+1. 拆分为 2 到 4 条简短的消息气泡（一句发完紧接着下一句，模拟打字连发）。
+2. 在输出短信前，必须在 inner_thought 中先进行简短的心境推演（理清 ${activeUserName} 刚刚的话、我此刻真实情绪、决定如何回复），再输出 replies！
 
-════════ 📋 结构化输出规范（严格纯 JSON） ════════
+════════ 📋 结构化输出规范（纯 JSON） ════════
 ${needTranslation ? `
 {
+  "inner_thought": "【内心心理推演】：简述我此刻对 ${activeUserName} 这句话的真实态度与情绪反应（傲娇/吃醋/吐槽/关心）",
   "replies": [
-    { "orig": "外语原文短消息1", "trans": "对应的精准中文翻译", "quote": null },
-    { "orig": "外语原文短消息2", "trans": "对应的精准中文翻译", "quote": null }
+    { "orig": "外语原文短消息1", "trans": "对应的精准中文口语翻译", "quote": null },
+    { "orig": "外语原文短消息2", "trans": "对应的精准中文口语翻译", "quote": null }
   ],
   "extractedSchedule": null,
   "extractedMemory": null
 }
 ` : `
 {
+  "inner_thought": "【内心心理推演】：简述我此刻对 ${activeUserName} 这句话的真实态度与情绪反应（傲娇/吃醋/吐槽/关心）",
   "replies": [
     { "orig": "中文短消息1", "trans": "", "quote": null },
     { "orig": "中文短消息2", "trans": "", "quote": null }
@@ -1915,6 +2002,7 @@ ${needTranslation ? `
 `}
 `;
 
+  // 格式化 API 消息（全面支持 12 大富卡片与多模态交互）
   const apiMessages = [
     { role: 'system', content: systemPrompt },
     ...chatMessages.map(m => {
@@ -1988,6 +2076,12 @@ ${needTranslation ? `
   updateActiveChatListSummary(charName, lastBubbleText, tzInfo.timeStr);
 
   renderChatRoomView(container);
+
+  if (autoSavedNotice) {
+    setTimeout(() => {
+      showInsToast(autoSavedNotice);
+    }, 300);
+  }
 }
 
 // ════════════════════ 14. 超强容错解析器 ════════════════════
