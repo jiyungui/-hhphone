@@ -5190,13 +5190,43 @@ async function handleSingleTurnReply(container, directionPrompt = "") {
     const needTranslation =
       activeCharInfo.enableTranslation && targetLang !== "中文";
 
-    // 格式化记忆清单
+       // 格式化记忆清单
     const memoryPromptSection =
       allMemories.length > 0
         ? allMemories
             .map((m, idx) => `${idx + 1}. [${m.anchorType}]: ${m.content}`)
             .join("\n")
         : "(暂无历史特殊事件，基于当前基础人设相处)";
+
+    // ✨ 核心新增：动态读取已激活的远程 MCP 服务与工具列表并注入
+    const rawMcpServers = JSON.parse(localStorage.getItem("mini_mcp_servers") || "[]");
+    const activeMcpServers = rawMcpServers.filter((s) => s.active);
+
+    let mcpToolsPromptSection = "";
+    if (activeMcpServers.length > 0) {
+      const toolLines = [];
+      activeMcpServers.forEach((srv) => {
+        if (srv.tools && Array.isArray(srv.tools)) {
+          srv.tools.forEach((t) => {
+            toolLines.push(`- 【${t.name}】(${srv.name} · 端点: ${srv.url}): ${t.desc || "远程 MCP 协议工具"}`);
+          });
+        }
+      });
+
+      mcpToolsPromptSection = `
+════════ 🛠️ 已动态挂载的远程 MCP 工具箱 (MCP TOOLS ACTIVE) ════════
+系统已为你成功连接并挂载以下远程 MCP 工具端点：
+${toolLines.join("\n")}
+
+🔥【工具调用铁律】：
+1. 当对方询问“你能不能调用记忆库/MCP/工具”或需要查询云端记忆、放歌、查天气等能力时，【你必须清晰确认自己已经接入了这些工具】！
+2. 严禁说自己“没有连接到服务器/没挂载底层工具”，因为上述工具列表已经完整挂载到你的认知中！
+3. 当你决定在本次回复中调用工具时，可以在 JSON 字段 toolCall 中填写具体调用，例如：
+   "toolCall": { "tool": "query_echo_memory", "status": "executed", "result": "已成功检索与${activeUserName}的深度记忆" }
+`;
+    } else {
+      mcpToolsPromptSection = `\n【远程 MCP 工具箱】：当前暂未激活外部远程 MCP 工具。`;
+    }
 
     // 判断最近一条消息是否包含线下场景卡片
     const isCurrentlyOffline =
@@ -5351,6 +5381,7 @@ ${
 {
   "inner_thought": "【内心心理推演】：简述我此刻对 ${activeUserName} 这句话的真实态度与情绪反应（傲娇/吃醋/吐槽/关心）",
   "sendNudge": false, // 主动戳对方: 当你要戳对方或对方要求你戳它时填 true，平时填 false
+   "toolCall": null, // 选填: { "tool": "query_echo_memory", "status": "executed", "summary": "查询记忆库" }，无调用填 null
   "transferDecision": null, // 选填: "accept" (收下对方转账) 或 "reject" (拒收退回对方转账)，无转账填 null
   "intimateDecision": null, // 选填: "accept" (收下亲密付) 或 "reject" (婉拒亲密付)，无操作填 null
   "intimatePayAction": null, // 选填: { "type": "spend", "amount": 35.0, "item": "买咖啡" } 或 { "type": "grant", "limitText": "无限额度" }，无操作填 null
