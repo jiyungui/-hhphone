@@ -163,101 +163,48 @@ export function initSystemHubSidebar() {
 }
 
 export function switchSystemApp(appId) {
-  currentActiveApp = appId;
+  // 1. 统一提取 cleanId (如 'app-api' -> 'api')
+  const cleanId = appId.startsWith('app-') ? appId.replace('app-', '') : appId;
+  currentActiveApp = cleanId;
 
+  // 2. 隐藏所有顶层应用视口
   const allContainers = document.querySelectorAll('.app-view-container');
-  allContainers.forEach(el => el.classList.remove('active'));
+  allContainers.forEach(el => {
+    el.classList.remove('active');
+    el.style.display = 'none'; // 强制隐藏其他页面
+  });
 
-  const targetRoot = document.getElementById(`app-${appId}-root`);
+  // 3. 找到目标容器并以 flex 撑满视口激活展示
+  const targetRoot = document.getElementById(`app-${cleanId}-root`) || document.getElementById(`app-${appId}-root`) || document.getElementById(appId);
   if (targetRoot) {
     targetRoot.classList.add('active');
+    targetRoot.style.display = 'flex'; // 撑满视口，彻底告别空白
+    targetRoot.style.width = '100%';
+    targetRoot.style.height = '100%';
   }
 
-  if (appId === 'api' && targetRoot) {
-    renderApiSettingsView(targetRoot);
-  } else if (appId === 'messages' && targetRoot) { // ✨ 挂载独立短信 App 视图
+  // 4. 挂载具体应用的核心主视图
+  if (cleanId === 'api' && targetRoot) {
+    renderApiSettingsView(targetRoot); // ✨ 立即渲染 API 设置中枢
+  } else if (cleanId === 'messages' && targetRoot) {
     renderMessagesView(targetRoot);
   }
 
-  document.querySelectorAll('[data-hub-app]').forEach(card => {
-    card.classList.toggle('active', card.getAttribute('data-hub-app') === appId);
+  // 5. 同步所有侧边栏抽屉卡片的高亮状态
+  document.querySelectorAll('[data-hub-app], [data-app-id]').forEach(card => {
+    const cardId = card.getAttribute('data-hub-app') || card.getAttribute('data-app-id');
+    const cleanCardId = cardId.startsWith('app-') ? cardId.replace('app-', '') : cardId;
+    card.classList.toggle('active', cleanCardId === cleanId);
   });
-}
-
-// ════════════ 4 大新增板块的 INS 极简白黑风渲染函数 ════════════
-function renderStickersGalleryView(container) {
-  container.innerHTML = `
-    <div class="user-container" style="display:flex; flex-direction:column; height:100%; padding: 0 14px 14px 14px; overflow-y:auto;">
-      <div class="user-header" style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--line-color);">
-        <span class="user-header-title" style="font-size:16px; font-weight:800; color:#111;">Stickers</span>
-        <span class="user-count-badge" style="font-size:9.5px; font-weight:700; color:#888;">STICKER VAULT</span>
-      </div>
-      <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
-        <div class="api-card" style="border: 1px solid var(--line-color); border-radius:10px; padding:12px; background:#FFF;">
-          <div style="font-size:11.5px; font-weight:800; color:#111; margin-bottom:4px;">默认表情包预设</div>
-          <span style="font-size:9.5px; color:#888;">聊天中可随时在「更多 ➔ 表情包」中快速发送极简线条表情。</span>
-          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-top:8px;">
-            <div style="padding:6px; background:#FAFAFA; border:1px solid #EAEAEA; border-radius:6px; text-align:center; font-size:10px; font-weight:700;">[暗中观察]</div>
-            <div style="padding:6px; background:#FAFAFA; border:1px solid #EAEAEA; border-radius:6px; text-align:center; font-size:10px; font-weight:700;">[叹气]</div>
-            <div style="padding:6px; background:#FAFAFA; border:1px solid #EAEAEA; border-radius:6px; text-align:center; font-size:10px; font-weight:700;">[给心心]</div>
-            <div style="padding:6px; background:#FAFAFA; border:1px solid #EAEAEA; border-radius:6px; text-align:center; font-size:10px; font-weight:700;">[问号]</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderThemeCustomView(container) {
-  container.innerHTML = `
-    <div class="user-container" style="display:flex; flex-direction:column; height:100%; padding: 0 14px 14px 14px; overflow-y:auto;">
-      <div class="user-header" style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--line-color);">
-        <span class="user-header-title" style="font-size:16px; font-weight:800; color:#111;">Theme & Style</span>
-        <span class="user-count-badge" style="font-size:9.5px; font-weight:700; color:#888;">INS LINEAR B&W</span>
-      </div>
-      <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
-        <div class="api-card" style="border: 1px solid var(--line-color); border-radius:10px; padding:12px; background:#FFF;">
-          <div style="font-size:11.5px; font-weight:800; color:#111; margin-bottom:4px;">极简白黑线条风 (当前主题)</div>
-          <span style="font-size:9.5px; color:#888; line-height:1.4;">纯粹白底黑线设计、时间戳外置、连发首条头像、零 Emoji。</span>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderGamesCenterView(container) {
-  container.innerHTML = `
-    <div class="user-container" style="display:flex; flex-direction:column; height:100%; padding: 0 14px 14px 14px; overflow-y:auto;">
-      <div class="user-header" style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--line-color);">
-        <span class="user-header-title" style="font-size:16px; font-weight:800; color:#111;">Games Hub</span>
-        <span class="user-count-badge" style="font-size:9.5px; font-weight:700; color:#888;">INTERACTION</span>
-      </div>
-      <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
-        <div class="api-card" style="border: 1px solid var(--line-color); border-radius:10px; padding:12px; background:#FFF;">
-          <div style="font-size:11.5px; font-weight:800; color:#111; margin-bottom:2px;">双人互动小游戏 (准备就绪)</div>
-          <span style="font-size:9.5px; color:#888;">在聊天中与 Char 发起投骰子、抽塔罗牌或真心话大冒险对决。</span>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderMomentsView(container) {
-  container.innerHTML = `
-    <div class="user-container" style="display:flex; flex-direction:column; height:100%; padding: 0 14px 14px 14px; overflow-y:auto;">
-      <div class="user-header" style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--line-color);">
-        <span class="user-header-title" style="font-size:16px; font-weight:800; color:#111;">Moments</span>
-        <span class="user-count-badge" style="font-size:9.5px; font-weight:700; color:#888;">TIMELINE</span>
-      </div>
-      <div style="padding: 40px 0; text-align: center; font-size: 10.5px; color: var(--text-muted);">
-        暂无新动态更新，角色在后台活动时将在此发布生活切片
-      </div>
-    </div>
-  `;
 }
 
 // 页面加载完成后启动
 document.addEventListener('DOMContentLoaded', () => {
   initDockNavigation();
   initSystemHubSidebar();
+
+  // 如果引入了 appDrawer 模块，同样注册联动
+  if (window.initAppDrawer) {
+    window.initAppDrawer(switchSystemApp);
+  }
 });

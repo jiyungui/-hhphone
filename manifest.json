@@ -1,6 +1,6 @@
 {
-  "name": "Mini Phone OS",
-  "short_name": "MiniPhone",
+  "name": "随便phone",
+  "short_name": "随便phone",
   "description": "Minimalist Black & White Phone System",
   "start_url": "./index.html",
   "display": "standalone",

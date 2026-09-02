@@ -182,7 +182,7 @@ function bindDrawerEvents() {
     }
   }, { passive: true });
 
-  // 绑定应用点击切换
+   // 绑定应用点击切换
   const appItems = sidebar.querySelectorAll('.drawer-app-item');
   appItems.forEach(item => {
     item.addEventListener('click', () => {

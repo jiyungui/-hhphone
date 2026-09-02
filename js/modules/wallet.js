@@ -1368,3 +1368,57 @@ export function executeCharGrantIntimatePay(charName, limitText = '无限额度'
   sendSystemSms('随便银行', `【随便银行】角色【${charName}】已为您开通专属亲密付（额度：${limitText}）！您在后续通讯与消费中可直接由对方专属账户代付。`);
   return true;
 }
+
+/**
+ * 3. 当 Char 拒收转账时：资金原路全额退还给 User
+ */
+export function executeTransferRefund(charName, amount, currency = 'CNY', paySource = '') {
+  const walletData = getWalletData();
+  const refundAmt = parseFloat(amount) || 0;
+  if (refundAmt <= 0) return false;
+
+  const nowTime = new Date().toISOString().slice(0, 16).replace('T', ' ');
+
+  if (paySource && paySource.includes('银行卡')) {
+    // 提取卡号并退还到卡
+    const match = paySource.match(/尾号\s*([0-9]{4})/);
+    const last4 = match ? match[1] : '';
+    const card = walletData.cards.find(c => c.cardNo.endsWith(last4)) || walletData.cards[0];
+    if (card) {
+      card.balance = (card.balance || 0) + refundAmt;
+      sendSystemSms('随便银行', `【随便银行】您向【${charName}】发起的 ${refundAmt.toFixed(2)} ${currency} 转账已被对方拒收退回。资金已全额原路退回至您尾号 ${card.cardNo.slice(-4)} 的卡中，当前卡内余额为：${card.balance.toFixed(2)} ${card.currency}。`);
+    }
+  } else if (!paySource.includes('亲密付')) {
+    // 退还到钱包余额
+    if (!walletData.balances) walletData.balances = {};
+    walletData.balances[currency] = (walletData.balances[currency] || 0) + refundAmt;
+  }
+
+  // 记录退款账单流水
+  walletData.bills.unshift({
+    id: `bill-${Date.now()}`,
+    title: `转账退款 (${charName} 已拒收)`,
+    type: 'income',
+    typeText: '转账退回',
+    currency: currency,
+    amount: refundAmt,
+    payer: `${charName} (拒收退回)`,
+    recipient: paySource || '原支付账户',
+    time: nowTime
+  });
+
+  saveWalletData(walletData);
+  return true;
+}
+
+/**
+ * 4. 当 Char 拒收亲密付时：撤销该授权
+ */
+export function executeIntimatePayDecline(charName) {
+  const walletData = getWalletData();
+  if (walletData.intimatePay?.userToChar) {
+    walletData.intimatePay.userToChar = walletData.intimatePay.userToChar.filter(i => i.charName !== charName);
+    saveWalletData(walletData);
+  }
+  return true;
+}

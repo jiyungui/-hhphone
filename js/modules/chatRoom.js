@@ -4,7 +4,7 @@ import { resolveApiEndpoints } from "./apiSettings.js";
 import { CameraTool } from "./cameraTool.js";
 import { VoiceTool } from "./voiceTool.js";
 import { MediaStorage } from "../utils/mediaStorage.js";
-import { getWalletData, executeCharIntimateSpend, executeCharGrantIntimatePay, CURRENCIES } from "./wallet.js";
+import { getWalletData, saveWalletData, executeCharIntimateSpend, executeCharGrantIntimatePay, executeTransferRefund, executeIntimatePayDecline, CURRENCIES } from "./wallet.js";
 import { sendSystemSms } from "./messages.js";
 
 let activeCharInfo = null;
@@ -2506,16 +2506,32 @@ function renderMessagesHtml(messages) {
       let mainBubbleBody = "";
       if (m.cardType === "image") {
         mainBubbleBody = `<img src="${m.mediaUrl}" class="msg-bubble-media-img" />`;
-         } else if (m.cardType === "transfer") { // ✨ INS 极简高级转账凭据卡片
+             } else if (m.cardType === "transfer") { // ✨ 动态状态响应转账卡片 (待收/已收/拒收)
         const isFromIntimate = m.paySource && m.paySource.includes('亲密付');
+        const status = m.status || 'pending'; // 'pending' | 'accepted' | 'rejected'
+
+        let statusText = '待对方查收';
+        let statusClass = 'pending';
+        let titleText = '转账转出';
+
+        if (status === 'accepted') {
+          statusText = '对方已收下';
+          statusClass = 'accepted';
+          titleText = '转账已收下';
+        } else if (status === 'rejected') {
+          statusText = '对方已拒收 · 资金已退回';
+          statusClass = 'rejected';
+          titleText = '转账已退回';
+        }
+
         mainBubbleBody = `
-          <div class="ins-chat-transfer-card">
+          <div class="ins-chat-transfer-card ${statusClass}">
             <div class="ins-transfer-card-header">
-              <div class="ins-transfer-icon-box">
+              <div class="ins-transfer-icon-box ${statusClass}">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
               </div>
               <div class="ins-transfer-header-meta">
-                <span class="ins-transfer-title">转账转出 · 待对方查收</span>
+                <span class="ins-transfer-title">${titleText}</span>
                 <span class="ins-transfer-channel">${escapeHtml(m.paySource || '随便钱包')}</span>
               </div>
             </div>
@@ -2530,21 +2546,31 @@ function renderMessagesHtml(messages) {
             </div>
 
             <div class="ins-transfer-card-footer">
-              <span class="ins-transfer-status-tag ${isFromIntimate ? 'intimate-mode' : ''}">${isFromIntimate ? 'TA的亲密付代扣转账' : '实时支付成功'}</span>
+              <span class="ins-transfer-status-tag ${statusClass}">● ${statusText}</span>
               <span class="ins-transfer-time">${m.time || ''}</span>
             </div>
           </div>
         `;
-      } else if (m.cardType === "intimate_pay") {
-        // ✨ INS 极简高级亲密付轻卡片
+      } else if (m.cardType === "intimate_pay") { // ✨ 动态状态响应亲密付卡片
+        const status = m.status || 'accepted'; // 'pending' | 'accepted' | 'rejected'
+        let statusText = '已激活 · 随时自动扣划';
+        let statusClass = 'accepted';
+        let titleText = '专属亲密付 · 已开通';
+
+        if (status === 'rejected') {
+          statusText = '对方已婉拒 · 未激活';
+          statusClass = 'rejected';
+          titleText = '亲密付已退回';
+        }
+
         mainBubbleBody = `
-          <div class="ins-chat-intimate-card">
+          <div class="ins-chat-intimate-card ${statusClass}">
             <div class="ins-intimate-top-row">
-              <div class="ins-intimate-icon-wrap">
+              <div class="ins-intimate-icon-wrap ${statusClass}">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
               </div>
               <div class="ins-intimate-header-text">
-                <span class="ins-intimate-card-title">专属亲密付 · 已开通</span>
+                <span class="ins-intimate-card-title">${titleText}</span>
                 <span class="ins-intimate-card-source">${escapeHtml(m.sourceText || "关联账户自动代付")}</span>
               </div>
             </div>
@@ -2554,9 +2580,9 @@ function renderMessagesHtml(messages) {
               <span class="ins-intimate-amount-lbl">消费额度上限</span>
             </div>
 
-            <div class="ins-intimate-bottom-status">
-              <span class="ins-intimate-status-dot"></span>
-              <span>已激活 · 随时自动扣划</span>
+            <div class="ins-intimate-bottom-status ${statusClass}">
+              <span class="ins-intimate-status-dot ${statusClass}"></span>
+              <span>${statusText}</span>
             </div>
           </div>
         `;
@@ -5181,27 +5207,30 @@ async function handleSingleTurnReply(container, directionPrompt = "") {
     const walletData = getWalletData();
     const userGrantedIntimate = walletData.intimatePay?.userToChar?.find((i) => i.charName === charName);
 
-    const intimatePromptSection = `
-════════ 💳 亲密付/亲属卡权限中枢 ════════
-${
-  userGrantedIntimate
-    ? `
-【对方已为你开通了专属亲密付】：
-- 绑定扣款源：${userGrantedIntimate.sourceName}
-- 授权消费额度：${userGrantedIntimate.limitText}
-🔥【特权】：在你的真实认知中，你拥有直接花对方钱的特权！当你在日常生活中顺手买咖啡、点夜宵、打车、买乐器配件或给对方准备小礼物时，你可以在 JSON 的 intimatePayAction 中填写代扣消费：
-  "intimatePayAction": { "type": "spend", "amount": 35.0, "item": "买冰美式" }
-（系统会自动在对方钱包账单中扣款并向对方手机发送扣款短信提醒！）
-`
-    : `
-【对方暂未为你开通亲密付】：你暂时无法直接花对方账户里的钱。
-`
-}
+       // 检查最近是否有 User 发起且未处理的转账或亲密付
+    const lastUserTransfer = [...chatMessages].reverse().find(m => m.role === 'user' && m.cardType === 'transfer' && (!m.status || m.status === 'pending'));
+    const lastUserIntimate = [...chatMessages].reverse().find(m => m.role === 'user' && m.cardType === 'intimate_pay' && (!m.status || m.status === 'pending'));
 
-【你向对方赠送亲密付的特权】：
-- 如果你想宠溺对方、展现占有欲、或者给对方零花钱（例如说“拿去随便刷”、“绑定了我的卡”），你可以在本次回复中主动为对方开通亲密付：
-  "intimatePayAction": { "type": "grant", "limitText": "无限额度" }
-（系统会立即在屏幕上为你生成一张专属亲密付凭证卡片并为对方激活开户！）
+    const intimatePromptSection = `
+════════ 💳 资金转账与亲密付决策权（你有绝对的拒收与收下主权） ════════
+${lastUserTransfer ? `
+🔥【注意：对方刚刚向你发起了转账（金额: ${lastUserTransfer.currencySymbol || '¥'}${lastUserTransfer.amount} ${lastUserTransfer.currency || 'CNY'}，附言: "${lastUserTransfer.content}"）】：
+- 你拥有【自主决定收下还是退还】的最高权利！严禁无脑默认全盘接受！
+- 【收下转账】：若你愿意接受（或傲娇笑纳、调侃收下），在 JSON 中填写 "transferDecision": "accept"；
+- 【拒收退还】：若你觉得不需要、在生气吃醋、觉得无功不受禄、自尊心作祟、或者觉得对方在敷衍/打发你，必须在言语中吐槽拒绝，并在 JSON 中填写 "transferDecision": "reject"！（系统会自动将这笔钱原路退回对方账户并生成退款单！）
+` : ''}
+
+${lastUserIntimate ? `
+🔥【注意：对方刚刚向你开通了亲密付（额度: ${lastUserIntimate.limitText}）】：
+- 【收下激活】：若你愿意接受开通，在 JSON 填写 "intimateDecision": "accept"；
+- 【婉拒退回】：若你不想绑定对方账户或觉得太早了，在 JSON 填写 "intimateDecision": "reject"！（系统会撤销该授权并退回卡片！）
+` : ''}
+
+${userGrantedIntimate ? `
+【对方已为你开通了专属亲密付】：
+- 绑定扣款源：${userGrantedIntimate.sourceName}，授权额度：${userGrantedIntimate.limitText}
+- 你可以在日常中直接填写代扣消费："intimatePayAction": { "type": "spend", "amount": 35.0, "item": "买冰美式" }
+` : ''}
 `;
 
     // ════════ 终极独立人格与深度活人感 System Prompt ════════
@@ -5302,7 +5331,9 @@ ${
     ? `
 {
   "inner_thought": "【内心心理推演】：简述我此刻对 ${activeUserName} 这句话的真实态度与情绪反应（傲娇/吃醋/吐槽/关心）",
-  "sendNudge": true, // 🔥 主动戳对方: 当你要戳对方或对方要求你戳它时填 true，平时填 false
+  "sendNudge": false, // 主动戳对方: 当你要戳对方或对方要求你戳它时填 true，平时填 false
+  "transferDecision": null, // 选填: "accept" (收下对方转账) 或 "reject" (拒收退回对方转账)，无转账填 null
+  "intimateDecision": null, // 选填: "accept" (收下亲密付) 或 "reject" (婉拒亲密付)，无操作填 null
   "intimatePayAction": null, // 选填: { "type": "spend", "amount": 35.0, "item": "买咖啡" } 或 { "type": "grant", "limitText": "无限额度" }，无操作填 null
   "avatarAction": null,
   "avatarAutoCollect": null,
@@ -5319,7 +5350,9 @@ ${
     : `
 {
   "inner_thought": "【内心心理推演】：简述我此刻对 ${activeUserName} 这句话的真实态度与情绪反应（傲娇/吃醋/吐槽/关心）",
-  "sendNudge": true, // 🔥 主动戳对方: 当你要戳对方或对方要求你戳它时填 true，平时填 false
+  "sendNudge": false, // 主动戳对方: 当你要戳对方或对方要求你戳它时填 true，平时填 false
+  "transferDecision": null, // 选填: "accept" (收下对方转账) 或 "reject" (拒收退回对方转账)，无转账填 null
+  "intimateDecision": null, // 选填: "accept" (收下亲密付) 或 "reject" (婉拒亲密付)，无操作填 null
   "intimatePayAction": null, // 选填: { "type": "spend", "amount": 35.0, "item": "买咖啡" } 或 { "type": "grant", "limitText": "无限额度" }，无操作填 null
   "avatarAction": null,
   "avatarAutoCollect": null,
