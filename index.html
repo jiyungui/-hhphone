@@ -2,21 +2,20 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>随便phone</title>
 
-    <!-- PWA & 桌面安装 -->
+    <!-- PWA & 桌面安装标准模式 -->
     <link rel="manifest" href="manifest.json" />
     <meta name="theme-color" content="#FFFFFF" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
+    <!-- ✨ 核心修改：改为 default，使状态栏高度独立，严禁使用 black-translucent 顶穿灵动岛 -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <link rel="apple-touch-icon" href="icon.svg" />
+
+    <!-- ✨ 核心安全区域预注入 (参考成熟方案) -->
+    <style>:root{--sat:max(env(safe-area-inset-top, 0px), 24px);--sab:max(env(safe-area-inset-bottom, 0px), 12px);--sal:env(safe-area-inset-left, 0px);--sar:env(safe-area-inset-right, 0px);}</style>
 
     <!-- 样式引用 -->
     <link rel="stylesheet" href="css/base.css" />

@@ -359,11 +359,11 @@ function bindUserFormEvents(container) {
       avatarFileInput.click();
     };
 
-       avatarFileInput.onchange = (e) => {
+          avatarFileInput.onchange = (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
-      // ✨ 核心修复：转换为永久持久化 Base64 字符串，无论刷新多少次头像永不丢失
+      // ✨ 使用 FileReader 保存永久 Base64 字符串
       const reader = new FileReader();
       reader.onload = (event) => {
         userDraft.avatarUrl = event.target.result;

@@ -425,11 +425,11 @@ function bindCharacterFormEvents(container) {
       avatarFileInput.click();
     };
 
-      avatarFileInput.onchange = (e) => {
+        avatarFileInput.onchange = (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      
-      // ✨ 核心修复：转换为永久持久化 Base64 字符串，彻底告别临时 Blob 失效变成问号
+
+      // ✨ 使用 FileReader 保存永久 Base64 字符串，刷新永远不丢失
       const reader = new FileReader();
       reader.onload = (event) => {
         charDraft.avatarUrl = event.target.result;
