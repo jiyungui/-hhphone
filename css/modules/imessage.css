@@ -1,3 +1,19 @@
+/* 消息主视图容器 */
+.imessage-container, #view-imessage {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-main, #FFFFFF);
+  overflow-y: auto;
+  padding-top: 6px; /* 额外微调间距 */
+}
+
+/* 搜索框栏 */
+.imessage-search-bar {
+  padding: 6px 14px 10px 14px;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    MINI PHONE OS · IMESSAGE & CHAT MODULE (INS LINEAR STYLE)
    纯正极简白黑线条风 · 正方形头像 · 2-3-2 分组卡片 · 绝无 Emoji

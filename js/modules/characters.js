@@ -425,12 +425,17 @@ function bindCharacterFormEvents(container) {
       avatarFileInput.click();
     };
 
-    avatarFileInput.onchange = (e) => {
+      avatarFileInput.onchange = (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      const url = URL.createObjectURL(file);
-      charDraft.avatarUrl = url;
-      renderCharacterFormView(container);
+      
+      // ✨ 核心修复：转换为永久持久化 Base64 字符串，彻底告别临时 Blob 失效变成问号
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        charDraft.avatarUrl = event.target.result;
+        renderCharacterFormView(container);
+      };
+      reader.readAsDataURL(file);
     };
   }
 

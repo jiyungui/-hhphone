@@ -10,10 +10,9 @@
   --radius-md: 16px;
   --radius-lg: 36px;
   
-  /* ✨ 核心优化：针对 iPhone/Safari/灵动岛的精准安全边距与保底高度 */
-  --app-height: 100%;
-  --safe-top: max(env(safe-area-inset-top, 0px), 44px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* ✨ 核心：iPhone / Safari / PWA 强保底顶部物理下沉避让 */
+  --safe-top: max(env(safe-area-inset-top, 0px), 48px);
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
 }
@@ -29,34 +28,23 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* 彻底禁止 iOS 页面橡皮筋乱晃与白条溢出 */
-html {
-  width: 100%;
-  height: 100%;
+html, body {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
+  background-color: #000000;
   position: fixed;
   top: 0;
   left: 0;
 }
 
-body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background-color: #E8E8E8;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overscroll-behavior: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-}
-
-/* ═══════════ 💻 电脑桌面端展示：拟真手机壳 ═══════════ */
+/* ═══════════ 💻 电脑桌面端 ═══════════ */
 .phone-frame {
   width: 390px;
-  height: 800px;
+  height: 844px;
   max-height: 94vh;
   background-color: var(--bg-main);
   border-radius: var(--radius-lg);
@@ -66,19 +54,17 @@ body {
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  transition: all 0.2s ease;
+  margin: auto;
 }
 
-/* 顶部假状态栏（仅桌面端显示） */
 .status-bar {
-  height: 36px;
-  padding: 0 18px;
+  height: 44px;
+  padding: 0 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.3px;
   background-color: var(--bg-main);
   z-index: 20;
   flex-shrink: 0;
@@ -90,7 +76,6 @@ body {
   align-items: center;
 }
 
-/* 手机主区域 */
 .phone-body {
   flex: 1;
   width: 100%;
@@ -120,75 +105,44 @@ body {
   display: flex;
 }
 
-/* 空状态占位 */
-.empty-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--text-dim);
-  gap: 12px;
-}
-.empty-placeholder span {
-  font-size: 12px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-/* ═══════════ 📱 iOS / 移动设备 / Safari / PWA 桌面独立全屏 ═══════════ */
+/* ═══════════ 📱 移动端 / Safari PWA 全屏自适应 (沉底贴合·避让灵动岛) ═══════════ */
 @media (max-width: 600px), (display-mode: standalone) {
   body {
-    background-color: var(--bg-main);
+    background-color: #FFFFFF !important;
   }
   
   .phone-frame {
-    width: 100%;
-    height: 100%;
-    max-height: 100%;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: hidden;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    overflow: hidden !important;
   }
 
-  /* 手机端隐藏网页假状态栏，由系统状态栏接管 */
   .status-bar {
     display: none !important;
   }
 
-  /* ✨ 核心：通过 padding-top 精准把内容整体下移，避开状态栏与灵动岛；同时底部贴底消除白条 */
+  /* ✨ 核心下移 56px：彻底避开 iPhone 顶部的 01:52、灵动岛与电池 */
   .phone-body {
-    padding-top: var(--safe-top) !important;
-    padding-left: var(--safe-left) !important;
-    padding-right: var(--safe-right) !important;
+    padding-top: max(env(safe-area-inset-top, 0px), 56px) !important;
+    padding-left: env(safe-area-inset-left, 0px) !important;
+    padding-right: env(safe-area-inset-right, 0px) !important;
     padding-bottom: 0 !important;
     height: 100% !important;
   }
 
-  /* 左侧 Dock 栏在手机端底部留出舒适小边距 */
+  /* 左侧 Dock 栏在底部留出物理安全距离 */
   .dock-nav {
-    padding-bottom: max(var(--safe-bottom), 12px) !important;
+    padding-top: 6px !important;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px) !important;
   }
-}
-
-/* ═══════════ 全局 App 容器显隐控制 ═══════════ */
-.app-view-container {
-  display: none !important;
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  overflow: hidden;
-  background-color: var(--bg-main, #FFFFFF);
-}
-
-.app-view-container.active {
-  display: flex !important;
 }
