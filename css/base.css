@@ -172,3 +172,19 @@ body {
     padding-bottom: max(var(--safe-bottom), 14px) !important;
   }
 }
+
+/* ═══════════ 全局 App 容器显隐控制 ═══════════ */
+.app-view-container {
+  display: none !important;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  background-color: var(--bg-main, #FFFFFF);
+}
+
+.app-view-container.active {
+  display: flex !important;
+}

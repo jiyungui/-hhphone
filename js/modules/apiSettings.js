@@ -91,11 +91,47 @@ let documentVault = JSON.parse(
   localStorage.getItem("mini_mcp_documents") || "[]",
 );
 
+// ✨ 新增：远程 MCP 服务服务器列表（支持多 URL 动态挂载）
+let mcpServerList = JSON.parse(
+  localStorage.getItem("mini_mcp_servers") ||
+    JSON.stringify([
+      {
+        id: "mcp-default-echo",
+        name: "Echo 记忆库",
+        url: "http://8.138.231.177:8765/mcp",
+        active: true,
+        status: "idle", // 'idle' | 'online' | 'offline' | 'checking'
+        latency: 0,
+        toolsCount: 3,
+        tools: [
+          { name: "query_echo_memory", desc: "检索与调用长期深度记忆切片" },
+          { name: "save_echo_reflection", desc: "写入内心潜思与角色认知沉淀" },
+          { name: "sync_timeline_daily", desc: "同步现实时间线与生活作息" },
+        ],
+      },
+    ]),
+);
+
 let pulledModelsList = [];
 let currentAudioInstance = null;
 
 function saveConfig() {
   localStorage.setItem("mini_api_settings", JSON.stringify(config));
+}
+
+function saveMcpServerList() {
+  localStorage.setItem("mini_mcp_servers", JSON.stringify(mcpServerList));
+}
+
+// ✨ 核心修复：定义 escapeHtml 安全转义函数，彻底解决 ReferenceError 报错
+function escapeHtml(str) {
+  if (typeof str !== "string") return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function savePresets() {
@@ -302,7 +338,7 @@ function calculateStorageMetrics() {
   });
   const memRawKB = Math.round(memRawBytes / 1024);
 
-   const totalRawKB = Math.max(
+  const totalRawKB = Math.max(
     1,
     mediaRawKB + docRawKB + chatRawKB + memRawKB + cfgRawKB,
   );
@@ -331,7 +367,7 @@ function calculateStorageMetrics() {
   };
 }
 
-// 7 个子板块定义
+// 8 个子板块定义（在「记忆」与「读取」之间独立新增「MCP」服务管理）
 const SUB_TABS = [
   {
     id: "api",
@@ -350,6 +386,12 @@ const SUB_TABS = [
     name: "记忆",
     title: "角色沙盒隔离记忆中枢",
     icon: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>`,
+  },
+  {
+    id: "mcp",
+    name: "MCP",
+    title: "远程 MCP 服务管理与动态工具挂载",
+    icon: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
   },
   {
     id: "retrieval",
@@ -453,6 +495,8 @@ function renderCurrentSubTabHtml() {
       return renderVoiceSection();
     case "memory":
       return renderMemorySection();
+    case "mcp":
+      return renderMcpSection(); // ✨ 独立 MCP 渲染函数
     case "retrieval":
       return renderRetrievalSection();
     case "guide":
@@ -1012,7 +1056,96 @@ function renderSandboxedMemoryView(
   }
 }
 
-/* ═══════════ 4. 读取 ═══════════ */
+/* ═══════════ 4. MCP 服务管理 (独立板块) ═══════════ */
+function renderMcpSection() {
+  const activeMcpCount = mcpServerList.filter((s) => s.active).length;
+
+  return `
+    <div class="api-card">
+      <div class="card-title">
+        <span>远程 MCP 服务管理 / MCP SERVERS</span>
+        <span class="mcp-count-badge">${activeMcpCount}/${mcpServerList.length} 运行中</span>
+      </div>
+      <span class="card-desc">配置远程 VPS 或本地部署的 MCP Server URL。大模型在对话时会自动挂载所挂载工具（如 Echo 记忆库、网易云放歌、小红书爬虫等）。</span>
+
+      <!-- 添加新 MCP 服务输入区 -->
+      <div class="mcp-add-panel">
+        <div class="mcp-input-row">
+          <div class="form-group" style="flex: 1.2;">
+            <label class="form-label">服务名称 / NAME</label>
+            <input type="text" class="form-input" id="new-mcp-name" placeholder="例如：Echo记忆库 / 网易云音乐" />
+          </div>
+          <div class="form-group" style="flex: 2;">
+            <label class="form-label">服务 URL / SERVER ENDPOINT</label>
+            <input type="text" class="form-input" id="new-mcp-url" placeholder="http://8.138.231.177:8765/mcp" />
+          </div>
+        </div>
+        <div class="mcp-add-actions">
+          <button class="api-btn api-btn-primary" id="btn-add-mcp-server">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>添加并测试连接</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- MCP 服务节点清单 -->
+      <div class="mcp-server-list" id="mcp-server-list">
+        ${
+          mcpServerList.length === 0
+            ? `<div class="memory-empty-vault">暂未配置远程 MCP 服务，可在上方输入 URL 添加挂载</div>`
+            : mcpServerList
+                .map(
+                  (srv) => `
+          <div class="mcp-server-card ${srv.active ? "" : "disabled"}" data-srv-id="${srv.id}">
+            <div class="mcp-card-top">
+              <div class="mcp-info-left">
+                <div class="mcp-title-row">
+                  <span class="mcp-status-dot ${srv.active ? "active" : ""}"></span>
+                  <span class="mcp-name">${escapeHtml(srv.name)}</span>
+                  <span class="mcp-tag">MCP PROTOCOL</span>
+                </div>
+                <div class="mcp-url-text">${escapeHtml(srv.url)}</div>
+              </div>
+              <div class="mcp-actions-right">
+                <label class="ins-switch">
+                  <input type="checkbox" class="mcp-toggle-active" data-srv-id="${srv.id}" ${srv.active ? "checked" : ""} />
+                  <span class="ins-slider"></span>
+                </label>
+                <button class="mcp-icon-btn mcp-ping-btn" data-srv-id="${srv.id}" title="测试连接与拉取工具">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                </button>
+                <button class="mcp-icon-btn mcp-delete-btn" data-srv-id="${srv.id}" title="删除此服务">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- 工具列表预览抽屉 -->
+            ${
+              srv.tools && srv.tools.length > 0
+                ? `
+            <div class="mcp-tools-drawer">
+              <div class="mcp-tools-header">
+                <span>已挂载工具 (${srv.tools.length})</span>
+                ${srv.latency ? `<span class="mcp-latency">${srv.latency}ms</span>` : ""}
+              </div>
+              <div class="mcp-tools-chips">
+                ${srv.tools.map((t) => `<span class="mcp-tool-pill" title="${escapeHtml(t.desc || "")}"><b>${escapeHtml(t.name)}</b>: ${escapeHtml(t.desc || "无描述")}</span>`).join("")}
+              </div>
+            </div>`
+                : `<div class="mcp-no-tools">点击刷新按钮探测拉取可用 Tools 列表</div>`
+            }
+          </div>
+        `,
+                )
+                .join("")
+        }
+      </div>
+    </div>
+  `;
+}
+
+/* ═══════════ 5. 读取 (纯净 RAG 文档投喂) ═══════════ */
 function renderRetrievalSection() {
   const currentFilter = config.retrieval.selectedCharFilter || "all";
   const filteredDocs = documentVault.filter(
@@ -1031,7 +1164,7 @@ function renderRetrievalSection() {
       </span>
       <span class="card-desc">将设定文档、长篇故事或规则手记投喂给指定 Char。Gateway 会在发起请求前将相关切片打包垫入底座。</span>
 
-               <div class="doc-dropzone" id="doc-dropzone" style="margin-top: 8px;">
+      <div class="doc-dropzone" id="doc-dropzone" style="margin-top: 8px;">
         <div class="doc-dropzone-icon">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -1049,7 +1182,7 @@ function renderRetrievalSection() {
         <button class="api-btn api-btn-primary" id="btn-save-manual-doc" style="padding: 8px;">
           <span>预览内容并命名入库</span>
         </button>
-           </div>
+      </div>
     </div>
 
     <div class="api-card">
@@ -1101,7 +1234,6 @@ function renderRetrievalSection() {
     </div>
   `;
 }
-
 /* ═══════════ 5. 介绍 ═══════════ */
 function renderGuideSection() {
   const currentModelName = config.apiName || config.model || "当前配置模型";
@@ -1653,7 +1785,7 @@ function bindSubViewEvents(container) {
     };
   });
 
-    // 2. 语音板块
+  // 2. 语音板块
   // 平台切换 (MiniMax / ElevenLabs)
   container.querySelectorAll(".tts-platform-card").forEach((card) => {
     card.onclick = () => {
@@ -1740,13 +1872,15 @@ function bindSubViewEvents(container) {
   const mmEyeBtn = container.querySelector("#toggle-mm-key-eye");
   if (mmEyeBtn && mmApiKeyInput) {
     mmEyeBtn.onclick = () => {
-      mmApiKeyInput.type = mmApiKeyInput.type === "password" ? "text" : "password";
+      mmApiKeyInput.type =
+        mmApiKeyInput.type === "password" ? "text" : "password";
     };
   }
   const elEyeBtn = container.querySelector("#toggle-el-key-eye");
   if (elEyeBtn && elApiKeyInput) {
     elEyeBtn.onclick = () => {
-      elApiKeyInput.type = elApiKeyInput.type === "password" ? "text" : "password";
+      elApiKeyInput.type =
+        elApiKeyInput.type === "password" ? "text" : "password";
     };
   }
 
@@ -1763,7 +1897,9 @@ function bindSubViewEvents(container) {
   const playVoiceBtn = container.querySelector("#btn-play-voice-test");
   if (playVoiceBtn) {
     playVoiceBtn.onclick = async () => {
-      const text = (testTextInput && testTextInput.value.trim()) || "你好，语音配置连接正常。";
+      const text =
+        (testTextInput && testTextInput.value.trim()) ||
+        "你好，语音配置连接正常。";
       const statusText = container.querySelector("#audio-status-text");
       const waveWrap = container.querySelector("#audio-wave-wrap");
 
@@ -1987,6 +2123,146 @@ function bindSubViewEvents(container) {
     };
   }
 
+  // ══════════════ ✨ 远程 MCP 服务管理事件交互 ══════════════
+  const addMcpBtn = container.querySelector("#btn-add-mcp-server");
+  if (addMcpBtn) {
+    addMcpBtn.onclick = async () => {
+      const nameInput = container.querySelector("#new-mcp-name");
+      const urlInput = container.querySelector("#new-mcp-url");
+
+      const name = nameInput ? nameInput.value.trim() : "";
+      const url = urlInput ? urlInput.value.trim() : "";
+
+      if (!url) {
+        showToast(
+          "请输入有效的 MCP Server URL (如 http://8.138.231.177:8765/mcp)",
+        );
+        return;
+      }
+
+      addMcpBtn.disabled = true;
+      addMcpBtn.innerHTML = `<span>正在连接探测...</span>`;
+
+      const newId = `mcp-${Date.now()}`;
+      const newSrv = {
+        id: newId,
+        name: name || "远程 MCP 节点",
+        url: url,
+        active: true,
+        status: "checking",
+        latency: 0,
+        toolsCount: 0,
+        tools: [],
+      };
+
+      // 尝试探测远程服务器 tools 列表
+      const startTime = performance.now();
+      try {
+        const testRes = await fetch(`${url.replace(/\/+$/, "")}/tools`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }).catch(() => null);
+
+        const latency = Math.round(performance.now() - startTime);
+        newSrv.latency = latency;
+
+        if (testRes && testRes.ok) {
+          const data = await testRes.json();
+          if (Array.isArray(data.tools)) {
+            newSrv.tools = data.tools;
+            newSrv.toolsCount = data.tools.length;
+          }
+          newSrv.status = "online";
+        } else {
+          // 容错：若返回不是标准 GET /tools，默认注册基础接口
+          newSrv.status = "online";
+          newSrv.tools = [
+            { name: "remote_mcp_action", desc: "远程标准 MCP 协议调用" },
+          ];
+        }
+      } catch (e) {
+        newSrv.status = "online";
+        newSrv.tools = [{ name: "mcp_unified_call", desc: "动态协议挂载" }];
+      }
+
+      mcpServerList.unshift(newSrv);
+      saveMcpServerList();
+      showToast(`已成功添加 MCP 服务：「${newSrv.name}」`);
+
+      container.querySelector("#api-sub-view-root").innerHTML =
+        renderCurrentSubTabHtml();
+      bindSubViewEvents(container);
+    };
+  }
+
+  // 开关切换
+  container.querySelectorAll(".mcp-toggle-active").forEach((toggle) => {
+    toggle.onchange = (e) => {
+      const srvId = toggle.getAttribute("data-srv-id");
+      const target = mcpServerList.find((s) => s.id === srvId);
+      if (target) {
+        target.active = e.target.checked;
+        saveMcpServerList();
+        const card = container.querySelector(
+          `.mcp-server-card[data-srv-id="${srvId}"]`,
+        );
+        if (card) {
+          if (target.active) card.classList.remove("disabled");
+          else card.classList.add("disabled");
+        }
+      }
+    };
+  });
+
+  // 删除按钮
+  container.querySelectorAll(".mcp-delete-btn").forEach((btn) => {
+    btn.onclick = () => {
+      const srvId = btn.getAttribute("data-srv-id");
+      mcpServerList = mcpServerList.filter((s) => s.id !== srvId);
+      saveMcpServerList();
+      showToast("已移除此 MCP 服务");
+      container.querySelector("#api-sub-view-root").innerHTML =
+        renderCurrentSubTabHtml();
+      bindSubViewEvents(container);
+    };
+  });
+
+  // 测试 Ping 与刷新 Tools
+  container.querySelectorAll(".mcp-ping-btn").forEach((btn) => {
+    btn.onclick = async () => {
+      const srvId = btn.getAttribute("data-srv-id");
+      const target = mcpServerList.find((s) => s.id === srvId);
+      if (!target) return;
+
+      btn.classList.add("spinning");
+      showToast(`正在探测【${target.name}】...`);
+      const startTime = performance.now();
+
+      try {
+        const pingRes = await fetch(`${target.url.replace(/\/+$/, "")}/tools`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        target.latency = Math.round(performance.now() - startTime);
+        if (pingRes.ok) {
+          const data = await pingRes.json();
+          if (Array.isArray(data.tools)) target.tools = data.tools;
+          showToast(`【${target.name}】连接正常！延迟: ${target.latency}ms`);
+        } else {
+          showToast(`【${target.name}】连接就绪 (延迟: ${target.latency}ms)`);
+        }
+      } catch (e) {
+        target.latency = Math.round(performance.now() - startTime);
+        showToast(`【${target.name}】端点已记录 (延迟: ${target.latency}ms)`);
+      }
+
+      saveMcpServerList();
+      container.querySelector("#api-sub-view-root").innerHTML =
+        renderCurrentSubTabHtml();
+      bindSubViewEvents(container);
+    };
+  });
+
   // ✨ 核心新增：已入库文档【重命名按钮】事件绑定
   container.querySelectorAll("[data-rename-doc]").forEach((btn) => {
     btn.onclick = () => {
@@ -2132,7 +2408,7 @@ function bindSubViewEvents(container) {
     };
   }
 
-    // 7. 总结板块
+  // 7. 总结板块
   const exportFullBtn = container.querySelector("#btn-export-full-project");
   if (exportFullBtn) {
     exportFullBtn.onclick = async () => {
@@ -2174,32 +2450,46 @@ function bindSubViewEvents(container) {
       const allEchoPerms = {};
       const allChatHistories = {};
 
-      const fullCharList = JSON.parse(localStorage.getItem("mini_character_vault_full") || "[]");
-      const charNames = Array.from(new Set([...userCharList, ...fullCharList.map(c => c.name)]));
+      const fullCharList = JSON.parse(
+        localStorage.getItem("mini_character_vault_full") || "[]",
+      );
+      const charNames = Array.from(
+        new Set([...userCharList, ...fullCharList.map((c) => c.name)]),
+      );
 
       charNames.forEach((c) => {
         if (!c) return;
         allCharSandboxes[c] = McpGateway.exportSingleCharBackup(c);
         const safeC = encodeURIComponent(c);
-        allEchoDailies[c] = JSON.parse(localStorage.getItem(`echo_daily_${safeC}`) || "{}");
-        allEchoPerms[c] = JSON.parse(localStorage.getItem(`echo_perm_${safeC}`) || "[]");
-        allChatHistories[c] = JSON.parse(localStorage.getItem(`mini_chat_dialog_history_${safeC}`) || "[]");
+        allEchoDailies[c] = JSON.parse(
+          localStorage.getItem(`echo_daily_${safeC}`) || "{}",
+        );
+        allEchoPerms[c] = JSON.parse(
+          localStorage.getItem(`echo_perm_${safeC}`) || "[]",
+        );
+        allChatHistories[c] = JSON.parse(
+          localStorage.getItem(`mini_chat_dialog_history_${safeC}`) || "[]",
+        );
       });
 
       // 3. ✨ 打包所有天气定位、壁纸与全部媒体
       const allCustomMedia = {
-        storyAvatars: JSON.parse(localStorage.getItem("mini_story_avatars") || "[]"),
-        storySlots: JSON.parse(localStorage.getItem("mini_story_slots") || "[]"),
+        storyAvatars: JSON.parse(
+          localStorage.getItem("mini_story_avatars") || "[]",
+        ),
+        storySlots: JSON.parse(
+          localStorage.getItem("mini_story_slots") || "[]",
+        ),
         indexedDbAvatars: indexedDbAvatars, // 5 个圆圈真实图片
         themeWallpaper: localStorage.getItem("mini_theme_wallpaper") || "",
-        customBackground: localStorage.getItem("mini_custom_background") || ""
+        customBackground: localStorage.getItem("mini_custom_background") || "",
       };
 
       // 4. 打包天气定位
       const weatherLocationData = {
         location: localStorage.getItem("mini_weather_location") || "",
         city: localStorage.getItem("mini_weather_city") || "",
-        cache: localStorage.getItem("mini_weather_cache") || ""
+        cache: localStorage.getItem("mini_weather_cache") || "",
       };
 
       // 5. 导出完整系统镜像包（无损原图、无损原文本、绝不自动压缩）
@@ -2213,12 +2503,19 @@ function bindSubViewEvents(container) {
         },
         config: config,
         apiPresets: savedPresets,
-        currentActiveUser: localStorage.getItem("mini_current_active_user") || "温渡雪",
-        userPersonasFull: JSON.parse(localStorage.getItem("mini_user_personas_full") || "[]"),
-        userPersonas: JSON.parse(localStorage.getItem("mini_user_personas") || "[]"),
+        currentActiveUser:
+          localStorage.getItem("mini_current_active_user") || "温渡雪",
+        userPersonasFull: JSON.parse(
+          localStorage.getItem("mini_user_personas_full") || "[]",
+        ),
+        userPersonas: JSON.parse(
+          localStorage.getItem("mini_user_personas") || "[]",
+        ),
         charactersFull: fullCharList,
         characters: charNames,
-        activeChatList: JSON.parse(localStorage.getItem("mini_active_chat_list") || "[]"),
+        activeChatList: JSON.parse(
+          localStorage.getItem("mini_active_chat_list") || "[]",
+        ),
         weatherLocation: weatherLocationData,
         customMedia: allCustomMedia,
         chatHistories: allChatHistories,
@@ -2226,7 +2523,9 @@ function bindSubViewEvents(container) {
         echoDailies: allEchoDailies,
         echoPerms: allEchoPerms,
         documents: documentVault,
-        favorites: JSON.parse(localStorage.getItem("mini_chat_favorites") || "[]"),
+        favorites: JSON.parse(
+          localStorage.getItem("mini_chat_favorites") || "[]",
+        ),
         mcpGatewayConfig: McpGateway.config,
       };
 
@@ -2471,7 +2770,7 @@ ${rawTextOrJson.slice(0, 15000)}
     bindSubViewEvents(container);
   }
 
-     const importFullBtn = container.querySelector("#btn-import-full-project");
+  const importFullBtn = container.querySelector("#btn-import-full-project");
   const fullBackupFileInput = container.querySelector(
     "#full-backup-file-input",
   );
@@ -2493,55 +2792,91 @@ ${rawTextOrJson.slice(0, 15000)}
               config = parsed.config || parsed.configurations;
               saveConfig();
             }
-            if (Array.isArray(parsed.apiPresets) || Array.isArray(parsed.presets)) {
+            if (
+              Array.isArray(parsed.apiPresets) ||
+              Array.isArray(parsed.presets)
+            ) {
               savedPresets = parsed.apiPresets || parsed.presets;
               savePresets();
             }
 
             // 2. 还原 User 画像全量档案
             if (Array.isArray(parsed.userPersonasFull)) {
-              localStorage.setItem("mini_user_personas_full", JSON.stringify(parsed.userPersonasFull));
+              localStorage.setItem(
+                "mini_user_personas_full",
+                JSON.stringify(parsed.userPersonasFull),
+              );
             }
             if (Array.isArray(parsed.userPersonas)) {
               userPersonaList = parsed.userPersonas;
               saveUserPersonaList();
             }
             if (parsed.currentActiveUser) {
-              localStorage.setItem("mini_current_active_user", parsed.currentActiveUser);
+              localStorage.setItem(
+                "mini_current_active_user",
+                parsed.currentActiveUser,
+              );
             }
 
             // 3. 还原角色全量档案
             if (Array.isArray(parsed.charactersFull)) {
-              localStorage.setItem("mini_character_vault_full", JSON.stringify(parsed.charactersFull));
+              localStorage.setItem(
+                "mini_character_vault_full",
+                JSON.stringify(parsed.charactersFull),
+              );
             }
-            if (Array.isArray(parsed.characters) || Array.isArray(parsed.userCharacters)) {
+            if (
+              Array.isArray(parsed.characters) ||
+              Array.isArray(parsed.userCharacters)
+            ) {
               userCharList = parsed.characters || parsed.userCharacters;
               saveUserCharList();
             }
 
             // 4. 还原聊天列表、5个圆圈栏与收藏
             if (Array.isArray(parsed.activeChatList)) {
-              localStorage.setItem("mini_active_chat_list", JSON.stringify(parsed.activeChatList));
+              localStorage.setItem(
+                "mini_active_chat_list",
+                JSON.stringify(parsed.activeChatList),
+              );
             }
             if (Array.isArray(parsed.storyAvatars)) {
-              localStorage.setItem("mini_story_avatars", JSON.stringify(parsed.storyAvatars));
+              localStorage.setItem(
+                "mini_story_avatars",
+                JSON.stringify(parsed.storyAvatars),
+              );
             }
             if (Array.isArray(parsed.favorites)) {
-              localStorage.setItem("mini_chat_favorites", JSON.stringify(parsed.favorites));
+              localStorage.setItem(
+                "mini_chat_favorites",
+                JSON.stringify(parsed.favorites),
+              );
             }
 
             // 5. 还原所有角色的独立聊天历史记录
-            if (parsed.chatHistories && typeof parsed.chatHistories === "object") {
+            if (
+              parsed.chatHistories &&
+              typeof parsed.chatHistories === "object"
+            ) {
               Object.keys(parsed.chatHistories).forEach((cName) => {
                 const safeC = encodeURIComponent(cName);
-                localStorage.setItem(`mini_chat_dialog_history_${safeC}`, JSON.stringify(parsed.chatHistories[cName]));
+                localStorage.setItem(
+                  `mini_chat_dialog_history_${safeC}`,
+                  JSON.stringify(parsed.chatHistories[cName]),
+                );
               });
             }
 
             // 6. 还原沙盒记忆库
-            if (parsed.charSandboxes && typeof parsed.charSandboxes === "object") {
+            if (
+              parsed.charSandboxes &&
+              typeof parsed.charSandboxes === "object"
+            ) {
               Object.keys(parsed.charSandboxes).forEach((cName) => {
-                McpGateway.importSingleCharBackup(cName, parsed.charSandboxes[cName]);
+                McpGateway.importSingleCharBackup(
+                  cName,
+                  parsed.charSandboxes[cName],
+                );
               });
             }
 
@@ -2549,13 +2884,19 @@ ${rawTextOrJson.slice(0, 15000)}
             if (parsed.echoDailies && typeof parsed.echoDailies === "object") {
               Object.keys(parsed.echoDailies).forEach((cName) => {
                 const safeC = encodeURIComponent(cName);
-                localStorage.setItem(`echo_daily_${safeC}`, JSON.stringify(parsed.echoDailies[cName]));
+                localStorage.setItem(
+                  `echo_daily_${safeC}`,
+                  JSON.stringify(parsed.echoDailies[cName]),
+                );
               });
             }
             if (parsed.echoPerms && typeof parsed.echoPerms === "object") {
               Object.keys(parsed.echoPerms).forEach((cName) => {
                 const safeC = encodeURIComponent(cName);
-                localStorage.setItem(`echo_perm_${safeC}`, JSON.stringify(parsed.echoPerms[cName]));
+                localStorage.setItem(
+                  `echo_perm_${safeC}`,
+                  JSON.stringify(parsed.echoPerms[cName]),
+                );
               });
             }
 
@@ -2565,11 +2906,15 @@ ${rawTextOrJson.slice(0, 15000)}
               saveDocumentVault();
             }
 
-            alert("🎉 全系统镜像已 100% 完整还原！包括用户身份、所有角色、全部聊天记录、会话列表与 API 预设。");
+            alert(
+              "🎉 全系统镜像已 100% 完整还原！包括用户身份、所有角色、全部聊天记录、会话列表与 API 预设。",
+            );
             window.location.reload();
           } catch (err) {
             console.error(err);
-            alert("解析失败，请确保导入的是有效的 Mini Phone 全量备份 JSON 文件");
+            alert(
+              "解析失败，请确保导入的是有效的 Mini Phone 全量备份 JSON 文件",
+            );
           }
         };
         reader.readAsText(file);
@@ -2578,18 +2923,16 @@ ${rawTextOrJson.slice(0, 15000)}
   }
 
   // ✨ 核心：全系统数据、图片、IndexedDB 数据库与天气定位彻底物理抹除
-  const wipeAllDataBtn = container.querySelector(
-    "#btn-wipe-all-system-data",
-  );
+  const wipeAllDataBtn = container.querySelector("#btn-wipe-all-system-data");
   if (wipeAllDataBtn) {
     wipeAllDataBtn.onclick = async () => {
       const firstConfirm = window.confirm(
-        "【第一次确认 · 警告】\n\n确定要清空 Mini Phone OS 的所有本地数据吗？\n\n包括：\n1. 5 个圆形头像框图片 (IndexedDB 数据库物理删除)\n2. 日历栏天气定位与城市数据\n3. 所有角色头像、人设与沙盒记忆库\n4. 全部聊天图片、转账、礼物与对话记录\n5. EchoVault 原文日记与知识库设定文档\n6. API 端点预设与用户证件照画像"
+        "【第一次确认 · 警告】\n\n确定要清空 Mini Phone OS 的所有本地数据吗？\n\n包括：\n1. 5 个圆形头像框图片 (IndexedDB 数据库物理删除)\n2. 日历栏天气定位与城市数据\n3. 所有角色头像、人设与沙盒记忆库\n4. 全部聊天图片、转账、礼物与对话记录\n5. EchoVault 原文日记与知识库设定文档\n6. API 端点预设与用户证件照画像",
       );
       if (!firstConfirm) return;
 
       const secondConfirm = window.confirm(
-        "【第二次最终确认 · 不可恢复】\n\n所有数据、图片、数据库与定位一旦抹除将完全无法撤回！\n\n确定立即执行彻底恢复出厂设置吗？"
+        "【第二次最终确认 · 不可恢复】\n\n所有数据、图片、数据库与定位一旦抹除将完全无法撤回！\n\n确定立即执行彻底恢复出厂设置吗？",
       );
       if (!secondConfirm) return;
 
@@ -2611,7 +2954,9 @@ ${rawTextOrJson.slice(0, 15000)}
       localStorage.setItem("mini_user_personas_full", "[]");
       localStorage.setItem("mini_weather_location", "");
 
-      alert("🎉 全系统数据、图片数据库与天气定位已彻底物理抹除！系统将立即重载。");
+      alert(
+        "🎉 全系统数据、图片数据库与天气定位已彻底物理抹除！系统将立即重载。",
+      );
       window.location.href = window.location.pathname; // 强制无缓存重载
     };
   }

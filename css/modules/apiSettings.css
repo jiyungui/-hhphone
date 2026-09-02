@@ -1851,3 +1851,193 @@ select.form-input {
 .migrate-or-divider:not(:empty)::before { margin-right: 8px; }
 .migrate-or-divider:not(:empty)::after { margin-left: 8px; }
 
+
+/* ═══════════ 板块 4: 远程 MCP 服务管理 (黑白 INS 极简风) ═══════════ */
+.mcp-count-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #000000;
+  color: #FFFFFF;
+  letter-spacing: 0.3px;
+}
+
+.mcp-add-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg-sub);
+  border: 1px solid var(--line-color);
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 8px;
+}
+
+.mcp-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.mcp-add-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mcp-server-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.mcp-server-card {
+  background: #FFFFFF;
+  border: 1.5px solid var(--line-dark, #111111);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.mcp-server-card.disabled {
+  opacity: 0.5;
+  background: var(--bg-sub);
+  border-color: var(--line-color);
+}
+
+.mcp-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.mcp-info-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.mcp-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mcp-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #CCCCCC;
+}
+
+.mcp-status-dot.active {
+  background: #000000;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.15);
+}
+
+.mcp-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: 0.2px;
+}
+
+.mcp-tag {
+  font-size: 8px;
+  font-weight: 700;
+  border: 1px solid var(--line-dark);
+  padding: 1px 4px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+}
+
+.mcp-url-text {
+  font-size: 10px;
+  font-family: monospace;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.mcp-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.mcp-icon-btn {
+  background: transparent;
+  border: 1px solid var(--line-color);
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-main);
+  transition: all 0.15s ease;
+}
+
+.mcp-icon-btn:hover {
+  background: var(--bg-sub);
+  border-color: #000000;
+}
+
+.mcp-icon-btn:active {
+  transform: scale(0.92);
+}
+
+.mcp-icon-btn.spinning svg {
+  animation: insSpin 0.8s linear infinite;
+}
+
+/* 工具抽屉与 Pills */
+.mcp-tools-drawer {
+  background: var(--bg-sub);
+  border-radius: 6px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mcp-tools-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.mcp-latency {
+  font-family: monospace;
+  color: #000000;
+  font-weight: 800;
+}
+
+.mcp-tools-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.mcp-tool-pill {
+  font-size: 9px;
+  background: #FFFFFF;
+  border: 1px solid var(--line-color);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text-main);
+}
+
+.mcp-no-tools {
+  font-size: 9.5px;
+  color: var(--text-muted);
+  font-style: italic;
+}

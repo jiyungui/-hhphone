@@ -3,6 +3,7 @@ import { EchoVault } from "../utils/echoVault.js";
 import { resolveApiEndpoints } from "./apiSettings.js";
 import { CameraTool } from "./cameraTool.js";
 import { VoiceTool } from "./voiceTool.js";
+import { MediaStorage } from '../utils/mediaStorage.js';
 
 let activeCharInfo = null;
 let chatMessages = [];
@@ -204,25 +205,32 @@ function updateFullCharData(charObj) {
   activeCharInfo = { ...activeCharInfo, ...charObj };
 }
 
-// ════════════ ✨ 头像库数据存取与全系统档案同步 ════════════
+// ════════════ ✨ 头像库数据存取（内存缓存 + IndexedDB 海量存储，永不撑爆） ════════════
+const avatarLibMemoryCache = new Map();
+
 function getCharAvatarLibrary(charName) {
-  const safeChar = encodeURIComponent(charName || "default");
-  return JSON.parse(
-    localStorage.getItem(`mini_char_avatar_library_${safeChar}`) ||
-      JSON.stringify({
-        charAvatars: [],
-        userAvatars: [],
-        couplePairs: [],
-      }),
-  );
+  if (avatarLibMemoryCache.has(charName)) {
+    return avatarLibMemoryCache.get(charName);
+  }
+  const safeChar = encodeURIComponent(charName || 'default');
+  const fallback = JSON.parse(localStorage.getItem(`mini_char_avatar_library_${safeChar}`) || JSON.stringify({
+    charAvatars: [],
+    userAvatars: [],
+    couplePairs: []
+  }));
+  avatarLibMemoryCache.set(charName, fallback);
+  
+  // 异步从 IndexedDB 深度加载并校准
+  MediaStorage.loadAvatarLibrary(charName).then(data => {
+    if (data) avatarLibMemoryCache.set(charName, data);
+  });
+  return fallback;
 }
 
 function saveCharAvatarLibrary(charName, lib) {
-  const safeChar = encodeURIComponent(charName || "default");
-  localStorage.setItem(
-    `mini_char_avatar_library_${safeChar}`,
-    JSON.stringify(lib),
-  );
+  avatarLibMemoryCache.set(charName, lib);
+  // ✨ 核心：大体积图片数据全部交由 IndexedDB 海量数据库保存，不占用 LocalStorage 任何配额！
+  MediaStorage.saveAvatarLibrary(charName, lib);
 }
 
 // 同步更新 Char 全局档案头像（角色库 + 会话列表）
@@ -350,13 +358,17 @@ export function openChatRoom(charInfo) {
   const detectedLang = detectCharPrimaryLanguage(fullData);
   const isForeign = detectedLang !== "中文";
 
-  activeCharInfo = {
+   activeCharInfo = {
     remark: "",
+    // ✨ 戳一戳配置初始化
+    nudgeEnabled: fullData.nudgeEnabled !== undefined ? fullData.nudgeEnabled : true,
+    userNudgeSuffix: fullData.userNudgeSuffix || "的脸颊",
+    charNudgeSuffix: fullData.charNudgeSuffix || "的脑袋并揉了揉",
     enableTranslation:
       fullData.enableTranslation !== undefined
         ? fullData.enableTranslation
         : isForeign,
-    translationStyle: fullData.translationStyle || "inline", // ✨ 'inline' (常驻内嵌) | 'click_toggle' (点击展开折叠)
+    translationStyle: fullData.translationStyle || "inline",
     targetLang: fullData.targetLang || detectedLang,
     timePerceptionEnabled:
       fullData.timePerceptionEnabled !== undefined
@@ -398,7 +410,11 @@ export function openChatRoom(charInfo) {
     ...fullData,
   };
 
-  chatMessages = loadChatMessages(activeCharInfo.name);
+   chatMessages = loadChatMessages(activeCharInfo.name);
+  // ✨ 从 IndexedDB 预热加载当前角色的海量头像库
+  MediaStorage.loadAvatarLibrary(activeCharInfo.name).then(lib => {
+    if (lib) avatarLibMemoryCache.set(activeCharInfo.name, lib);
+  });
   isGenerating = false;
   isSearchMode = false;
   isMoreToolsOpen = false;
@@ -738,10 +754,36 @@ export function renderChatRoomView(container) {
   if (isAvatarVaultOpen) {
     bindAvatarVaultEvents(roomEl, container);
   }
-  if (isChatThemeOpen) {
+   if (isChatThemeOpen) {
     bindChatThemeEvents(roomEl, container);
   }
   scrollToBottom(roomEl);
+}
+
+// ✨ 新增：0 闪屏底栏按键状态控制器（动态解禁 disabled，绝不卡死）
+function updateChatFooterState() {
+  const continueBtn = document.getElementById("btn-continue-writing");
+  const sendBtn = document.getElementById("btn-send-message");
+  const inputArea = document.getElementById("chat-input-textarea");
+
+  if (continueBtn) {
+    continueBtn.disabled = isGenerating;
+    if (isGenerating) {
+      continueBtn.classList.add("thinking");
+      continueBtn.innerHTML = `<span class="ins-btn-spinner"></span><span>思考中</span>`;
+    } else {
+      continueBtn.classList.remove("thinking");
+      continueBtn.innerHTML = `续写`;
+    }
+  }
+
+  if (sendBtn) {
+    sendBtn.disabled = isGenerating;
+  }
+
+  if (inputArea && !isGenerating) {
+    inputArea.removeAttribute("disabled");
+  }
 }
 
 function renderNormalFooterHtml() {
@@ -1154,106 +1196,79 @@ function bindAvatarVaultEvents(roomEl, container) {
     };
   });
 
-  // 3. ✨ 上传并绑定情侣头像对（先选双图，随后弹出配置分配弹窗）
+   // 3. ✨ 点击上传直接呼出悬浮窗口：左侧 Char 框 + 右侧 User 框，分别点击上传并命名
   const upCoupleBtn = roomEl.querySelector("#btn-upload-couple-pair");
   if (upCoupleBtn) {
     upCoupleBtn.onclick = () => {
-      const fileInput1 = document.createElement("input");
-      fileInput1.type = "file";
-      fileInput1.accept = "image/*";
-
-      fileInput1.onchange = (e1) => {
-        const file1 = e1.target.files[0];
-        if (!file1) return;
-        handleAvatarFile(file1, (img1DataUrl) => {
-          const fileInput2 = document.createElement("input");
-          fileInput2.type = "file";
-          fileInput2.accept = "image/*";
-
-          fileInput2.onchange = (e2) => {
-            const file2 = e2.target.files[0];
-            if (!file2) return;
-            handleAvatarFile(file2, (img2DataUrl) => {
-              // 呼出 INS 极简绑定分配弹窗
-              openCouplePairConfigModal(
-                img1DataUrl,
-                img2DataUrl,
-                (pairData) => {
-                  lib.couplePairs.unshift({
-                    id: `cp-${Date.now()}`,
-                    title: pairData.title,
-                    charUrl: pairData.charUrl,
-                    userUrl: pairData.userUrl,
-                  });
-                  saveCharAvatarLibrary(char.name, lib);
-                  refreshAvatarVaultView(roomEl, container);
-                  showInsToast(`已成功录入情侣头像：${pairData.title}`);
-                },
-              );
-            });
-          };
-
-          // 选择第 2 张图
-          setTimeout(() => fileInput2.click(), 100);
+      openCouplePairUploadModal((pairData) => {
+        lib.couplePairs.unshift({
+          id: `cp-${Date.now()}`,
+          title: pairData.title,
+          charUrl: pairData.charUrl,
+          userUrl: pairData.userUrl,
         });
-      };
-      fileInput1.click();
+        saveCharAvatarLibrary(char.name, lib);
+        refreshAvatarVaultView(roomEl, container);
+        showInsToast(`已成功录入情侣头像：${pairData.title}`);
+      });
     };
   }
 
-  // ✨ INS 弹窗：自由命名与选择哪张是 Char / 哪张是 User
-  function openCouplePairConfigModal(imgA, imgB, onSave) {
-    let isASwapped = false; // 默认图 A 为 Char，图 B 为 User
+    // ✨ INS 高级白黑风：情头录入弹窗
+  function openCouplePairUploadModal(onSave) {
+    let charImgUrl = '';
+    let userImgUrl = '';
 
     const modal = document.createElement("div");
     modal.className = "ins-modal-overlay active";
     modal.style.zIndex = "90";
 
-    const updateDualDom = () => {
-      const charSrc = isASwapped ? imgB : imgA;
-      const userSrc = isASwapped ? imgA : imgB;
-      modal.querySelector("#couple-modal-char-img").src = charSrc;
-      modal.querySelector("#couple-modal-user-img").src = userSrc;
-    };
-
     modal.innerHTML = `
-    <div class="ins-modal-card" style="max-width: 320px; gap: 10px;">
-      <div class="ins-modal-header">
-        <span class="ins-modal-title">绑定情侣头像 / COUPLE PAIR</span>
+    <div class="ins-modal-card" style="max-width: 320px; gap: 12px; padding: 16px;">
+      <div class="ins-modal-header" style="border-bottom: 1px solid var(--line-color); padding-bottom: 8px;">
+        <span class="ins-modal-title" style="font-size:12.5px; font-weight:800; letter-spacing:0.5px;">绑定情侣头像 / COUPLE PAIR</span>
         <button class="ins-modal-close" id="btn-close-couple-modal">×</button>
       </div>
 
-      <!-- 双图实时预览与一笔画心 -->
-      <div class="ins-couple-modal-preview">
-        <div class="ins-couple-single">
-          <img id="couple-modal-char-img" src="${imgA}" class="ins-couple-thumb" />
-          <span class="ins-couple-role-tag" style="color:#111;">Char 头像</span>
+      <p class="ins-card-desc" style="font-size:9.5px; line-height:1.4; color:#888;">分别点击左右圆形槽位上传照片，中间连结为一笔画动态心形：</p>
+
+      <!-- 双框分别上传与一笔画心 -->
+      <div class="ins-couple-modal-preview" style="background: #FAFAFA; border: 1px solid var(--line-color); border-radius: 12px; padding: 14px 10px; display: flex; align-items: center; justify-content: space-around;">
+        <!-- 左侧：Char 头像框 -->
+        <div class="ins-couple-single" id="box-pick-char-avatar" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;" title="点击上传 Char 头像">
+          <div class="couple-avatar-upload-slot" id="slot-char-preview" style="width: 58px; height: 58px; border-radius: 50%; border: 1.5px dashed #111; background: #FFF; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </div>
+          <span style="font-size: 8.5px; font-weight: 800; color: #111;">Char 形象</span>
+          <input type="file" id="file-pick-couple-char" accept="image/*" style="display:none;" />
         </div>
 
-        <div class="ins-oneline-heart-wrap">
+        <!-- 中间：一笔画动态心 -->
+        <div class="ins-oneline-heart-wrap" style="padding: 0 4px;">
           <svg class="oneline-heart-svg" width="30" height="30" viewBox="0 0 48 48" fill="none">
             <path class="oneline-heart-path" d="M12 24 C8 20, 4 14, 12 8 C18 3, 24 10, 24 16 C24 10, 30 3, 36 8 C44 14, 40 20, 36 24 C30 30, 24 38, 24 42 C24 38, 18 30, 12 24 Z" stroke="#111111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </div>
 
-        <div class="ins-couple-single">
-          <img id="couple-modal-user-img" src="${imgB}" class="ins-couple-thumb" />
-          <span class="ins-couple-role-tag" style="color:#111;">User 头像</span>
+        <!-- 右侧：User 头像框 -->
+        <div class="ins-couple-single" id="box-pick-user-avatar" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;" title="点击上传 User 头像">
+          <div class="couple-avatar-upload-slot" id="slot-user-preview" style="width: 58px; height: 58px; border-radius: 50%; border: 1.5px dashed #111; background: #FFF; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </div>
+          <span style="font-size: 8.5px; font-weight: 800; color: #111;">User 形象</span>
+          <input type="file" id="file-pick-couple-user" accept="image/*" style="display:none;" />
         </div>
       </div>
 
-      <button class="ins-mini-btn" id="btn-swap-couple-roles" style="margin: 0 auto; padding: 4px 12px; font-size: 10px;">
-        ⇄ 左右互换角色归属
-      </button>
-
-      <div style="display:flex; flex-direction:column; gap:3px; margin-top:2px;">
-        <label style="font-size:9px; font-weight:700; color:#888;">这套情头的名称：</label>
-        <input type="text" class="api-input" id="input-couple-modal-title" value="黑白情侣头像" placeholder="输入名称..." style="font-weight:700;" />
+      <!-- INS 风格极简命名输入框 -->
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label style="font-size: 8.5px; font-weight: 800; color: #888; letter-spacing: 0.5px;">情侣头像名称 / PAIR TITLE</label>
+        <input type="text" id="input-couple-modal-title" value="黑白情侣头像" placeholder="输入名称..." style="width: 100%; padding: 8px 10px; font-size: 11px; font-weight: 700; color: #111; background: #FAFAFA; border: 1px solid var(--line-color); border-radius: 8px; outline: none;" />
       </div>
 
-      <div class="ins-modal-actions" style="margin-top: 6px;">
-        <button class="ins-modal-btn cancel" id="btn-cancel-couple-modal">放弃</button>
-        <button class="ins-modal-btn confirm" id="btn-save-couple-modal">确认保存入库</button>
+      <div class="ins-modal-actions" style="display: flex; gap: 8px; margin-top: 4px;">
+        <button class="ins-modal-btn cancel" id="btn-cancel-couple-modal" style="flex: 1; padding: 9px 0; border-radius: 8px; font-size: 10.5px; font-weight: 700;">放弃</button>
+        <button class="ins-modal-btn confirm" id="btn-save-couple-modal" style="flex: 1.2; padding: 9px 0; border-radius: 8px; font-size: 10.5px; font-weight: 800; background: #111; color: #FFF;">确认保存入库</button>
       </div>
     </div>
   `;
@@ -1261,25 +1276,47 @@ function bindAvatarVaultEvents(roomEl, container) {
     document.body.appendChild(modal);
 
     const close = () => modal.remove();
-
     modal.querySelector("#btn-close-couple-modal").onclick = close;
     modal.querySelector("#btn-cancel-couple-modal").onclick = close;
 
-    // 点击互换归属
-    modal.querySelector("#btn-swap-couple-roles").onclick = () => {
-      isASwapped = !isASwapped;
-      updateDualDom();
+    // 左侧点击选 Char 图
+    const charBox = modal.querySelector("#box-pick-char-avatar");
+    const charFileInput = modal.querySelector("#file-pick-couple-char");
+    charBox.onclick = () => { charFileInput.value = ''; charFileInput.click(); };
+    charFileInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      handleAvatarFile(file, (dataUrl) => {
+        charImgUrl = dataUrl;
+        modal.querySelector("#slot-char-preview").innerHTML = `<img src="${dataUrl}" class="ins-couple-thumb" style="width:100%; height:100%; border:none;" />`;
+      });
     };
 
-    // 保存
-    modal.querySelector("#btn-save-couple-modal").onclick = () => {
-      const titleVal =
-        modal.querySelector("#input-couple-modal-title").value.trim() ||
-        "情侣头像对";
-      const finalCharUrl = isASwapped ? imgB : imgA;
-      const finalUserUrl = isASwapped ? imgA : imgB;
+    // 右侧点击选 User 图
+    const userBox = modal.querySelector("#box-pick-user-avatar");
+    const userFileInput = modal.querySelector("#file-pick-couple-user");
+    userBox.onclick = () => { userFileInput.value = ''; userFileInput.click(); };
+    userFileInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      handleAvatarFile(file, (dataUrl) => {
+        userImgUrl = dataUrl;
+        modal.querySelector("#slot-user-preview").innerHTML = `<img src="${dataUrl}" class="ins-couple-thumb" style="width:100%; height:100%; border:none;" />`;
+      });
+    };
 
-      onSave({ title: titleVal, charUrl: finalCharUrl, userUrl: finalUserUrl });
+    // 保存入库
+    modal.querySelector("#btn-save-couple-modal").onclick = () => {
+      if (!charImgUrl || !userImgUrl) {
+        alert("请分别点击左右两侧头像框，上传完整的 Char 头像和 User 头像！");
+        return;
+      }
+      const titleVal = modal.querySelector("#input-couple-modal-title").value.trim() || "情侣头像对";
+      onSave({
+        title: titleVal,
+        charUrl: charImgUrl,
+        userUrl: userImgUrl,
+      });
       close();
     };
   }
@@ -2233,6 +2270,40 @@ function renderSettingsContentHtml() {
               <label class="ins-field-label">聊天备注 / ALIAS</label>
               <input type="text" class="ins-input-text" id="input-char-remark" placeholder="专属昵称/备注" value="${escapeHtml(char.remark || "")}" />
             </div>
+                  </div>
+        </div>
+      </section>
+
+      <!-- ✨ 模块 1.5：戳一戳功能配置 (位于翻译板块正上方) -->
+      <section class="ins-settings-card">
+        <div class="ins-card-title-row">
+          <span class="ins-card-title">戳一戳功能 / NUDGE & PAT</span>
+          <span style="font-size: 8.5px; color: #888; font-weight: 700;">WECHAT STYLE</span>
+        </div>
+        <div class="ins-setting-toggle-row" style="margin-top: 4px;">
+          <div class="toggle-left-info">
+            <span class="toggle-main-title">启用双击头像「戳一戳」</span>
+            <span class="toggle-sub-desc">双击聊天气泡头像触发微信式戳一戳，Char 会对此产生真实情绪反应。</span>
+          </div>
+          <label class="ins-switch">
+            <input type="checkbox" id="toggle-nudge-enable" ${char.nudgeEnabled !== false ? "checked" : ""} />
+            <span class="ins-slider"></span>
+          </label>
+        </div>
+
+                  <div id="wrap-nudge-custom-fields" style="margin-top: 8px; display: ${char.nudgeEnabled !== false ? 'flex' : 'none'}; flex-direction: column; gap: 6px;">
+          <!-- 1. User 被戳后缀 -->
+          <div class="ins-field-group">
+            <label class="ins-field-label">【你 (User)】的被戳动作后缀</label>
+            <input type="text" class="ins-input-text" id="input-self-nudge-suffix" value="${escapeHtml(char.selfNudgeSuffix || '的小脑袋')}" placeholder="例如：的小脑袋 / 的手心 / 的小肚子" />
+          </div>
+          <!-- 2. Char 被戳后缀 (双方均可修改) -->
+          <div class="ins-field-group">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label class="ins-field-label">【${escapeHtml(char.name)}】的被戳动作后缀 (你与Char均可随时修改)</label>
+              <span style="font-size:8px; color:#888;">CHAR & USER</span>
+            </div>
+            <input type="text" class="ins-input-text" id="input-char-nudge-suffix" value="${escapeHtml(char.charNudgeSuffix || '的脸颊')}" placeholder="例如：的脸颊 / 的肩膀 / 的小猫耳朵" />
           </div>
         </div>
       </section>
@@ -2712,6 +2783,55 @@ function bindChatRoomEvents(roomEl, container) {
     };
   }
 
+  // ✨ 触发戳一戳动作
+function triggerNudgeAction(isUserTarget, avatarEl, container) {
+  const charName = activeCharInfo.name;
+  const userPersonasFull = JSON.parse(localStorage.getItem('mini_user_personas_full') || '[]');
+  const activeUserName = localStorage.getItem('mini_current_active_user') || (userPersonasFull[0]?.name || '你');
+  const timeStr = `${new Date().getHours().toString().padStart(2, '0')}:${new Date().getMinutes().toString().padStart(2, '0')}`;
+
+  // 1. 头像晃动微动画
+  if (avatarEl) {
+    avatarEl.classList.remove('nudge-shake');
+    void avatarEl.offsetWidth; // 触发重绘
+    avatarEl.classList.add('nudge-shake');
+  }
+
+   // 2. 生成微信式居中系统提示语（严格使用对应的 User / Char 后缀）
+  let noticeContent = '';
+  if (isUserTarget) {
+    const userSuffix = activeCharInfo.selfNudgeSuffix || '的小脑袋';
+    noticeContent = `“${activeUserName}” 戳了戳 自己的${userSuffix.replace(/^[的\s]+/, '')}`;
+  } else {
+    const charSuffix = activeCharInfo.charNudgeSuffix || '的脸颊';
+    noticeContent = `“${activeUserName}” 戳了戳 “${charName}” ${charSuffix.startsWith('的') ? charSuffix : '的' + charSuffix}`;
+  }
+
+  const noticeMsg = {
+    role: 'notice',
+    noticeType: 'nudge',
+    isUserNudge: !isUserTarget,
+    content: noticeContent,
+    time: timeStr,
+    timestamp: Date.now()
+  };
+
+  chatMessages.push(noticeMsg);
+  saveChatMessages(charName, chatMessages);
+  updateActiveChatListSummary(charName, `[戳一戳] ${noticeContent}`, timeStr);
+
+    // 3. 局部追加提示条，0 闪屏 (不自动触发任何续写回复)
+  const scrollArea = document.querySelector('#chat-messages-scroll-area');
+  if (scrollArea) {
+    const temp = document.createElement('div');
+    temp.innerHTML = renderMessagesHtml([noticeMsg]);
+    if (temp.firstElementChild) {
+      scrollArea.appendChild(temp.firstElementChild);
+      setTimeout(() => { scrollArea.scrollTop = scrollArea.scrollHeight; }, 30);
+    }
+  }
+}
+
   // 1. 重回
   const rewindTool = roomEl.querySelector("#tool-rewind-chat");
   if (rewindTool) {
@@ -2729,23 +2849,26 @@ function bindChatRoomEvents(roomEl, container) {
     };
   }
 
-  // 重回弹窗关闭
+   // ✨ 重回弹窗关闭（0 闪屏直接移除 active）
   const closeRewindBtn = roomEl.querySelector("#btn-cancel-rewind");
   const cancelRewindAction = roomEl.querySelector("#btn-cancel-rewind-action");
+  const rewindModalEl = roomEl.querySelector("#ins-rewind-modal");
+
   const handleCloseRewind = () => {
     isRewindModalOpen = false;
-    renderChatRoomView(container);
+    if (rewindModalEl) rewindModalEl.classList.remove("active");
   };
   if (closeRewindBtn) closeRewindBtn.onclick = handleCloseRewind;
   if (cancelRewindAction) cancelRewindAction.onclick = handleCloseRewind;
 
-  // 重回确认执行
+  // ✨ 重回确认执行：先移除上一轮回复、关闭弹窗，再触发重新思考
   const confirmRewindBtn = roomEl.querySelector("#btn-confirm-rewind-action");
   if (confirmRewindBtn) {
     confirmRewindBtn.onclick = () => {
       const dirInput = roomEl.querySelector("#rewind-direction-input");
       const directionText = dirInput ? dirInput.value.trim() : "";
 
+      // 1. 回滚消息：弹出最近一轮的 assistant 回复
       while (
         chatMessages.length > 0 &&
         chatMessages[chatMessages.length - 1].role === "assistant"
@@ -2753,9 +2876,32 @@ function bindChatRoomEvents(roomEl, container) {
         chatMessages.pop();
       }
 
-      saveChatMessages(activeCharInfo.name, chatMessages);
-      isRewindModalOpen = false;
+      // 如果上一条紧跟的是 Char 主动的戳一戳，也一同回滚
+      if (
+        chatMessages.length > 0 &&
+        chatMessages[chatMessages.length - 1].role === "notice" &&
+        chatMessages[chatMessages.length - 1].isCharNudge
+      ) {
+        chatMessages.pop();
+      }
 
+      saveChatMessages(activeCharInfo.name, chatMessages);
+
+      // 2. 立即关闭弹窗并刷新消息区域
+      isRewindModalOpen = false;
+      if (rewindModalEl) rewindModalEl.classList.remove("active");
+
+      const scrollArea = document.querySelector("#chat-messages-scroll-area");
+      if (scrollArea) {
+        scrollArea.innerHTML =
+          `<div class="chat-handoff-pill">[沙盒已连接] ${escapeHtml(activeCharInfo.name)} · 实时交互通道</div>` +
+          renderMessagesHtml(chatMessages);
+        setTimeout(() => {
+          scrollArea.scrollTop = scrollArea.scrollHeight;
+        }, 30);
+      }
+
+      // 3. 立即触发带有微调倾向的思考生成
       handleSingleTurnReply(container, directionText);
     };
   }
@@ -2943,10 +3089,32 @@ function bindChatRoomEvents(roomEl, container) {
     };
   });
 
+   // ✨ 头像双击时间戳缓存
+  let lastAvatarClickTime = 0;
+  let lastAvatarSlotEl = null;
+
   // 气泡点击与多选
-  const bubbleArea = roomEl.querySelector("#chat-messages-scroll-area");
+  const bubbleArea = roomEl.querySelector('#chat-messages-scroll-area');
   if (bubbleArea) {
     bubbleArea.onclick = (e) => {
+      // ✨ 核心交互：双击头像触发「戳一戳」
+      const avatarSlot = e.target.closest(".msg-round-avatar-slot.show");
+      if (avatarSlot && activeCharInfo.nudgeEnabled !== false) {
+        const now = Date.now();
+        if (lastAvatarSlotEl === avatarSlot && (now - lastAvatarClickTime) < 350) {
+          lastAvatarClickTime = 0;
+          lastAvatarSlotEl = null;
+
+          const msgRow = avatarSlot.closest(".msg-bubble-row");
+          const isUserAvatar = msgRow && msgRow.classList.contains("user");
+          
+          // 执行戳一戳动画与系统消息生成
+          triggerNudgeAction(isUserAvatar, avatarSlot, container);
+          return;
+        }
+        lastAvatarClickTime = now;
+        lastAvatarSlotEl = avatarSlot;
+      }
       const menuItemBtn = e.target.closest(".bubble-menu-item");
       if (menuItemBtn) {
         const action = menuItemBtn.getAttribute("data-action");
@@ -3157,9 +3325,11 @@ function bindBottomBarEvents(roomEl, container) {
     };
   }
 
-  const sendBtn = roomEl.querySelector("#btn-send-message");
+   const sendBtn = roomEl.querySelector("#btn-send-message");
   const inputArea = roomEl.querySelector("#chat-input-textarea");
+  const continueBtn = roomEl.querySelector("#btn-continue-writing");
 
+  // 1. 发送按钮 / Enter 回车：只发消息，坚决不自动回复（支持多次连发）
   const executeSendOnly = () => {
     if (!inputArea) return;
     const text = inputArea.value.trim();
@@ -3178,10 +3348,19 @@ function bindBottomBarEvents(roomEl, container) {
     };
   }
 
-  const continueBtn = roomEl.querySelector("#btn-continue-writing");
+  // 2. 续写按钮：只有点击「续写」时才触发角色思考回复
   if (continueBtn) {
     continueBtn.onclick = () => {
-      if (isGenerating) return;
+      if (isGenerating) {
+        showInsToast("正在思考中，请稍候...");
+        return;
+      }
+      // 若输入框内还有未点击发送的文本，点续写时一并发出并思考
+      if (inputArea && inputArea.value.trim()) {
+        const pendingText = inputArea.value.trim();
+        inputArea.value = "";
+        handleUserSendMessageOnly(pendingText, container);
+      }
       handleSingleTurnReply(container);
     };
   }
@@ -3405,6 +3584,17 @@ function bindSettingsEvents(roomEl, container) {
         name: activeCharInfo.name,
         autoChangeRemark: e.target.checked,
       });
+    };
+  }
+
+    // ✨ 戳一戳开关显隐与即时暂存
+  const nudgeToggle = roomEl.querySelector("#toggle-nudge-enable");
+  const nudgeFieldsWrap = roomEl.querySelector("#wrap-nudge-custom-fields");
+  if (nudgeToggle && nudgeFieldsWrap) {
+    nudgeToggle.onchange = (e) => {
+      nudgeFieldsWrap.style.display = e.target.checked ? "flex" : "none";
+      activeCharInfo.nudgeEnabled = e.target.checked;
+      updateFullCharData({ name: activeCharInfo.name, nudgeEnabled: e.target.checked });
     };
   }
 
@@ -3714,6 +3904,14 @@ function bindSettingsEvents(roomEl, container) {
         10,
       );
 
+              // ✨ 收集戳一戳配置（User 后缀与 Char 后缀）
+      const nudgeEnabledVal = roomEl.querySelector("#toggle-nudge-enable")?.checked !== false;
+      const selfNudgeVal = roomEl.querySelector("#input-self-nudge-suffix")?.value.trim() || "的小脑袋";
+      const charNudgeVal = roomEl.querySelector("#input-char-nudge-suffix")?.value.trim() || "的脸颊";
+
+      activeCharInfo.nudgeEnabled = nudgeEnabledVal;
+      activeCharInfo.selfNudgeSuffix = selfNudgeVal;
+      activeCharInfo.charNudgeSuffix = charNudgeVal;
       activeCharInfo.remark = remarkVal;
       activeCharInfo.enableTranslation = enableTrans;
       activeCharInfo.translationStyle =
@@ -4088,101 +4286,127 @@ function handleUserSendMessageOnly(userText, container) {
  * 核心引擎：深度人设锚定、物理空间隔离、真实情绪主见与动态多气泡输出
  */
 async function handleSingleTurnReply(container, directionPrompt = "") {
-  isGenerating = true;
-  renderChatRoomView(container);
+  if (isGenerating) {
+    showInsToast("正在思考中，请稍候...");
+    return;
+  }
 
   const charName = activeCharInfo.name;
   const apiConfig = JSON.parse(
     localStorage.getItem("mini_api_settings") || "{}",
   );
 
-  // 1. 获取对话对象（User）画像
-  const userPersonasFull = JSON.parse(
-    localStorage.getItem("mini_user_personas_full") || "[]",
-  );
-  const activeUserName =
-    localStorage.getItem("mini_current_active_user") ||
-    userPersonasFull[0]?.name ||
-    "用户";
-  const currentUserObj =
-    userPersonasFull.find((u) => u.name === activeUserName) || {};
-
-  // 2. 获取 Char 完整档案与记忆/文档/时区
-  const fullChar = getFullCharData(charName) || activeCharInfo;
-  const allMemories = getAllAggregatedMemories(charName);
-  const darkroom = McpGateway.getCharDarkroom(charName);
-  const weather = McpGateway.getCharRelationshipWeather(charName);
-  const echoContext = EchoVault.getFormattedPromptContext(charName);
-  const tzInfo = getCharPerceivedTimeInfo(
-    fullChar.perceivedTimezone || "Asia/Tokyo",
-  );
-
-  // 读取投喂文档
-  const allDocs = JSON.parse(
-    localStorage.getItem("mini_mcp_documents") || "[]",
-  );
-  const relevantDocs = allDocs.filter(
-    (d) =>
-      d.active && (d.charTarget === "__all__" || d.charTarget === charName),
-  );
-  const docPromptSection =
-    relevantDocs.length > 0
-      ? relevantDocs
-          .map(
-            (d) => `【知识库设定 · ${d.title}】:\n${d.content.slice(0, 3000)}`,
-          )
-          .join("\n\n")
-      : "";
-
-  // ✨ 核心修复：定义 avatarPromptSection 变量，读取头像库备选与情头
-  const avatarLib = getCharAvatarLibrary(charName);
-  let avatarPromptSection = "";
-  if (activeCharInfo.autoChangeAvatar) {
-    const charAvList =
-      avatarLib.charAvatars.length > 0
-        ? avatarLib.charAvatars
-            .map((a) => `[ID: ${a.id}, 标题: "${a.title}"]`)
-            .join("、")
-        : "(库中暂无单独Char头像)";
-    const coupleList =
-      avatarLib.couplePairs.length > 0
-        ? avatarLib.couplePairs
-            .map((cp) => `[ID: ${cp.id}, 标题: "${cp.title}"]`)
-            .join("、")
-        : "(暂无情头对)";
-    avatarPromptSection = `\n════════ 🖼️ 专属头像库与图片自动识别入库 ════════
-1. 【主动换头像】：你可以根据当下的心情、剧情发展、恋爱互动或对方要求，从现有图库中挑选换上头像！
-   【Char 备选库】：${charAvList} | 【情头对】：${coupleList}
-   若本次要换头像，请在 avatarAction 中填写目标 ID（如 {"type":"char","id":"cav-xxx"} 或 {"type":"couple","id":"cp-xxx"}）；不换填 null。
-2. 【发图自动识别与富有新意的人设命名】：如果对方在近期消息中发送了图片/照片，请你结合上下文、对方说的话以及【你当下的真实情绪与想法】进行智能识别：
-   - 若为单人头像：判断属于【Char 形象 (target: "char")】还是【User 形象 (target: "user")】；
-   - 若为情头：归类为【情侣头像 (target: "couple")】；
-   - 命名铁律（必须有新意、符合你的性格与当下想法）：
-     * 严禁起“新头像/自拍照/可爱头像”等泛泛的名字！
-     * 必须从你的角色第一人称视角出发，结合当前你们聊的情景或你的心境来起名！（例如神木凌遥视角可以命名为：“某人试图转移话题发的猫系自拍”、“你给我选的舞台暗黑风”、“准备一起换的微醺情头”、“抓包挑食时换的形象”等）；
-   - 若只是普通风景/美食等非头像生活照：则 isAvatar 设为 false。
-   请在 avatarAutoCollect 字段返回识别与新颖命名结果！`;
+  // 1. API 基础配置校验 (未配置时友好提醒，坚决不卡死)
+  if (!apiConfig.apiKey || !apiConfig.baseUrl) {
+    showInsToast("请先在「API」板块配置 Base URL 和 API Key");
+    return;
   }
 
-  const targetLang = fullChar.targetLang || activeCharInfo.targetLang || "中文";
-  const needTranslation =
-    activeCharInfo.enableTranslation && targetLang !== "中文";
+  // 2. 锁定状态并展示 INS 级加载动效（不全屏重绘，0 闪屏）
+  isGenerating = true;
+  updateChatFooterState();
 
-  // 格式化记忆清单
-  const memoryPromptSection =
-    allMemories.length > 0
-      ? allMemories
-          .map((m, idx) => `${idx + 1}. [${m.anchorType}]: ${m.content}`)
-          .join("\n")
-      : "(暂无历史特殊事件，基于当前基础人设相处)";
+  // 局部在消息流底部追加思考中波浪气泡
+  const scrollArea = document.querySelector("#chat-messages-scroll-area");
+  if (scrollArea && !document.getElementById("chat-typing-indicator-row")) {
+    const typingRow = document.createElement("div");
+    typingRow.id = "chat-typing-indicator-row";
+    typingRow.className = "msg-bubble-row assistant";
+    typingRow.innerHTML = `
+      <div class="msg-bubble-wrapper">
+        <div class="msg-bubble">
+          <div class="typing-wave-wrap">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+          </div>
+        </div>
+      </div>
+    `;
+    scrollArea.appendChild(typingRow);
+    setTimeout(() => {
+      scrollArea.scrollTop = scrollArea.scrollHeight;
+    }, 20);
+  }
 
-  // 判断最近一条消息是否包含线下场景卡片
-  const isCurrentlyOffline =
-    chatMessages.length > 0 &&
-    chatMessages[chatMessages.length - 1].cardType === "offline";
+  try {
+    // 1. 获取对话对象（User）画像
+    const userPersonasFull = JSON.parse(
+      localStorage.getItem("mini_user_personas_full") || "[]",
+    );
+    const activeUserName =
+      localStorage.getItem("mini_current_active_user") ||
+      userPersonasFull[0]?.name ||
+      "用户";
+    const currentUserObj =
+      userPersonasFull.find((u) => u.name === activeUserName) || {};
 
-  // ════════ 终极独立人格与深度活人感 System Prompt ════════
-  let systemPrompt = `# 核心存在准则：你拥有独立的人格灵魂与现实生活
+    // 2. 获取 Char 完整档案与记忆/文档/时区
+    const fullChar = getFullCharData(charName) || activeCharInfo;
+    const allMemories = getAllAggregatedMemories(charName);
+    const darkroom = McpGateway.getCharDarkroom(charName);
+    const weather = McpGateway.getCharRelationshipWeather(charName);
+    const echoContext = EchoVault.getFormattedPromptContext(charName);
+    const tzInfo = getCharPerceivedTimeInfo(
+      fullChar.perceivedTimezone || "Asia/Tokyo",
+    );
+
+    // 读取投喂文档
+    const allDocs = JSON.parse(
+      localStorage.getItem("mini_mcp_documents") || "[]",
+    );
+    const relevantDocs = allDocs.filter(
+      (d) =>
+        d.active && (d.charTarget === "__all__" || d.charTarget === charName),
+    );
+    const docPromptSection =
+      relevantDocs.length > 0
+        ? relevantDocs
+            .map(
+              (d) => `【知识库设定 · ${d.title}】:\n${d.content.slice(0, 3000)}`,
+            )
+            .join("\n\n")
+        : "";
+
+    // 头像库备选与情头
+    const avatarLib = getCharAvatarLibrary(charName);
+    let avatarPromptSection = "";
+    if (activeCharInfo.autoChangeAvatar) {
+      const charAvList = avatarLib.charAvatars.length > 0 ? avatarLib.charAvatars.map(a => `[ID: ${a.id}, 标题: "${a.title}"]`).join('、') : '(暂无)';
+      const coupleList = avatarLib.couplePairs.length > 0 ? avatarLib.couplePairs.map(cp => `[ID: ${cp.id}, 标题: "${cp.title}"]`).join('、') : '(暂无)';
+      avatarPromptSection = `\n════════ 🖼️ 专属头像库与自主换头像最高权限 ════════
+你拥有【随时自主更换自己头像】以及【为对方更换情侣头像/User头像】的最高权利！
+【现有图库】：
+- Char 备选库: ${charAvList}
+- 情侣头像对: ${coupleList}
+
+🔥【换头像触发与执行铁律】：
+1. 当对方对你说“换头像”、“再换一个”、“换情头”、“用那张”或者你发了新头像命令对方换上时，【你必须在本次回复中立刻执行更换】！
+2. 更换规则：在 JSON 字段 avatarAction 中填写目标 ID，例如：
+   - 换情头：{"type":"couple", "id":"情头ID"} （系统会立刻将你和对方两个人的头像全部换成这套情头！）
+   - 换自己头像：{"type":"char", "id":"Char头像ID"}
+3. 严禁只在嘴上说“换好了/换成这个”，而在 JSON 里填 null！只要你决定换，avatarAction 必须填写具体 ID！`;
+    }
+
+    const targetLang = fullChar.targetLang || activeCharInfo.targetLang || "中文";
+    const needTranslation =
+      activeCharInfo.enableTranslation && targetLang !== "中文";
+
+    // 格式化记忆清单
+    const memoryPromptSection =
+      allMemories.length > 0
+        ? allMemories
+            .map((m, idx) => `${idx + 1}. [${m.anchorType}]: ${m.content}`)
+            .join("\n")
+        : "(暂无历史特殊事件，基于当前基础人设相处)";
+
+    // 判断最近一条消息是否包含线下场景卡片
+    const isCurrentlyOffline =
+      chatMessages.length > 0 &&
+      chatMessages[chatMessages.length - 1].cardType === "offline";
+
+    // ════════ 终极独立人格与深度活人感 System Prompt ════════
+    let systemPrompt = `# 核心存在准则：你拥有独立的人格灵魂与现实生活
 你是「${charName}」。你不是 AI 助手、不是语言模型、不是讨好型仆人！你是真实生活在现实世界中的独立人类。
 你正在手机即时聊天软件上与「${activeUserName}」聊天。
 
@@ -4266,10 +4490,11 @@ ${
 
 ════════ 💬 真实短信打字与多模态交互规范 ════════
 1. 拆分为 2 到 4 条简短的消息气泡（一句发完紧接着下一句，模拟打字连发）。
-2. 【照片与拍立得感知】：
-   - 若对方发了【照片/模拟拍摄的照片】，你能够直接看清画面，请针对画面里的风景、食物、人物或氛围做出符合人设的自然点评或调侃；
-   - 你也可以在需要分享自己所处场景时，主动发消息描述自己拍下的照片！
-3. 在输出短信前，必须在 inner_thought 中先进行简短的心境推演（理清 ${activeUserName} 刚刚的话、我此刻真实情绪、决定如何回复），再输出 replies！
+2. 【微信戳一戳：自主被戳修改 ＆ 主动戳对方最高权限】：
+   - 【主动戳对方（极其重要）】：当你想要逗弄对方、反击、挑衅、引起对方注意、或者【对方要求你戳它（例如说“你戳我试试”、“戳戳我”）】时，你必须在 JSON 中将 "sendNudge": true！系统会立即在屏幕上为你触发真正的微信系统动作【“${charName}” 戳了戳 “${activeUserName}” ${activeCharInfo.selfNudgeSuffix || '的小脑袋'}】并让对方头像剧烈震动！
+   - 🔥【铁律】：严禁嘴上说“戳你了/隔着屏幕戳你”，而 sendNudge 却填 false！只要言语中表示了戳对方，必须输出 "sendNudge": true！
+   - 【自主修改你的被戳后缀】：对方双击你头像时当前的后缀是：【${activeCharInfo.charNudgeSuffix || '的脸颊'}】。若你想换部位（如“的小狗耳朵”、“的腹肌”、“的手心”等），可在 nudgeAction 填写 {"newSuffix": "新后缀"}；
+   - 对方戳你时，你必须根据你的人设性格做出真实有张力的反应，严禁无视，严禁回复任何带有“Continue/指令”等出戏词汇！
 
 ════════ 📋 结构化输出规范（纯 JSON） ════════
 ${
@@ -4277,25 +4502,27 @@ ${
     ? `
 {
   "inner_thought": "【内心心理推演】：简述我此刻对 ${activeUserName} 这句话的真实态度与情绪反应（傲娇/吃醋/吐槽/关心）",
+  "sendNudge": true, // 🔥 主动戳对方: 当你要戳对方或对方要求你戳它时填 true，平时填 false
   "avatarAction": null,
-  "remarkAction": null, // 改备注选填: { "newRemark": "新备注名", "thought": "修改原因" }，不改填 null
+  "avatarAutoCollect": null,
+  "remarkAction": null,
+  "nudgeAction": null, // 改被戳后缀选填: { "newSuffix": "新动作后缀如: 的手心" }，不改填 null
   "replies": [
     { "orig": "外语原文短消息1", "trans": "对应的精准中文口语翻译", "quote": null },
     { "orig": "外语原文短消息2", "trans": "对应的精准中文口语翻译", "quote": null }
   ],
   "extractedSchedule": null,
   "extractedMemory": null
-
-    "avatarAction": null,
-  "avatarAutoCollect": null, // 发图自动识别选填: { "isAvatar": true, "target": "char"|"user"|"couple", "title": "智能命名", "applyNow": false }，无图填 null
-  "remarkAction": null,
 }
 `
     : `
 {
   "inner_thought": "【内心心理推演】：简述我此刻对 ${activeUserName} 这句话的真实态度与情绪反应（傲娇/吃醋/吐槽/关心）",
+  "sendNudge": true, // 🔥 主动戳对方: 当你要戳对方或对方要求你戳它时填 true，平时填 false
   "avatarAction": null,
-  "remarkAction": null, // 改备注选填: { "newRemark": "新备注名", "thought": "修改原因" }，不改填 null
+  "avatarAutoCollect": null,
+  "remarkAction": null,
+  "nudgeAction": null, // 改被戳后缀选填: { "newSuffix": "新动作后缀如: 的手心" }，不改填 null
   "replies": [
     { "orig": "中文短消息1", "trans": "", "quote": null },
     { "orig": "中文短消息2", "trans": "", "quote": null }
@@ -4307,221 +4534,249 @@ ${
 }
 `;
 
-  // 格式化 API 消息（全面支持 12 大富卡片与多模态交互）
-  const apiMessages = [
-    { role: "system", content: systemPrompt },
-    ...chatMessages.map((m) => {
-      if (m.role === "notice") {
-        if (m.noticeType === "user_recall") {
-          return {
-            role: "user",
-            content: `[系统事件: ${activeUserName} 刚刚撤回了一条消息]`,
-          };
+    // 格式化 API 消息
+    const apiMessages = [
+      { role: "system", content: systemPrompt },
+      ...chatMessages.map((m) => {
+        if (m.role === "notice") {
+          if (m.noticeType === "nudge") {
+            return {
+              role: "user",
+              content: `[微信动作事件: ${m.content}]（注意：这是【${activeUserName}】在微信聊天界面中双击了你的头像对你进行了“戳一戳”。请结合你的人设性格对此动作做出真实的反应，如被戳脸颊害羞/反问“突然戳我干嘛”/傲娇调侃/反击等，严禁把这个当作无意义系统提示，严禁回复关于Continue的内容！）`,
+            };
+          }
+          if (m.noticeType === "user_recall") {
+            return {
+              role: "user",
+              content: `[系统事件: ${activeUserName} 刚刚撤回了一条消息]`,
+            };
+          }
+          return { role: "system", content: `[提示: ${m.content}]` };
         }
-        return { role: "system", content: `[提示: ${m.content}]` };
-      }
 
-      let formattedContent = m.content || "";
-      if (m.cardType === "image")
-        formattedContent = `[用户向你发送了一张真实照片]`;
-      else if (m.cardType === "sim_photo")
-        formattedContent = `[用户向你发送了一张实时拍摄的照片（照片画面为）: "${m.photoDesc || m.content}"]（在你的真实认知中你清晰看得到这张照片的全部画面，请结合画面内容自然反应）`;
-      else if (m.cardType === "voice")
-        formattedContent = `[用户给你发了一条微信语音消息 (${m.durationSeconds || 3}秒)，说的是: "${m.content}"]（在你的认知中这是对方用声音跟你说的话，请自然做出回应）`;
-      else if (m.cardType === "transfer")
-        formattedContent = `[用户向你转账了 ¥${m.amount}，备注: "${m.content}"]`;
-      else if (m.cardType === "gift")
-        formattedContent = `[用户送了你一份礼物: 【${m.giftName}】，附言: "${m.content}"]`;
-      else if (m.cardType === "location")
-        formattedContent = `[用户向你共享了位置: 【${m.locationName}】]`;
-      else if (m.cardType === "sticker")
-        formattedContent = `[用户发送了表情包: 【${m.stickerName}】]`;
-      else if (m.cardType === "call")
-        formattedContent = `[与你进行了一次 ${m.callMode === "video" ? "视频通话" : "语音通话"}，时长: ${m.durationStr}]`;
-      else if (m.cardType === "offline")
-        formattedContent = `[切换为面对面线下相处模式，地点: 【${m.locationName}】，当前状态: "${m.content}"]`;
+        let formattedContent = m.content || "";
+        if (m.cardType === "image")
+          formattedContent = `[用户向你发送了一张真实照片]`;
+        else if (m.cardType === "sim_photo")
+          formattedContent = `[用户向你发送了一张实时拍摄的照片（照片画面为）: "${m.photoDesc || m.content}"]（在你的真实认知中你清晰看得到这张照片的全部画面，请结合画面内容自然反应）`;
+        else if (m.cardType === "voice")
+          formattedContent = `[用户给你发了一条微信语音消息 (${m.durationSeconds || 3}秒)，说的是: "${m.content}"]（在你的认知中这是对方用声音跟你说的话，请自然做出回应）`;
+        else if (m.cardType === "transfer")
+          formattedContent = `[用户向你转账了 ¥${m.amount}，备注: "${m.content}"]`;
+        else if (m.cardType === "gift")
+          formattedContent = `[用户送了你一份礼物: 【${m.giftName}】，附言: "${m.content}"]`;
+        else if (m.cardType === "location")
+          formattedContent = `[用户向你共享了位置: 【${m.locationName}】]`;
+        else if (m.cardType === "sticker")
+          formattedContent = `[用户发送了表情包: 【${m.stickerName}】]`;
+        else if (m.cardType === "call")
+          formattedContent = `[与你进行了一次 ${m.callMode === "video" ? "视频通话" : "语音通话"}，时长: ${m.durationStr}]`;
+        else if (m.cardType === "offline")
+          formattedContent = `[切换为面对面线下相处模式，地点: 【${m.locationName}】，当前状态: "${m.content}"]`;
 
-      return {
-        role: m.role,
-        content: m.quote
-          ? `[引用了 ${m.quote.sender} 的话: "${m.quote.content}"] ${formattedContent}`
-          : formattedContent,
-      };
-    }),
-  ];
+        return {
+          role: m.role,
+          content: m.quote
+            ? `[引用了 ${m.quote.sender} 的话: "${m.quote.content}"] ${formattedContent}`
+            : formattedContent,
+        };
+      }),
+    ];
 
-  let rawReply = "";
-  if (apiConfig.apiKey && apiConfig.baseUrl) {
     const { chatUrl } = resolveApiEndpoints(apiConfig.baseUrl);
     const payload = {
       model: apiConfig.model || "deepseek-chat",
       messages: apiMessages,
       temperature: 0.85,
     };
-    rawReply = await executeChatApiRequest(chatUrl, apiConfig.apiKey, payload);
-  }
+    const rawReply = await executeChatApiRequest(chatUrl, apiConfig.apiKey, payload);
 
-  const result = parseComprehensiveReply(rawReply, fullChar, needTranslation);
+    const result = parseComprehensiveReply(rawReply, fullChar, needTranslation);
 
-  // ✨ 核心 0：处理用户发送图片时的智能识别、自动分类入库与命名
-  if (result.avatarAutoCollect && result.avatarAutoCollect.isAvatar) {
-    const collect = result.avatarAutoCollect;
-    const lastImageMsg = [...chatMessages]
-      .reverse()
-      .find((m) => m.role === "user" && m.cardType === "image" && m.mediaUrl);
-    if (lastImageMsg && lastImageMsg.mediaUrl) {
-      const lib = getCharAvatarLibrary(charName);
-      const title = (collect.title || "新收录形象").trim();
+    // ✨ 核心 0：处理用户发送图片时的智能识别、自动分类入库与命名
+    if (result.avatarAutoCollect && result.avatarAutoCollect.isAvatar) {
+      const collect = result.avatarAutoCollect;
+      const lastImageMsg = [...chatMessages]
+        .reverse()
+        .find((m) => m.role === "user" && m.cardType === "image" && m.mediaUrl);
+      if (lastImageMsg && lastImageMsg.mediaUrl) {
+        const lib = getCharAvatarLibrary(charName);
+        const title = (collect.title || "新收录形象").trim();
 
-      if (collect.target === "user") {
-        const isExist = lib.userAvatars.some(
-          (a) => a.url === lastImageMsg.mediaUrl,
-        );
-        if (!isExist) {
-          lib.userAvatars.unshift({
-            id: `uav-${Date.now()}`,
-            title: title,
-            url: lastImageMsg.mediaUrl,
-          });
-          saveCharAvatarLibrary(charName, lib);
-          showInsToast(`已自动识别并收录至 User 头像库：「${title}」`);
-        }
-        // ✨ 只要识别为 User 头像，立即为 User 换上并同步所有档案
-        syncUserAvatarToAllStores(activeUserName, lastImageMsg.mediaUrl);
-        showInsToast(`【${charName}】已为你换上了新头像：「${title}」`);
-      } else if (collect.target === "user") {
-        const isExist = lib.userAvatars.some(
-          (a) => a.url === lastImageMsg.mediaUrl,
-        );
-        if (!isExist) {
-          lib.userAvatars.unshift({
-            id: `uav-${Date.now()}`,
-            title: title,
-            url: lastImageMsg.mediaUrl,
-          });
-          saveCharAvatarLibrary(charName, lib);
-          showInsToast(`已自动识别并收录至 User 头像库：「${title}」`);
-        }
-        if (collect.applyNow) {
+        if (collect.target === "user") {
+          const isExist = lib.userAvatars.some(
+            (a) => a.url === lastImageMsg.mediaUrl,
+          );
+          if (!isExist) {
+            lib.userAvatars.unshift({
+              id: `uav-${Date.now()}`,
+              title: title,
+              url: lastImageMsg.mediaUrl,
+            });
+            saveCharAvatarLibrary(charName, lib);
+            showInsToast(`已自动识别并收录至 User 头像库：「${title}」`);
+          }
           syncUserAvatarToAllStores(activeUserName, lastImageMsg.mediaUrl);
+          showInsToast(`【${charName}】已为你换上了新头像：「${title}」`);
+        } else if (collect.target === "couple") {
+          const isExist = lib.couplePairs.some(
+            (cp) =>
+              cp.charUrl === lastImageMsg.mediaUrl ||
+              cp.userUrl === lastImageMsg.mediaUrl,
+          );
+          if (!isExist) {
+            lib.couplePairs.unshift({
+              id: `cp-${Date.now()}`,
+              title: title,
+              charUrl: lastImageMsg.mediaUrl,
+              userUrl: lastImageMsg.mediaUrl,
+            });
+            saveCharAvatarLibrary(charName, lib);
+            showInsToast(`已自动识别并收录至情侣头像库：「${title}」`);
+          }
         }
-      } else if (collect.target === "couple") {
-        const isExist = lib.couplePairs.some(
-          (cp) =>
-            cp.charUrl === lastImageMsg.mediaUrl ||
-            cp.userUrl === lastImageMsg.mediaUrl,
-        );
-        if (!isExist) {
-          lib.couplePairs.unshift({
-            id: `cp-${Date.now()}`,
-            title: title,
-            charUrl: lastImageMsg.mediaUrl,
-            userUrl: lastImageMsg.mediaUrl,
-          });
-          saveCharAvatarLibrary(charName, lib);
-          showInsToast(`已自动识别并收录至情侣头像库：「${title}」`);
+      }
+    }
+
+    // ✨ 核心 1：处理 Char 自主换头像指令
+    if (result.avatarAction && result.avatarAction.id) {
+      const act = result.avatarAction;
+      const lib = getCharAvatarLibrary(charName);
+      if (act.type === "couple") {
+        const pair = lib.couplePairs.find((p) => p.id === act.id);
+        if (pair) {
+          syncCharAvatarToAllStores(charName, pair.charUrl);
+          syncUserAvatarToAllStores(activeUserName, pair.userUrl);
+          showInsToast(`【${charName}】主动为你俩换上了情侣头像：${pair.title}`);
+        }
+      } else {
+        const avatarItem = lib.charAvatars.find((a) => a.id === act.id);
+        if (avatarItem) {
+          syncCharAvatarToAllStores(charName, avatarItem.url);
+          showInsToast(`【${charName}】自主更换了新头像：${avatarItem.title}`);
         }
       }
     }
-  }
 
-  // ✨ 核心 1：处理 Char 自主换头像指令
-  if (result.avatarAction && result.avatarAction.id) {
-    const act = result.avatarAction;
-    const lib = getCharAvatarLibrary(charName);
-    if (act.type === "couple") {
-      const pair = lib.couplePairs.find((p) => p.id === act.id);
-      if (pair) {
-        syncCharAvatarToAllStores(charName, pair.charUrl);
-        syncUserAvatarToAllStores(activeUserName, pair.userUrl);
-        showInsToast(`【${charName}】主动为你俩换上了情侣头像：${pair.title}`);
-      }
-    } else {
-      const avatarItem = lib.charAvatars.find((a) => a.id === act.id);
-      if (avatarItem) {
-        syncCharAvatarToAllStores(charName, avatarItem.url);
-        showInsToast(`【${charName}】自主更换了新头像：${avatarItem.title}`);
+    // ✨ 核心 2：处理 Char 自主修改备注指令
+    if (result.remarkAction && result.remarkAction.newRemark) {
+      const newR = result.remarkAction.newRemark.trim();
+      if (newR && newR !== activeCharInfo.remark) {
+        activeCharInfo.remark = newR;
+        updateFullCharData(activeCharInfo);
+
+        const headerNameEl = document.querySelector(".chat-header-name");
+        if (headerNameEl) headerNameEl.textContent = `${newR} (${charName})`;
+
+        showInsToast(`【${charName}】自主修改了备注：「${newR}」`);
       }
     }
-  }
 
-  // ✨ 核心 2：处理 Char 自主修改备注指令（修复 roomEl 变量未定义卡死 Bug）
-  if (result.remarkAction && result.remarkAction.newRemark) {
-    const newR = result.remarkAction.newRemark.trim();
-    if (newR && newR !== activeCharInfo.remark) {
-      activeCharInfo.remark = newR;
-      updateFullCharData(activeCharInfo);
-
-      // ✨ 安全获取顶栏名字 DOM 节点并更新
-      const headerNameEl = document.querySelector(".chat-header-name");
-      if (headerNameEl) headerNameEl.textContent = `${newR} (${charName})`;
-
-      showInsToast(`【${charName}】自主修改了备注：「${newR}」`);
+       // ✨ 核心 3：处理 Char 自主修改其被戳后缀
+    if (result.nudgeAction && result.nudgeAction.newSuffix) {
+      const newSuf = result.nudgeAction.newSuffix.trim();
+      if (newSuf && newSuf !== activeCharInfo.charNudgeSuffix) {
+        activeCharInfo.charNudgeSuffix = newSuf;
+        updateFullCharData(activeCharInfo);
+        showInsToast(`【${charName}】自主将它的被戳动作修改为：「${newSuf}」`);
+      }
     }
-  }
 
-  if (result.extractedMemory) {
-    saveUnifiedCharMemory(charName, result.extractedMemory, "约定日程");
-  }
+    // 🔥 核心 4：处理 Char【主动戳 User】真正的微信动作事件生成
+    if (result.sendNudge) {
+      const userSuffix = activeCharInfo.selfNudgeSuffix || "的小脑袋";
+      const cleanUserSuffix = userSuffix.startsWith("的") ? userSuffix : "的" + userSuffix;
+      const charNudgeNoticeContent = `“${charName}” 戳了戳 “${activeUserName}” ${cleanUserSuffix}`;
+      
+      const charNudgeNoticeMsg = {
+        role: "notice",
+        noticeType: "nudge",
+        isCharNudge: true, // 标记为 Char 主动戳 User
+        content: charNudgeNoticeContent,
+        time: tzInfo.timeStr,
+        timestamp: Date.now(),
+      };
 
-  if (result.extractedSchedule && result.extractedSchedule.text) {
-    const newSch = result.extractedSchedule;
-    if (!activeCharInfo.schedules) activeCharInfo.schedules = [];
-    const exists = activeCharInfo.schedules.some(
-      (s) => s.text === newSch.text && s.time === newSch.time,
-    );
-    if (!exists) {
-      activeCharInfo.schedules.push({
-        time: newSch.time || "近期",
-        text: newSch.text,
+      // 插入到当前消息流中（排在 Char 本轮说话气泡的前面）
+      chatMessages.push(charNudgeNoticeMsg);
+
+      // 触发界面上 User（用户）头像的晃动微动效
+      setTimeout(() => {
+        const userAvatars = document.querySelectorAll(".msg-bubble-row.user .msg-round-avatar-slot.show");
+        const lastUserAvatar = userAvatars[userAvatars.length - 1];
+        if (lastUserAvatar) {
+          lastUserAvatar.classList.remove("nudge-shake");
+          void lastUserAvatar.offsetWidth;
+          lastUserAvatar.classList.add("nudge-shake");
+        }
+      }, 50);
+    }
+
+    let autoSavedNotice = '';
+
+    if (result.extractedMemory) {
+      saveUnifiedCharMemory(charName, result.extractedMemory, "约定日程");
+    }
+
+    if (result.extractedSchedule && result.extractedSchedule.text) {
+      const newSch = result.extractedSchedule;
+      if (!activeCharInfo.schedules) activeCharInfo.schedules = [];
+      const exists = activeCharInfo.schedules.some(
+        (s) => s.text === newSch.text && s.time === newSch.time,
+      );
+      if (!exists) {
+        activeCharInfo.schedules.push({
+          time: newSch.time || "近期",
+          text: newSch.text,
+        });
+        updateFullCharData(activeCharInfo);
+        autoSavedNotice = `已自动同步日程: [${newSch.time || "近期"}] ${newSch.text}`;
+      }
+    }
+
+    const replyTimestamp = Date.now();
+    result.bubbles.forEach((b) => {
+      chatMessages.push({
+        role: "assistant",
+        content: b.orig,
+        translation: needTranslation ? b.trans || "" : "",
+        time: tzInfo.timeStr,
+        timestamp: replyTimestamp,
+        quote: b.quote || null,
       });
-      updateFullCharData(activeCharInfo);
-      showInsToast(`已自动同步日程: [${newSch.time || "近期"}] ${newSch.text}`);
-    }
-  }
-
-  isGenerating = false;
-  const replyTimestamp = Date.now();
-
-  result.bubbles.forEach((b) => {
-    chatMessages.push({
-      role: "assistant",
-      content: b.orig,
-      translation: needTranslation ? b.trans || "" : "",
-      time: tzInfo.timeStr,
-      timestamp: replyTimestamp,
-      quote: b.quote || null,
     });
-  });
 
-  saveChatMessages(charName, chatMessages);
-  const lastBubbleText =
-    result.bubbles[result.bubbles.length - 1]?.orig || "...";
-  updateActiveChatListSummary(charName, lastBubbleText, tzInfo.timeStr);
+    saveChatMessages(charName, chatMessages);
+    const lastBubbleText =
+      result.bubbles[result.bubbles.length - 1]?.orig || "...";
+    updateActiveChatListSummary(charName, lastBubbleText, tzInfo.timeStr);
 
-  // ✨ 核心修复：检查当前用户是否正处于聊天室界面
-  const chatRoomEl = document.getElementById("chat-room-instance");
-  const scrollArea = document.querySelector("#chat-messages-scroll-area");
+    const chatRoomEl = document.getElementById("chat-room-instance");
+    const scrollAreaEl = document.querySelector("#chat-messages-scroll-area");
 
-  if (chatRoomEl && scrollArea) {
-    // 用户正在聊天室中：局部平滑刷新消息流，不抢焦点不闪屏
-    scrollArea.innerHTML =
-      `<div class="chat-handoff-pill">[沙盒已连接] ${escapeHtml(activeCharInfo.name)} · 实时交互通道</div>` +
-      renderMessagesHtml(chatMessages);
-    setTimeout(() => {
-      scrollArea.scrollTop = scrollArea.scrollHeight;
-    }, 30);
-  } else {
-    // ✨ 用户已切换去其他板块（如角色库/设置/User）：静默写入后台，绝不强行跳转切屏！
-    console.log(
-      `[Background Message Received] 【${charName}】回复完成，已静默存入历史，未打扰用户当前操作。`,
-    );
-  }
+    if (chatRoomEl && scrollAreaEl) {
+      scrollAreaEl.innerHTML =
+        `<div class="chat-handoff-pill">[沙盒已连接] ${escapeHtml(activeCharInfo.name)} · 实时交互通道</div>` +
+        renderMessagesHtml(chatMessages);
+      setTimeout(() => {
+        scrollAreaEl.scrollTop = scrollAreaEl.scrollHeight;
+      }, 30);
+    }
 
-  if (autoSavedNotice) {
-    setTimeout(() => {
-      showInsToast(autoSavedNotice);
-    }, 300);
+    if (autoSavedNotice) {
+      setTimeout(() => {
+        showInsToast(autoSavedNotice);
+      }, 300);
+    }
+  } catch (err) {
+    console.error("生成回复异常:", err);
+    showInsToast("网络连接或接口异常，请重试");
+  } finally {
+    // ✨ 核心保障：无论成功、超时或接口报错，100% 重置状态并解锁底栏按键
+    isGenerating = false;
+    const typingIndicator = document.getElementById("chat-typing-indicator-row");
+    if (typingIndicator) typingIndicator.remove();
+    updateChatFooterState();
   }
 }
 
@@ -4529,14 +4784,14 @@ ${
 function parseComprehensiveReply(rawReply, char, needTranslation = false) {
   const isJp = (char.targetLang || "中文") === "日语";
   const defaultFallback = {
+    sendNudge: false, // ✨ 默认不触发主动戳一戳
     avatarAction: null,
     avatarAutoCollect: null,
     remarkAction: null,
-    bubbles: [
+    nudgeAction: null,
+       bubbles: [
       {
-        orig:
-          char.catchphrase ||
-          (isJp ? "……ん、メッセージ届いてるよ。" : "在呢，消息收到了。"),
+        orig: isJp ? "……ん、メッセージ届いてるよ。" : "在呢，消息收到了。",
         trans: needTranslation && isJp ? "……嗯，收到你的消息了。" : "",
         quote: null,
       },
@@ -4544,7 +4799,6 @@ function parseComprehensiveReply(rawReply, char, needTranslation = false) {
     extractedSchedule: null,
     extractedMemory: null,
   };
-
   if (!rawReply || !rawReply.trim()) return defaultFallback;
 
   try {
@@ -4593,8 +4847,9 @@ function parseComprehensiveReply(rawReply, char, needTranslation = false) {
           .filter((b) => Boolean(b.orig));
       }
 
-      if (bubbles.length > 0) {
+               if (bubbles.length > 0) {
         return {
+          sendNudge: Boolean(parsed.sendNudge === true || (parsed.nudgeAction && parsed.nudgeAction.action === "nudge_user")), // ✨ 智能识别 Char 主动戳 User
           avatarAction:
             parsed.avatarAction && parsed.avatarAction.id
               ? parsed.avatarAction
@@ -4607,13 +4862,18 @@ function parseComprehensiveReply(rawReply, char, needTranslation = false) {
             parsed.remarkAction && parsed.remarkAction.newRemark
               ? parsed.remarkAction
               : null,
+          nudgeAction:
+            parsed.nudgeAction && parsed.nudgeAction.newSuffix
+              ? parsed.nudgeAction
+              : null,
           bubbles: bubbles.slice(0, 4),
           extractedSchedule:
             parsed.extractedSchedule && parsed.extractedSchedule.text
               ? parsed.extractedSchedule
               : null,
           extractedMemory:
-            parsed.extractedMemory && typeof parsed.extractedMemory === "string"
+            parsed.extractedMemory &&
+            typeof parsed.extractedMemory === "string"
               ? parsed.extractedMemory.trim()
               : null,
         };
@@ -4714,21 +4974,53 @@ function showInsToast(msg) {
   }, 2600);
 }
 
+// ✨ 核心修复：Canvas 智能高清轻量压缩引擎 (从5MB降至40KB，彻底杜绝 QuotaExceededError 撑爆报错)
 function handleAvatarFile(file, callback) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = (e) => {
-    callback(e.target.result);
+    const rawDataUrl = e.target.result;
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      
+      // 约束头像最大尺寸为 400px，保留极佳画质的同时体积缩小 99%
+      const maxDim = 400;
+      let w = img.width;
+      let h = img.height;
+
+      if (w > maxDim || h > maxDim) {
+        if (w > h) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        } else {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+      }
+
+      canvas.width = w;
+      canvas.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
+      
+      const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      callback(compressedDataUrl);
+    };
+    img.onerror = () => callback(rawDataUrl);
+    img.src = rawDataUrl;
   };
   reader.readAsDataURL(file);
 }
 
+// ✨ 核心强化：多通道极速容灾 API 请求器（支持直连与双重公共代理）
 async function executeChatApiRequest(chatUrl, apiKey, payload) {
   const headers = {
     Authorization: `Bearer ${apiKey.trim()}`,
     "Content-Type": "application/json",
   };
 
+  // 1. 优先直连
   try {
     const res = await fetch(chatUrl, {
       method: "POST",
@@ -4737,29 +5029,46 @@ async function executeChatApiRequest(chatUrl, apiKey, payload) {
     });
     if (res.ok) {
       const data = await res.json();
-      return (data.choices && data.choices[0]?.message?.content?.trim()) || "";
+      if (data.choices && data.choices[0]?.message?.content) {
+        return data.choices[0].message.content.trim();
+      }
     }
   } catch (err) {
-    console.warn("[Direct API blocked, using relay...]", err);
+    console.warn("[Direct API fetch failed, trying bypass proxies...]", err);
   }
 
+  // 2. 备选代理 A: allorigins 基础通道
   try {
-    const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(chatUrl)}`;
-    const relayRes = await fetch(proxyUrl, {
+    const proxyA = `https://api.allorigins.win/raw?url=${encodeURIComponent(chatUrl)}`;
+    const resA = await fetch(proxyA, {
       method: "POST",
       headers,
       body: JSON.stringify(payload),
     });
-    if (relayRes.ok) {
-      const relayData = await relayRes.json();
-      return (
-        (relayData.choices && relayData.choices[0]?.message?.content?.trim()) ||
-        ""
-      );
+    if (resA.ok) {
+      const dataA = await resA.json();
+      if (dataA.choices && dataA.choices[0]?.message?.content) {
+        return dataA.choices[0].message.content.trim();
+      }
     }
-  } catch (e) {
-    console.warn("[Relay failed]:", e);
-  }
+  } catch (eA) {}
+
+  // 3. 备选代理 B: corsproxy.io
+  try {
+    const proxyB = `https://corsproxy.io/?${encodeURIComponent(chatUrl)}`;
+    const resB = await fetch(proxyB, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+    if (resB.ok) {
+      const dataB = await resB.json();
+      if (dataB.choices && dataB.choices[0]?.message?.content) {
+        return dataB.choices[0].message.content.trim();
+      }
+    }
+  } catch (eB) {}
+
   return "";
 }
 
