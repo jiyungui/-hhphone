@@ -3117,3 +3117,255 @@ input:checked + .ins-slider:before {
   30%, 50%, 70% { transform: translate3d(-2px, 0, 0) rotate(-2deg); }
   40%, 60% { transform: translate3d(2px, 0, 0) rotate(2deg); }
 }
+
+/* ═══════════ INS 黑白极简·聊天室亲密付轻量卡片 ═══════════ */
+/* 消除包含卡片消息时的多余黑色气泡内衬 */
+.msg-bubble-row.user .msg-bubble:has(.ins-chat-intimate-card),
+.msg-bubble-row.assistant .msg-bubble:has(.ins-chat-intimate-card) {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.ins-chat-intimate-card {
+  background: #FFFFFF;
+  border: 1.5px solid #111111;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 215px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  user-select: none;
+  animation: intimateCardPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes intimateCardPop {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.ins-intimate-top-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #EFEFEF;
+}
+
+.ins-intimate-icon-wrap {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #111111;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ins-intimate-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.ins-intimate-card-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: 0.2px;
+}
+
+.ins-intimate-card-source {
+  font-size: 8px;
+  color: #888888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 155px;
+}
+
+/* 中间大字重额度展示 */
+.ins-intimate-amount-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 0;
+}
+
+.ins-intimate-amount-val {
+  font-size: 16px;
+  font-weight: 900;
+  color: #111111;
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ins-intimate-amount-lbl {
+  font-size: 7.5px;
+  color: #999999;
+}
+
+/* 底部状态条 */
+.ins-intimate-bottom-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #10B981;
+  background: #F0FDF4;
+  border: 1px solid #DCFCE7;
+  padding: 3.5px 8px;
+  border-radius: 6px;
+}
+
+.ins-intimate-status-dot {
+  width: 4.5px;
+  height: 4.5px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+/* ═══════════ INS 黑白极简·聊天室转账凭据卡片 ═══════════ */
+.msg-bubble-row.user .msg-bubble:has(.ins-chat-transfer-card),
+.msg-bubble-row.assistant .msg-bubble:has(.ins-chat-transfer-card) {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.ins-chat-transfer-card {
+  background: #FFFFFF;
+  border: 1.5px solid #111111;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 215px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  user-select: none;
+  animation: intimateCardPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.ins-transfer-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #EFEFEF;
+}
+
+.ins-transfer-icon-box {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: #111111;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ins-transfer-header-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.ins-transfer-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.ins-transfer-channel {
+  font-size: 8px;
+  color: #888888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 155px;
+}
+
+.ins-transfer-card-amount-box {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 2px 0;
+}
+
+.ins-transfer-amount-row {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.ins-transfer-curr {
+  font-size: 14px;
+  font-weight: 900;
+  color: #111111;
+}
+
+.ins-transfer-num {
+  font-size: 20px;
+  font-weight: 900;
+  color: #111111;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ins-transfer-code {
+  font-size: 9px;
+  font-weight: 800;
+  color: #666666;
+  font-family: ui-monospace, monospace;
+}
+
+.ins-transfer-note-text {
+  font-size: 9.5px;
+  color: #444444;
+  line-height: 1.35;
+}
+
+.ins-transfer-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 6px;
+  border-top: 1px dashed #EAEAEA;
+  font-size: 8px;
+}
+
+.ins-transfer-status-tag {
+  color: #10B981;
+  font-weight: 800;
+}
+
+.ins-transfer-status-tag.intimate-mode {
+  color: #111111;
+  background: #F4F4F4;
+  padding: 1.5px 5px;
+  border-radius: 3px;
+  border: 1px solid #CCCCCC;
+}
+
+.ins-transfer-time {
+  color: #AAAAAA;
+}

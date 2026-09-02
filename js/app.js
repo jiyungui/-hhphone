@@ -2,13 +2,16 @@ import { renderIMessageView } from './modules/imessage.js';
 import { renderCharactersView } from './modules/characters.js';
 import { renderUserView } from './modules/user.js';
 import { renderApiSettingsView } from './modules/apiSettings.js';
+import { renderWalletView } from './modules/wallet.js';
+import { renderMessagesView } from './modules/messages.js';
 
-// 12 大系统应用配置表 (INS 极简白黑风格)
+// 系统应用配置表 (INS 极简白黑风格)
 const SYSTEM_APPS = [
   { id: 'chat', name: 'CHAT', desc: '信息 · 动态 · 角色中枢', icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>` },
   { id: 'api', name: 'API 设置', desc: '模型接口 · 端点与Key配置', icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>` },
   { id: 'theme', name: '美化', desc: '壁纸气泡 · 字体与质感', icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20v-5a5 5 0 0 1 0-10V2z"/></svg>` },
   { id: 'diary', name: '日记', desc: '私密日记 · 心情与随笔', icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>` },
+  { id: 'messages', name: '短信', desc: '系统验证 · 银行与通知', icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>` },
   { id: 'music', name: '音乐', desc: '黑胶唱片 · 律动与白噪', icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>` },
   { id: 'inspect', name: '查手机', desc: '窥探模式 · 秘密相册与记录', icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><circle cx="12" cy="14" r="1"/></svg>` },
   { id: 'social', name: '社交', desc: '圈子广场 · 动态连结分享', icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>` },
@@ -56,6 +59,8 @@ function renderDockTargetView(target, panel) {
     renderUserView(panel);
   } else if (target === 'settings') {
     renderApiSettingsView(panel);
+  } else if (target === 'wallet') { // ✨ 接入独立钱包渲染
+    renderWalletView(panel);
   } else if (target === 'stickers') {
     renderStickersGalleryView(panel);
   } else if (target === 'theme') {
@@ -170,6 +175,8 @@ export function switchSystemApp(appId) {
 
   if (appId === 'api' && targetRoot) {
     renderApiSettingsView(targetRoot);
+  } else if (appId === 'messages' && targetRoot) { // ✨ 挂载独立短信 App 视图
+    renderMessagesView(targetRoot);
   }
 
   document.querySelectorAll('[data-hub-app]').forEach(card => {

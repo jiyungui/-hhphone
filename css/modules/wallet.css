@@ -1,0 +1,1157 @@
+/* ═══════════════════════════════════════════════════════════════
+   MINI PHONE OS · 随便钱包 (INS 极简白黑风)
+   绝无 Emoji · 纯黑白线条与高对比度排版 · 微信级账单详情 · 亲密付
+   ═══════════════════════════════════════════════════════════════ */
+.wallet-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: #FFFFFF;
+  overflow: hidden;
+}
+
+/* 顶栏 */
+.wallet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line-color, #EAEAEA);
+  background: #FFFFFF;
+}
+
+.wallet-header-title-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wallet-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: 0.3px;
+}
+
+.wallet-tag {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border: 1px solid #111111;
+  border-radius: 3px;
+}
+
+.wallet-header-badge {
+  font-size: 9px;
+  font-weight: 700;
+  color: #555555;
+  background: #F4F4F4;
+  padding: 3px 7px;
+  border-radius: 4px;
+  border: 1px solid #EAEAEA;
+}
+
+/* 4 大板块导航 */
+.wallet-nav-tabs {
+  display: flex;
+  padding: 8px 14px;
+  gap: 6px;
+  border-bottom: 1px solid var(--line-color, #EAEAEA);
+  background: #FAFAFA;
+}
+
+.wallet-nav-btn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 6px 0;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #777777;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wallet-nav-btn.active {
+  background: #111111;
+  color: #FFFFFF;
+  border-color: #111111;
+}
+
+.wallet-content-pane {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ══════════ 1. 余额主卡 ══════════ */
+.wallet-balance-master-card {
+  background: #FFFFFF;
+  border: 1.5px solid #111111;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.balance-card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.balance-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.balance-meta-tag {
+  font-size: 8px;
+  font-weight: 800;
+  background: #111111;
+  color: #FFFFFF;
+  padding: 1.5px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+}
+
+.balance-currency-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #222222;
+}
+
+.balance-code-pill {
+  font-size: 9px;
+  font-weight: 800;
+  font-family: ui-monospace, monospace;
+  color: #666666;
+  border: 1px solid #CCCCCC;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.balance-display-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 2px 0;
+}
+
+.balance-symbol-large {
+  font-size: 22px;
+  font-weight: 900;
+  color: #111111;
+}
+
+.balance-number-large {
+  font-size: 34px;
+  font-weight: 900;
+  color: #111111;
+  letter-spacing: -0.8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.balance-action-grid {
+  display: flex;
+  gap: 8px;
+}
+
+.balance-main-btn {
+  flex: 1;
+  padding: 9px 0;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.balance-main-btn.primary-solid {
+  background: #111111;
+  color: #FFFFFF;
+  border: 1.5px solid #111111;
+}
+
+.balance-main-btn.primary-solid:active {
+  background: #333333;
+  transform: scale(0.98);
+}
+
+.balance-main-btn.outline-solid {
+  background: #FFFFFF;
+  color: #111111;
+  border: 1.5px solid #111111;
+}
+
+.balance-main-btn.outline-solid:active {
+  background: #F5F5F5;
+  transform: scale(0.98);
+}
+
+.balance-card-footer-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed #E5E5E5;
+  font-size: 9.5px;
+  color: #777777;
+  line-height: 1.4;
+}
+
+.alert-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #111111;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+/* ══════════ 2. 多币种资产分账户看板 ══════════ */
+.wallet-section-box {
+  background: #FFFFFF;
+  border: 1px solid var(--line-color, #EAEAEA);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.section-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.section-box-title {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: 0.2px;
+}
+
+.section-box-desc {
+  font-size: 8.5px;
+  color: #888888;
+}
+
+.currency-vault-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.currency-vault-card {
+  background: #FAFAFA;
+  border: 1px solid #EAEAEA;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.currency-vault-card:hover {
+  border-color: #AAAAAA;
+}
+
+.currency-vault-card.selected {
+  background: #FFFFFF;
+  border: 1.5px solid #111111;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.currency-vault-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.curr-name {
+  font-size: 10px;
+  font-weight: 800;
+  color: #222222;
+}
+
+.curr-symbol-badge {
+  font-size: 8px;
+  font-weight: 800;
+  font-family: ui-monospace, monospace;
+  background: #EAEAEA;
+  color: #333333;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.currency-vault-card.selected .curr-symbol-badge {
+  background: #111111;
+  color: #FFFFFF;
+}
+
+.currency-vault-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.curr-sym {
+  font-size: 12px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.curr-val {
+  font-size: 14px;
+  font-weight: 900;
+  color: #111111;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ══════════ 3. 账单分析与列表 ══════════ */
+.wallet-bills-summary-card {
+  background: #FFFFFF;
+  border: 1.5px solid #111111;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.bills-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bills-summary-title {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: 0.2px;
+}
+
+.ins-clear-bills-pill {
+  background: #FFFFFF;
+  border: 1px solid #111111;
+  border-radius: 12px;
+  padding: 2.5px 8px;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #111111;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.ins-clear-bills-pill:hover {
+  background: #111111;
+  color: #FFFFFF;
+}
+
+.ins-clear-bills-pill:active {
+  transform: scale(0.92);
+}
+
+.bills-summary-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.summary-stat-box {
+  background: #FAFAFA;
+  border: 1px solid #EAEAEA;
+  border-radius: 8px;
+  padding: 9px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-stat-box.expense .stat-amount {
+  color: #EF4444;
+  font-weight: 900;
+}
+
+.summary-stat-box.income .stat-amount {
+  color: #10B981;
+  font-weight: 900;
+}
+
+.summary-stat-box.net .stat-amount {
+  color: #111111;
+  font-weight: 900;
+}
+
+.stat-label {
+  font-size: 8px;
+  font-weight: 700;
+  color: #888888;
+}
+
+.stat-amount {
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.expense-rank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.expense-rank-item {
+  background: #FAFAFA;
+  border: 1px solid #EAEAEA;
+  border-radius: 8px;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.expense-rank-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.expense-rank-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rank-index-badge {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: #111111;
+  color: #FFFFFF;
+  font-size: 8.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rank-name {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.rank-count-tag {
+  font-size: 8px;
+  color: #888888;
+  background: #EEEEEE;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.expense-rank-right {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.rank-amount {
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #111111;
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-percent {
+  font-size: 9px;
+  font-weight: 800;
+  color: #888888;
+  font-family: ui-monospace, monospace;
+}
+
+.expense-progress-track {
+  width: 100%;
+  height: 4px;
+  background: #EAEAEA;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.expense-progress-bar {
+  height: 100%;
+  background: #111111;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.bills-filter-bar {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.bills-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.bill-filter-chip {
+  background: #FAFAFA;
+  border: 1px solid #EAEAEA;
+  border-radius: 14px;
+  padding: 3px 9px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #777777;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.bill-filter-chip.active {
+  background: #111111;
+  color: #FFFFFF;
+  border-color: #111111;
+}
+
+.wallet-bill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wallet-bill-item-card {
+  background: #FAFAFA;
+  border: 1px solid #EAEAEA;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wallet-bill-item-card:hover {
+  border-color: #111111;
+  background: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.wallet-bill-item-card:active {
+  transform: scale(0.98);
+}
+
+.bill-card-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.bill-icon-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bill-icon-box.income {
+  background: #ECFDF5;
+  color: #10B981;
+  border: 1px solid #A7F3D0;
+}
+
+.bill-icon-box.expense {
+  background: #FEF2F2;
+  color: #EF4444;
+  border: 1px solid #FECACA;
+}
+
+.bill-meta-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bill-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bill-main-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #111111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bill-cat-chip {
+  font-size: 7.5px;
+  font-weight: 700;
+  background: #EAEAEA;
+  color: #555555;
+  padding: 1px 4px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.bill-timestamp {
+  font-size: 8px;
+  color: #999999;
+}
+
+.bill-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.bill-amount-num {
+  font-size: 13px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.bill-amount-num.income { color: #10B981; }
+.bill-amount-num.expense { color: #EF4444; }
+
+.bill-currency-tag {
+  font-size: 7.5px;
+  font-weight: 800;
+  color: #AAAAAA;
+  font-family: ui-monospace, monospace;
+}
+
+/* ══════════ 4. 银行卡 ══════════ */
+.cards-section-card {
+  padding: 14px !important;
+  gap: 12px !important;
+}
+
+.cards-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 2px;
+}
+
+.cards-header-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cards-main-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: 0.2px;
+}
+
+.cards-count-tag {
+  font-size: 8px;
+  font-weight: 700;
+  color: #777777;
+  background: #F2F2F2;
+  padding: 1.5px 5px;
+  border-radius: 3px;
+}
+
+.ins-add-card-pill-btn {
+  background: #FFFFFF;
+  border: 1.2px solid #111111;
+  border-radius: 14px;
+  padding: 3px 10px;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #111111;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.ins-add-card-pill-btn:hover {
+  background: #111111;
+  color: #FFFFFF;
+}
+
+.ins-add-card-pill-btn:active {
+  transform: scale(0.94);
+}
+
+.cards-grid-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bank-card-item {
+  background: #111111;
+  color: #FFFFFF;
+  border-radius: 12px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+}
+
+.bank-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.bank-name {
+  letter-spacing: 0.3px;
+}
+
+.bank-currency-tag {
+  background: #262626;
+  font-size: 8px;
+  font-weight: 800;
+  font-family: ui-monospace, monospace;
+  padding: 1.5px 5px;
+  border-radius: 3px;
+  color: #E0E0E0;
+}
+
+.bank-user-chip {
+  background: #2C2C2C;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 8.5px;
+  font-weight: 700;
+}
+
+.bank-card-middle {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 2px 0;
+}
+
+.bank-card-number {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: #EAEAEA;
+}
+
+.bank-card-balance-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.card-balance-lbl {
+  font-size: 8px;
+  color: #999999;
+}
+
+.card-balance-num {
+  font-size: 18px;
+  font-weight: 900;
+  color: #FFFFFF;
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bank-card-actions-bar.single-action {
+  display: flex;
+  padding-top: 4px;
+  border-top: 1px solid #262626;
+}
+
+.bank-action-btn.primary-card-btn {
+  flex: 1;
+  background: #242424;
+  border: 1px solid #383838;
+  color: #FFFFFF;
+  border-radius: 6px;
+  padding: 7px 0;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.bank-action-btn.primary-card-btn:hover {
+  background: #333333;
+  border-color: #555555;
+}
+
+.bank-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  font-size: 8.5px;
+  color: #888888;
+}
+
+.wallet-empty-card-placeholder {
+  border: 1.5px dashed #CCCCCC;
+  border-radius: 10px;
+  padding: 24px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #888888;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ══════════ 5. ✨ 深度优化：亲密付 (白黑 INS 极简风) ══════════ */
+.intimate-master-card {
+  background: #FFFFFF;
+  border: 1.5px solid #111111;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.intimate-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.intimate-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.intimate-main-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: 0.2px;
+}
+
+.intimate-sub-badge {
+  font-size: 7.5px;
+  font-weight: 800;
+  background: #111111;
+  color: #FFFFFF;
+  padding: 1px 4px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+}
+
+.intimate-sub-nav {
+  display: flex;
+  background: #FAFAFA;
+  border: 1px solid #EAEAEA;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 4px;
+}
+
+.intimate-sub-tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 6px 0;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #777777;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.intimate-sub-tab-btn.active {
+  background: #FFFFFF;
+  color: #111111;
+  font-weight: 800;
+  border: 1px solid #111111;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+
+.intimate-content-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 120px;
+}
+
+.intimate-card-item {
+  background: #FAFAFA;
+  border: 1px solid #EAEAEA;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.intimate-card-item:hover {
+  border-color: #111111;
+  background: #FFFFFF;
+}
+
+.intimate-card-item.from-char {
+  background: #FFFFFF;
+  border: 1.5px solid #111111;
+}
+
+.intimate-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.intimate-char-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.intimate-avatar-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #111111;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.intimate-avatar-circle.from-char {
+  background: #FFFFFF;
+  color: #111111;
+  border: 1.5px solid #111111;
+}
+
+.intimate-target-name {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.intimate-source-tag {
+  font-size: 8.5px;
+  color: #888888;
+}
+
+.intimate-limit-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.limit-num {
+  font-size: 12px;
+  font-weight: 900;
+  color: #111111;
+  font-variant-numeric: tabular-nums;
+}
+
+.limit-lbl {
+  font-size: 7.5px;
+  color: #888888;
+}
+
+.intimate-item-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 8.5px;
+  color: #888888;
+  padding-top: 6px;
+  border-top: 1px dashed #EAEAEA;
+}
+
+.intimate-revoke-btn {
+  background: transparent;
+  border: 1px solid #CCCCCC;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 8px;
+  font-weight: 700;
+  color: #EF4444;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.intimate-revoke-btn:hover {
+  background: #FEF2F2;
+  border-color: #EF4444;
+}
+
+/* ══════════ 6. 弹窗与通用组件 ══════════ */
+.wallet-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.wallet-modal-card {
+  background: #FFFFFF;
+  border: 1.5px solid #111111;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 320px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+}
+
+.wallet-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #EEEEEE;
+  padding-bottom: 8px;
+}
+
+.wallet-modal-title {
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.wallet-modal-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #111111;
+}
+
+.wallet-form-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wallet-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wallet-form-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: #555555;
+}
+
+.wallet-input, .wallet-select {
+  border: 1px solid #111111;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #111111;
+  outline: none;
+}
+
+.wallet-btn {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.wallet-btn.primary-btn {
+  background: #111111;
+  color: #FFFFFF;
+  border: 1.5px solid #111111;
+}
+
+.wallet-btn.secondary-btn {
+  background: #FAFAFA;
+  color: #111111;
+  border: 1px solid #111111;
+}
+
+.wallet-ins-toast {
+  position: fixed;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+  background: #111111;
+  color: #FFFFFF;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0;
+  transition: all 0.2s ease;
+  z-index: 200;
+}
+
+.wallet-ins-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
