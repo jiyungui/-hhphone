@@ -73,16 +73,32 @@ function renderCharacterListView(container) {
         <span class="char-add-bar-text">录入新角色档案</span>
       </div>
 
-      <div class="char-grid-list" id="char-grid-list">
+          <div class="char-grid-list" id="char-grid-list">
         ${characters.length === 0 ? `
-          <div class="empty-placeholder">
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-              <line x1="12" y1="8" x2="12" y2="16"></line>
-              <line x1="8" y1="12" x2="16" y2="12"></line>
-            </svg>
-            <span>NO CHARACTERS YET</span>
-            <small style="font-size: 10px; color: var(--text-muted);">点击上方加号录入第一个角色</small>
+          <div style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 14px;
+            background: #FAFAFA;
+            border: 1.5px dashed var(--chat-ui-border, #111);
+            border-radius: 12px;
+            gap: 8px;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 4px;
+          ">
+            <div style="width: 44px; height: 44px; border-radius: 50%; background: #FFF; border: 1.2px solid #111; display: flex; align-items: center; justify-content: center; color: #111;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+            </div>
+            <span style="font-size: 12px; font-weight: 900; color: #111; letter-spacing: 0.5px;">NO CHARACTERS YET</span>
+            <span style="font-size: 8.5px; color: #888;">暂无角色档案，点击上方加号录入第一个角色</span>
           </div>
         ` : characters.map(c => `
           <div class="char-card-item" data-id="${c.id}">
@@ -367,32 +383,97 @@ function renderCharacterFormView(container) {
           </div>
         </div>
 
-        <!-- 6. 实体与资源关联 -->
-        <div class="api-card">
-          <span class="card-title">实体与资源绑定 (Association)</span>
-
-          <div class="form-group">
-            <label class="form-label">关联主要 User 身份</label>
-            <select class="form-input" id="form-char-user-link">
-              <option value="">未关联 User 身份</option>
-              ${userPersonaList.map(u => `<option value="${u}" ${charDraft.linkedUserPersona === u ? 'selected' : ''}>${u}</option>`).join('')}
-            </select>
+               <!-- 6. 实体与资源关联 (升级为 INS 高质感卡片选择器) -->
+        <div class="api-card" style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="card-title" style="font-size:11px; font-weight:800; color:#111;">实体与资源绑定 (ASSOCIATION)</span>
+            <span style="font-size:7.5px; font-family:ui-monospace, monospace; color:#888;">RESOURCE HUB</span>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">关联世界书设定 (WorldBook)</label>
-            <select class="form-input" id="form-char-wb-link">
-              <option value="">未关联世界书</option>
-              ${worldBookList.map(wb => `<option value="${wb.id || wb.name}" ${charDraft.linkedWorldBook === (wb.id || wb.name) ? 'selected' : ''}>${wb.name || wb.title}</option>`).join('')}
-            </select>
-          </div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <!-- 1. 关联 User 身份 -->
+            <div class="ins-resource-picker-card" id="btn-pick-char-user" style="
+              background: #FAFAFA;
+              border: 1.2px solid ${charDraft.linkedUserPersona ? '#111' : '#EAEAEA'};
+              border-radius: 8px;
+              padding: 9px 12px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              cursor: pointer;
+              transition: all 0.15s ease;
+            ">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:28px; height:28px; border-radius:6px; background:#FFF; border:1px solid #111; display:flex; align-items:center; justify-content:center; color:#111;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <div style="display:flex; flex-direction:column;">
+                  <span style="font-size:8px; font-weight:700; color:#888;">关联主要 User 身份</span>
+                  <span style="font-size:11px; font-weight:800; color:#111;" id="lbl-linked-user-name">
+                    ${charDraft.linkedUserPersona || '未关联 (点击选择)'}
+                  </span>
+                </div>
+              </div>
+              <span style="font-size:8px; font-weight:800; background:${charDraft.linkedUserPersona ? '#111' : '#FFF'}; color:${charDraft.linkedUserPersona ? '#FFF' : '#111'}; border:1px solid #111; padding:2px 8px; border-radius:4px;">
+                ${charDraft.linkedUserPersona ? '已绑定 ✎' : '选择 +'}
+              </span>
+            </div>
 
-          <div class="form-group">
-            <label class="form-label">关联专属表情包 (Sticker Pack)</label>
-            <select class="form-input" id="form-char-sticker-link">
-              <option value="">未关联表情包</option>
-              ${stickerPackList.map(sp => `<option value="${sp.id || sp.name}" ${charDraft.linkedStickerPack === (sp.id || sp.name) ? 'selected' : ''}>${sp.name || sp.title}</option>`).join('')}
-            </select>
+            <!-- 2. 关联世界书 -->
+            <div class="ins-resource-picker-card" id="btn-pick-char-wb" style="
+              background: #FAFAFA;
+              border: 1.2px solid ${charDraft.linkedWorldBook ? '#111' : '#EAEAEA'};
+              border-radius: 8px;
+              padding: 9px 12px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              cursor: pointer;
+              transition: all 0.15s ease;
+            ">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:28px; height:28px; border-radius:6px; background:#FFF; border:1px solid #111; display:flex; align-items:center; justify-content:center; color:#111;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="3.5" ry="9"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+                </div>
+                <div style="display:flex; flex-direction:column;">
+                  <span style="font-size:8px; font-weight:700; color:#888;">关联世界书设定 (WorldBook)</span>
+                  <span style="font-size:11px; font-weight:800; color:#111;" id="lbl-linked-wb-name">
+                    ${charDraft.linkedWorldBook || '未关联 (点击选择)'}
+                  </span>
+                </div>
+              </div>
+              <span style="font-size:8px; font-weight:800; background:${charDraft.linkedWorldBook ? '#111' : '#FFF'}; color:${charDraft.linkedWorldBook ? '#FFF' : '#111'}; border:1px solid #111; padding:2px 8px; border-radius:4px;">
+                ${charDraft.linkedWorldBook ? '已绑定 ✎' : '选择 +'}
+              </span>
+            </div>
+
+            <!-- 3. 关联表情包 -->
+            <div class="ins-resource-picker-card" id="btn-pick-char-sticker" style="
+              background: #FAFAFA;
+              border: 1.2px solid ${charDraft.linkedStickerPack ? '#111' : '#EAEAEA'};
+              border-radius: 8px;
+              padding: 9px 12px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              cursor: pointer;
+              transition: all 0.15s ease;
+            ">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:28px; height:28px; border-radius:6px; background:#FFF; border:1px solid #111; display:flex; align-items:center; justify-content:center; color:#111;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                </div>
+                <div style="display:flex; flex-direction:column;">
+                  <span style="font-size:8px; font-weight:700; color:#888;">关联专属表情包 (Stickers)</span>
+                  <span style="font-size:11px; font-weight:800; color:#111;" id="lbl-linked-sticker-name">
+                    ${charDraft.linkedStickerPack || '未关联 (点击选择)'}
+                  </span>
+                </div>
+              </div>
+              <span style="font-size:8px; font-weight:800; background:${charDraft.linkedStickerPack ? '#111' : '#FFF'}; color:${charDraft.linkedStickerPack ? '#FFF' : '#111'}; border:1px solid #111; padding:2px 8px; border-radius:4px;">
+                ${charDraft.linkedStickerPack ? '已绑定 ✎' : '选择 +'}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -437,6 +518,98 @@ function bindCharacterFormEvents(container) {
       };
       reader.readAsDataURL(file);
     };
+  }
+
+    // 1. 选择 User 身份弹窗
+  const pickUserBtn = container.querySelector('#btn-pick-char-user');
+  if (pickUserBtn) {
+    pickUserBtn.onclick = () => {
+      const userList = JSON.parse(localStorage.getItem('mini_user_personas_full') || '[]');
+      openResourceDrawerModal('选择关联 User 身份', userList.map(u => ({ id: u.name, name: u.name, desc: u.occupation || u.gender, avatar: u.avatarUrl })), (selectedId) => {
+        charDraft.linkedUserPersona = selectedId;
+        renderCharacterFormView(container);
+      });
+    };
+  }
+
+  // 2. 选择世界书弹窗
+  const pickWbBtn = container.querySelector('#btn-pick-char-wb');
+  if (pickWbBtn) {
+    pickWbBtn.onclick = () => {
+      const wbList = JSON.parse(localStorage.getItem('mini_worldbooks') || '[]');
+      openResourceDrawerModal('选择关联世界书设定', wbList.map(wb => ({ id: wb.id || wb.name, name: wb.name || wb.title, desc: `${wb.entries?.length || 0} 条规则词条` })), (selectedId) => {
+        charDraft.linkedWorldBook = selectedId;
+        renderCharacterFormView(container);
+      });
+    };
+  }
+
+   // 3. 选择专属表情包弹窗
+  const pickStickerBtn = container.querySelector('#btn-pick-char-sticker');
+  if (pickStickerBtn) {
+    pickStickerBtn.onclick = () => {
+      const vault = JSON.parse(localStorage.getItem('mini_sticker_vault') || '{}');
+      const groups = vault.groups || [{ id: 'abstract', name: '抽象表情包' }];
+      openResourceDrawerModal('选择关联专属表情包分组', groups.map(g => ({ id: g.name, name: g.name, desc: '专属表情包图库' })), (selectedId) => {
+        charDraft.linkedStickerPack = selectedId;
+        renderCharacterFormView(container);
+      });
+    };
+  }
+
+  // ✨ 补齐 HTML 转义函数
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // 通用 INS 风格资源选择弹出抽屉函数
+  function openResourceDrawerModal(title, items, onSelect) {
+    const overlay = document.createElement('div');
+    overlay.className = 'sticker-modal-overlay';
+    overlay.innerHTML = `
+      <div class="sticker-modal-card" style="max-width:320px; max-height:80vh; display:flex; flex-direction:column; gap:10px;">
+        <div class="sticker-modal-header">
+          <span class="sticker-modal-title">${title}</span>
+          <button class="sticker-modal-close" id="btn-close-resource-modal">×</button>
+        </div>
+        <div style="overflow-y:auto; display:flex; flex-direction:column; gap:6px; max-height:300px; padding-right:2px;">
+          <!-- 解除绑定选项 -->
+          <div class="ins-drawer-opt-item" data-id="" style="padding:8px 10px; background:#FAFAFA; border:1px dashed #CCC; border-radius:6px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+            <span style="font-size:10.5px; font-weight:700; color:#888;">不关联 (解除绑定)</span>
+            <span style="font-size:8px; color:#888;">清空</span>
+          </div>
+
+          ${items.map(item => `
+            <div class="ins-drawer-opt-item" data-id="${item.id}" style="padding:8px 10px; background:#FFF; border:1.2px solid #111; border-radius:6px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                ${item.avatar ? `<div style="width:22px; height:22px; border-radius:50%; background:#111; background-image:url('${item.avatar}'); background-size:cover; background-position:center; border:1px solid #111;"></div>` : ''}
+                <div style="display:flex; flex-direction:column;">
+                  <span style="font-size:11px; font-weight:800; color:#111;">${escapeHtml(item.name)}</span>
+                  <span style="font-size:7.5px; color:#888;">${escapeHtml(item.desc || '')}</span>
+                </div>
+              </div>
+              <button class="ins-card-action-btn use" style="padding:2px 8px; font-size:8px; pointer-events:none;">选择</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#btn-close-resource-modal').onclick = () => overlay.remove();
+    overlay.querySelectorAll('.ins-drawer-opt-item').forEach(el => {
+      el.onclick = () => {
+        const id = el.getAttribute('data-id');
+        overlay.remove();
+        onSelect(id);
+      };
+    });
   }
 
   const detailedTextarea = container.querySelector('#form-char-detailed-info');

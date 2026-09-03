@@ -5924,14 +5924,21 @@ ${userGrantedIntimate ? `
 ` : ''}
 `;
 
-    // ✨ 动态提取已存入的表情包供 Char 感知与选用
+       // ✨ 权限隔离：Char 只能读取其在角色档案中「关联绑定」的表情包库
     const stickerVaultData = getStickerVault();
-    const availableStickers = (stickerVaultData.stickers || []).slice(0, 30);
+    const allStickers = stickerVaultData.stickers || [];
+    const linkedPack = activeCharInfo.linkedStickerPack || '';
+
+    // 仅过滤出属于该角色绑定分组的表情包；若未关联则为空
+    let availableStickers = [];
+    if (linkedPack) {
+      availableStickers = allStickers.filter(s => s.groupId === linkedPack || s.groupName === linkedPack);
+    }
     const stickerNamesList = availableStickers.map(s => `"${s.name}"`).join('、');
 
     const stickerPromptSection = `
 ════════ 🖼️ 微信表情包交互与自主发送权限 ════════
-【现有表情包图库】：${stickerNamesList || "(暂无)"}
+【当前角色专属关联表情包库】：${stickerNamesList || "(当前角色未关联专属表情包或图库为空，本次对话禁止发送表情包)"}
 
 🔥【表情包认知与自主发送规范】：
 1. 【精准识别对方的表情】：当对方发送了图片表情包时，你能够完全“看到”画面的情绪表达（如哭、嘲讽、撒娇、恶搞等），请结合你的人设性格自然作出回应（或吐槽反击、或被逗笑）；

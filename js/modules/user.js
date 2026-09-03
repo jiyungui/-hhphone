@@ -74,16 +74,32 @@ function renderUserListView(container) {
         <span class="user-add-bar-text">录入新 User 身份档案</span>
       </div>
 
-      <!-- 紧凑型列表 -->
+          <!-- 紧凑型列表 -->
       <div class="user-grid-list" id="user-grid-list">
         ${userList.length === 0 ? `
-          <div class="empty-placeholder">
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-            <span>NO USER PERSONAS YET</span>
-            <small style="font-size: 10px; color: var(--text-muted);">点击上方加号建立你的第一个身份画像</small>
+          <div style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 14px;
+            background: #FAFAFA;
+            border: 1.5px dashed var(--chat-ui-border, #111);
+            border-radius: 12px;
+            gap: 8px;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 4px;
+          ">
+            <div style="width: 44px; height: 44px; border-radius: 50%; background: #FFF; border: 1.2px solid #111; display: flex; align-items: center; justify-content: center; color: #111;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <span style="font-size: 12px; font-weight: 900; color: #111; letter-spacing: 0.5px;">NO USER PERSONAS YET</span>
+            <span style="font-size: 8.5px; color: #888;">暂无身份画像，点击上方加号建立你的第一个身份画像</span>
           </div>
         ` : userList.map(u => {
           const isActive = u.name === currentActiveName;
