@@ -211,12 +211,16 @@ function getWidgetQuoteTimelineHtml(cfg, weatherData) {
   const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
   const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
   const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const hasImg = !!cfg.imageUrl;
 
   return `
     <div class="ins-widget-quote-timeline ins-custom-widget-slot" style="${getStyleString(cfg)}">
       <div class="quote-train-card">
-        <div class="quote-train-thumb ${cfg.imageUrl ? 'has-custom-img' : ''}" style="${cfg.imageUrl ? `background-image:url('${cfg.imageUrl}');` : ''}">
-          ${!cfg.imageUrl ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>` : ''}
+        <div class="quote-train-thumb" style="
+          width: 90px; height: 52px; border-radius: 6px; position: relative; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden;
+          ${hasImg ? `background-image: url('${cfg.imageUrl}') !important; background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important;` : `background: #111111;`}
+        ">
+          ${!hasImg ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>` : ''}
           <div class="quote-train-time">${realTimeStr}</div>
         </div>
         <div class="quote-train-body">
@@ -274,6 +278,8 @@ function getWidgetBubbleMemoHtml(cfg) {
 
 // 7. 黑白杂志排版订阅卡
 function getWidgetEditorialMagazineHtml(cfg) {
+  const hasBanner = !!cfg.bannerUrl;
+
   return `
     <div class="ins-widget-editorial-card ins-custom-widget-slot" style="${getStyleString(cfg)}">
       <div class="editorial-pills-row">
@@ -282,8 +288,11 @@ function getWidgetEditorialMagazineHtml(cfg) {
         <span class="e-pill">${escapeHtml(cfg.tag3 || 'Swoony')}</span>
       </div>
       <div class="editorial-banner-box">
-        <div class="editorial-manga-thumb ${cfg.bannerUrl ? 'has-custom-img' : ''}" style="${cfg.bannerUrl ? `background-image:url('${cfg.bannerUrl}');` : ''}">
-          ${!cfg.bannerUrl ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>` : ''}
+        <div class="editorial-manga-thumb" style="
+          width: 76px; height: 52px; border-radius: 6px; border: 1px solid #333; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
+          ${hasBanner ? `background-image: url('${cfg.bannerUrl}') !important; background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important;` : `background: #111111;`}
+        ">
+          ${!hasBanner ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>` : ''}
         </div>
         <div class="editorial-banner-right">
           <div class="editorial-charm-title">${escapeHtml(cfg.title || 'Four Leaf Charm.')} <span style="font-size:10px;">♡</span></div>
@@ -305,6 +314,8 @@ function getWidgetEditorialMagazineHtml(cfg) {
 
 // 8. 紫色飘带书签便签卡
 function getWidgetRibbonTagHtml(cfg) {
+  const hasAvatar = !!cfg.avatarUrl;
+
   return `
     <div class="ins-widget-ribbon-card ins-custom-widget-slot" style="${getStyleString(cfg)}">
       <div class="ribbon-top-banner">
@@ -313,8 +324,11 @@ function getWidgetRibbonTagHtml(cfg) {
           <span class="ribbon-main-title">${escapeHtml(cfg.title || 'usamaru')}</span>
           <span class="ribbon-sub-quote">${escapeHtml(cfg.quote || '[Slow down, everything will be fine]')}</span>
         </div>
-        <div class="ribbon-rabbit-avatar ${cfg.avatarUrl ? 'has-custom-img' : ''}" style="${cfg.avatarUrl ? `background-image:url('${cfg.avatarUrl}');` : ''}">
-          ${!cfg.avatarUrl ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.8"><path d="M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/><path d="M9 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-4 4a2 2 0 0 0 2 0"/></svg>` : ''}
+        <div class="ribbon-rabbit-avatar" style="
+          width: 32px; height: 32px; border: 1.2px solid #111; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+          ${hasAvatar ? `background-image: url('${cfg.avatarUrl}') !important; background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important;` : `background: #FFF;`}
+        ">
+          ${!hasAvatar ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.8"><path d="M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/><path d="M9 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-4 4a2 2 0 0 0 2 0"/></svg>` : ''}
         </div>
       </div>
       <div class="ribbon-dashed-divider">
@@ -343,8 +357,11 @@ function getWidgetTicketRedthreadHtml(weekData, cfg) {
             <span class="ticket-name">${escapeHtml(cfg.name || '松井雪繪')}</span>
             <span class="ticket-year">${escapeHtml(cfg.year || '[2031]')}</span>
           </div>
-          <span class="ticket-eng-tag">${escapeHtml(cfg.eng || 'Wait till you read my innuendo')}</span>
-          <div class="ticket-photo-box ${cfg.photoUrl ? 'has-custom-img' : ''}" style="${cfg.photoUrl ? `background-image:url('${cfg.photoUrl}');` : ''}">
+                 <span class="ticket-eng-tag">${escapeHtml(cfg.eng || 'Wait till you read my innuendo')}</span>
+          <div class="ticket-photo-box" style="
+            width: 60px; height: 40px; border-radius: 4px; margin-top: 2px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+            ${cfg.photoUrl ? `background-image: url('${cfg.photoUrl}') !important; background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important;` : `background: #111111;`}
+          ">
             ${!cfg.photoUrl ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>` : ''}
           </div>
         </div>
@@ -385,10 +402,15 @@ function getWidgetInsProfileHtml(cfg) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </div>
       </div>
-      <div class="profile-main-body">
-        <div class="profile-avatar-stack">
-          <div class="profile-big-avatar ${cfg.avatarUrl ? 'has-custom-img' : ''}" style="${cfg.avatarUrl ? `background-image:url('${cfg.avatarUrl}');` : ''}"></div>
-          <div class="profile-mini-avatar-badge"></div>
+         <div class="profile-main-body">
+        <div class="profile-avatar-stack" style="position: relative; width: 50px; height: 50px;">
+          <div class="profile-big-avatar" style="
+            width: 46px; height: 46px; border-radius: 50%; border: 1.5px solid #111; overflow: hidden; display: flex; align-items: center; justify-content: center;
+            ${cfg.avatarUrl ? `background-image: url('${cfg.avatarUrl}') !important; background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important;` : `background: #222222;`}
+          ">
+            ${!cfg.avatarUrl ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="1.8"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>` : ''}
+          </div>
+          <div class="profile-mini-avatar-badge" style="position: absolute; bottom: 0; right: 0; width: 18px; height: 18px; border-radius: 50%; background: #FFF; border: 1px solid #111;"></div>
         </div>
         <div class="profile-meta-info">
           <span class="profile-name-text">${escapeHtml(cfg.name || 'NightRainWhisper')}</span>
@@ -425,15 +447,23 @@ function getWidgetDeskLockscreenHtml(cfg) {
   const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   return `
     <div class="ins-widget-desk-card ins-custom-widget-slot" style="${getStyleString(cfg)}">
-      <div class="desk-banner-frame ${cfg.bannerUrl ? 'has-custom-img' : ''}" style="${cfg.bannerUrl ? `background-image:url('${cfg.bannerUrl}');` : ''}">
+      <div class="desk-banner-frame" style="
+        height: 80px; border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 14px; overflow: hidden;
+        ${cfg.bannerUrl ? `background-image: url('${cfg.bannerUrl}') !important; background-size: cover !important; background-position: center !important;` : `background: #111111;`}
+      ">
         <div class="desk-lockscreen-mock">
           <span class="mock-date">${now.getMonth() + 1}月${now.getDate()}日 真实同步</span>
           <span class="mock-time">${timeStr}</span>
           <div class="mock-wallpaper-thumb"></div>
         </div>
       </div>
-      <div class="desk-user-bar">
-        <div class="desk-avatar ${cfg.avatarUrl ? 'has-custom-img' : ''}" style="${cfg.avatarUrl ? `background-image:url('${cfg.avatarUrl}');` : ''}"></div>
+      <div class="desk-user-bar" style="display: flex; gap: 6px; align-items: center; margin-top: 4px;">
+        <div class="desk-avatar" style="
+          width: 24px; height: 24px; border-radius: 50%; border: 1px solid #111; overflow: hidden; display: flex; align-items: center; justify-content: center;
+          ${cfg.avatarUrl ? `background-image: url('${cfg.avatarUrl}') !important; background-size: cover !important; background-position: center !important;` : `background: #111111;`}
+        ">
+          ${!cfg.avatarUrl ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>` : ''}
+        </div>
         <div class="desk-info-col">
           <div style="display:flex; align-items:center; gap:4px;">
             <span class="desk-user-name">${escapeHtml(cfg.name || 'DobniSoll..04')}</span>
@@ -450,11 +480,13 @@ function getWidgetDeskLockscreenHtml(cfg) {
   `;
 }
 
-// 12. Jasmine 极简天气日历
+// 12. Jasmine 极简天气日历 (修复图片空白)
 function getWidgetJasmineMinimalHtml(cfg, weatherData) {
   const now = new Date();
   const dayNamesEn = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   const monthNamesEn = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  const hasImg = !!cfg.avatarUrl;
+
   return `
     <div class="ins-widget-jasmine-card ins-custom-widget-slot" style="${getStyleString(cfg)}">
       <div class="jasmine-top-row">
@@ -463,11 +495,20 @@ function getWidgetJasmineMinimalHtml(cfg, weatherData) {
       </div>
       <div class="jasmine-title-block">
         <span class="j-main-title">${escapeHtml(cfg.title || 'Night • Jasmine')}</span>
-        <span class="j-sub-title">${escapeHtml(cfg.subTitle || '碎冰化為雨行時')}</span>
+        <span class="j-sub-title">${escapeHtml(cfg.subTitle || '碎冰化為雨行时')}</span>
       </div>
       <div class="jasmine-center-avatar-wrap">
         <span class="j-side-tag left">in'yo<br/>Trou 、verJasm1ne*</span>
-        <div class="j-avatar-circle ${cfg.avatarUrl ? 'has-custom-img' : ''}" style="${cfg.avatarUrl ? `background-image:url('${cfg.avatarUrl}');` : ''}">
+        <div class="j-avatar-circle" style="
+          width: 46px;
+          height: 46px;
+          border-radius: 50%;
+          border: 1.5px solid #111;
+          position: relative;
+          background-color: #FAFAFA;
+          ${hasImg ? `background-image: url('${cfg.avatarUrl}') !important; background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important;` : ''}
+        ">
+          ${!hasImg ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.8" style="margin: auto; display: block; margin-top: 10px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>` : ''}
           <div class="j-speech-cloud">•••</div>
         </div>
         <span class="j-side-tag right">
@@ -478,12 +519,11 @@ function getWidgetJasmineMinimalHtml(cfg, weatherData) {
       <div class="jasmine-name-label">${escapeHtml(cfg.name || 'Jasmine')}</div>
       <div class="jasmine-quote-box">
         <span class="j-quote-prefix">| ○ :</span>
-        <span class="j-quote-content">${escapeHtml(cfg.quote || '妳的名字是我心口咬下的青蘋果')}</span>
+        <span class="j-quote-content">${escapeHtml(cfg.quote || '妳的名字是我心口咬下的青苹果')}</span>
       </div>
     </div>
   `;
 }
-
 // 13. 3D CoverFlow 唱片机 (支持 5 张画廊点击/左右手势无缝滑动切换)
 function getWidgetCoverflowMusicHtml(cfg) {
   const curIdx = cfg.activeIndex !== undefined ? Number(cfg.activeIndex) : 2;
@@ -604,16 +644,16 @@ function getWidgetLoginExchangeHtml(cfg) {
   `;
 }
 
-// 16. Inny 回形针双人插画卡片 (新图 2)
+// 16. Inny 回形针双人插画卡片
 function getWidgetClipPairHtml(cfg) {
   return `
     <div class="ins-widget-clip-card ins-custom-widget-slot" style="${getStyleString(cfg)}">
-      <div class="clip-banner-wrap">
+      <div class="clip-banner-wrap" style="position: relative; width: 100%; height: 110px; border-radius: 8px; overflow: hidden;">
         <div class="clip-metal-icon"></div>
-        <div class="clip-photo-bg ${cfg.photoUrl ? 'has-custom-img' : ''}" style="${cfg.photoUrl ? `background-image:url('${cfg.photoUrl}');` : ''}">
-          <div class="clip-avatar-bubble">
-            <div class="c-b-ava"></div>
-            <span>${escapeHtml(cfg.quote || "It's very close to you")}</span>
+        <div class="clip-photo-bg" style="
+          width: 100%; height: 100%; position: relative; display: flex; justify-content: space-between; align-items: flex-end; padding: 8px; box-sizing: border-box;
+          ${cfg.photoUrl ? `background-image: url('${cfg.photoUrl}') !important; background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important;` : `background: #222222;`}
+        ">
           </div>
           <div class="clip-right-actions">
             <span class="c-act">♡</span>
@@ -706,15 +746,23 @@ function getWidgetNewspaperMeetingHtml(cfg, weatherData) {
   `;
 }
 
-// 19. Npcs 宽幅横幅社媒卡 (新图 5)
+// 19. Npcs 宽幅横幅社媒卡
 function getWidgetBannerProfileHtml(cfg) {
   return `
     <div class="ins-widget-banner-profile-card ins-custom-widget-slot" style="${getStyleString(cfg)}">
-      <div class="bp-top-cover ${cfg.bannerUrl ? 'has-custom-img' : ''}" style="${cfg.bannerUrl ? `background-image:url('${cfg.bannerUrl}');` : ''}">
+      <div class="bp-top-cover" style="
+        width: 100%; height: 60px; display: flex; align-items: center; justify-content: center; color: #FFF; font-size: 13px; font-family: serif; font-style: italic; overflow: hidden;
+        ${cfg.bannerUrl ? `background-image: url('${cfg.bannerUrl}') !important; background-size: cover !important; background-position: center !important;` : `background: #111111;`}
+      ">
         <span class="bp-cover-tag">${escapeHtml(cfg.bannerText || 'Npcs')}</span>
       </div>
       <div class="bp-user-header">
-        <div class="bp-overlap-avatar ${cfg.avatarUrl ? 'has-custom-img' : ''}" style="${cfg.avatarUrl ? `background-image:url('${cfg.avatarUrl}');` : ''}"></div>
+        <div class="bp-overlap-avatar" style="
+          width: 44px; height: 44px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 2px 6px rgba(0,0,0,0.15); overflow: hidden; display: flex; align-items: center; justify-content: center;
+          ${cfg.avatarUrl ? `background-image: url('${cfg.avatarUrl}') !important; background-size: cover !important; background-position: center !important;` : `background: #222222;`}
+        ">
+          ${!cfg.avatarUrl ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="1.8"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>` : ''}
+        </div>
         <div class="bp-actions-right">
           <button class="bp-btn">Edit</button>
           <button class="bp-btn dark">Follow</button>
