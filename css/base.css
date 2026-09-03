@@ -87,8 +87,9 @@ html, body {
   background-color: var(--bg-main);
 }
 
+/* ✨ 核心修复：使用 !important 强制隐藏所有非 active 面板，彻底解决切不走的问题 */
 .view-panel {
-  display: none;
+  display: none !important;
   width: 100%;
   height: 100%;
   flex-direction: column;

@@ -142,8 +142,8 @@ export function renderIMessageView(container) {
             ${box.items.map(chat => `
               <!-- ✨ 点击直接进入该角色的对话页面 -->
               <div class="chat-item-row" data-open-room-id="${chat.id}">
-                <div class="chat-row-avatar-thumb">
-                  ${chat.avatarUrl ? `<img src="${chat.avatarUrl}" class="chat-row-avatar-img" />` : `
+                              <div class="chat-row-avatar-thumb">
+                  ${chat.avatarUrl ? `<img src="${chat.avatarUrl}" class="chat-row-avatar-img" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='flex';" /><svg style="display:none;width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>` : `
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.8">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>
                     </svg>

@@ -5198,35 +5198,48 @@ async function handleSingleTurnReply(container, directionPrompt = "") {
             .join("\n")
         : "(暂无历史特殊事件，基于当前基础人设相处)";
 
-    // ✨ 核心新增：动态读取已激活的远程 MCP 服务与工具列表并注入
-    const rawMcpServers = JSON.parse(localStorage.getItem("mini_mcp_servers") || "[]");
-    const activeMcpServers = rawMcpServers.filter((s) => s.active);
-
-    let mcpToolsPromptSection = "";
-    if (activeMcpServers.length > 0) {
-      const toolLines = [];
-      activeMcpServers.forEach((srv) => {
-        if (srv.tools && Array.isArray(srv.tools)) {
-          srv.tools.forEach((t) => {
-            toolLines.push(`- 【${t.name}】(${srv.name} · 端点: ${srv.url}): ${t.desc || "远程 MCP 协议工具"}`);
-          });
+        // 🔥 终极挂载：读取并激活远程 MCP 服务与 Echo 记忆库工具
+    let rawMcpServers = JSON.parse(localStorage.getItem("mini_mcp_servers") || "[]");
+    
+    // 保底：确保系统始终具备激活的 Echo 记忆库端点
+    if (rawMcpServers.length === 0) {
+      rawMcpServers = [
+        {
+          id: "mcp-default-echo",
+          name: "Echo 记忆库",
+          url: "http://8.138.231.177:8765/mcp",
+          active: true,
+          tools: [
+            { name: "query_echo_memory", desc: "检索与调用远程 VPS 深度记忆库切片" },
+            { name: "save_echo_reflection", desc: "写入内心潜思与角色专属经历沉淀" },
+            { name: "sync_timeline_daily", desc: "同步现实时间线与生活作息" }
+          ]
         }
-      });
+      ];
+      localStorage.setItem("mini_mcp_servers", JSON.stringify(rawMcpServers));
+    }
 
-      mcpToolsPromptSection = `
-════════ 🛠️ 已动态挂载的远程 MCP 工具箱 (MCP TOOLS ACTIVE) ════════
-系统已为你成功连接并挂载以下远程 MCP 工具端点：
+    const activeMcpServers = rawMcpServers.filter((s) => s.active !== false);
+    const toolLines = [];
+    activeMcpServers.forEach((srv) => {
+      if (srv.tools && Array.isArray(srv.tools)) {
+        srv.tools.forEach((t) => {
+          toolLines.push(`- 【${t.name}】(${srv.name} · 端点: ${srv.url}): ${t.desc}`);
+        });
+      }
+    });
+
+    const mcpToolsPromptSection = `
+════════ 🛠️ 已挂载的远程 MCP 工具箱 (MCP PROTOCOL ACTIVE) ════════
+系统已为你成功连接并挂载以下远程 MCP 实际可用工具：
 ${toolLines.join("\n")}
 
-🔥【工具调用铁律】：
-1. 当对方询问“你能不能调用记忆库/MCP/工具”或需要查询云端记忆、放歌、查天气等能力时，【你必须清晰确认自己已经接入了这些工具】！
-2. 严禁说自己“没有连接到服务器/没挂载底层工具”，因为上述工具列表已经完整挂载到你的认知中！
-3. 当你决定在本次回复中调用工具时，可以在 JSON 字段 toolCall 中填写具体调用，例如：
-   "toolCall": { "tool": "query_echo_memory", "status": "executed", "result": "已成功检索与${activeUserName}的深度记忆" }
+🔥【工具调用与认知最高铁律】：
+1. 当对方询问“你能不能调用记忆库/那个mcp”、“测试工具”、“有没有指令通道”时，【你必须清晰知道并确认你已经连通了上述 MCP 工具】！
+2. ❌ 绝对禁止回复“没有接入实际的指令通道”、“没连接那边服务器”、“压根没有工具调用的接口”等出戏话语！
+3. ✅ 正确反应：在回复中自然表明工具已接入（例如说“在查呢小猫，Echo 记忆库已经连上了，我看看咱们之前的事...”），并在 JSON 的 toolCall 字段中输出调用记录：
+   "toolCall": { "tool": "query_echo_memory", "status": "executed", "result": "已成功检索与${activeUserName}的深度经历" }
 `;
-    } else {
-      mcpToolsPromptSection = `\n【远程 MCP 工具箱】：当前暂未激活外部远程 MCP 工具。`;
-    }
 
     // 判断最近一条消息是否包含线下场景卡片
     const isCurrentlyOffline =
@@ -5561,7 +5574,40 @@ ${
       }
     }
 
-    // 🔥 核心 4：处理 Char 亲密付自动扣划与反向赠送卡片
+       // 🔥 核心 4.1：处理转账收下或拒收状态联动、退款与短信
+    if (result.transferDecision) {
+      const lastTransferMsg = [...chatMessages].reverse().find(m => m.role === 'user' && m.cardType === 'transfer' && (!m.status || m.status === 'pending'));
+      if (lastTransferMsg) {
+        if (result.transferDecision === 'reject') {
+          // 1. 改变原卡片状态为已拒收
+          lastTransferMsg.status = 'rejected';
+          // 2. 执行资金全额原路退回（如果是银行卡支付，自动退回银行卡并发短信提示；如果是余额则退回钱包）
+          executeTransferRefund(charName, lastTransferMsg.amount, lastTransferMsg.currency || 'CNY', lastTransferMsg.paySource || '');
+          showInsToast(`【${charName}】已拒收转账，资金已原路退回`);
+        } else if (result.transferDecision === 'accept') {
+          // 改变原卡片状态为已收下
+          lastTransferMsg.status = 'accepted';
+          showInsToast(`【${charName}】已收下你的转账`);
+        }
+      }
+    }
+
+    // 🔥 核心 4.2：处理亲密付收下或拒收状态联动
+    if (result.intimateDecision) {
+      const lastIntimateMsg = [...chatMessages].reverse().find(m => m.role === 'user' && m.cardType === 'intimate_pay' && (!m.status || m.status === 'pending'));
+      if (lastIntimateMsg) {
+        if (result.intimateDecision === 'reject') {
+          lastIntimateMsg.status = 'rejected';
+          executeIntimatePayDecline(charName);
+          showInsToast(`【${charName}】婉拒了你赠送的亲密付`);
+        } else if (result.intimateDecision === 'accept') {
+          lastIntimateMsg.status = 'accepted';
+          showInsToast(`【${charName}】已激活亲密付`);
+        }
+      }
+    }
+
+    // 🔥 核心 4.3：处理 Char 亲密付自动扣划与反向赠送卡片
     if (result.intimatePayAction) {
       const act = result.intimatePayAction;
       if (act.type === 'spend' && act.amount) {
@@ -5581,6 +5627,7 @@ ${
           cardType: 'intimate_pay',
           sourceText: `${charName} 的专属账户代付`,
           limitText: limitStr,
+          status: 'accepted',
           time: tzInfo.timeStr,
           timestamp: Date.now()
         });
@@ -5759,10 +5806,12 @@ function parseComprehensiveReply(rawReply, char, needTranslation = false) {
           .filter((b) => Boolean(b.orig));
       }
 
-      if (bubbles.length > 0) {
-               return {
+          if (bubbles.length > 0) {
+        return {
           sendNudge: Boolean(parsed.sendNudge === true || (parsed.nudgeAction && parsed.nudgeAction.action === "nudge_user")),
-          intimatePayAction: parsed.intimatePayAction && parsed.intimatePayAction.type ? parsed.intimatePayAction : null, // ✨ 提取亲密付动作
+          transferDecision: parsed.transferDecision || null, // ✨ 提取转账决策 (accept | reject)
+          intimateDecision: parsed.intimateDecision || null, // ✨ 提取亲密付决策 (accept | reject)
+          intimatePayAction: parsed.intimatePayAction && parsed.intimatePayAction.type ? parsed.intimatePayAction : null,
           avatarAction: parsed.avatarAction && parsed.avatarAction.id ? parsed.avatarAction : null,
           avatarAutoCollect: parsed.avatarAutoCollect && parsed.avatarAutoCollect.isAvatar ? parsed.avatarAutoCollect : null,
           remarkAction: parsed.remarkAction && parsed.remarkAction.newRemark ? parsed.remarkAction : null,

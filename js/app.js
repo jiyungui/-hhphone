@@ -29,9 +29,15 @@ export function initDockNavigation() {
   const dockButtons = document.querySelectorAll('.dock-item');
   const viewPanels = document.querySelectorAll('.view-panel');
 
-  dockButtons.forEach(btn => {
+   dockButtons.forEach(btn => {
     btn.onclick = () => {
       const target = btn.getAttribute('data-target');
+
+      // ✨ 核心修复：点击 Dock 栏切换任何板块时，立即移除顶层覆盖的全屏聊天室
+      const activeChatRoom = document.getElementById('chat-room-instance');
+      if (activeChatRoom) {
+        activeChatRoom.remove();
+      }
 
       dockButtons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -162,6 +168,12 @@ export function initSystemHubSidebar() {
 }
 
 export function switchSystemApp(appId) {
+  // ✨ 核心修复：切换到其他 APP 时移除聊天室覆盖层
+  const activeChatRoom = document.getElementById('chat-room-instance');
+  if (activeChatRoom) {
+    activeChatRoom.remove();
+  }
+
   const cleanId = appId.startsWith('app-') ? appId.replace('app-', '') : appId;
   currentActiveApp = cleanId;
 

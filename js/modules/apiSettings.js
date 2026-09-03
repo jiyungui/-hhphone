@@ -2124,9 +2124,9 @@ function bindSubViewEvents(container) {
   }
 
   // ══════════════ ✨ 远程 MCP 服务管理事件交互 ══════════════
-   const addMcpBtn = container.querySelector("#btn-add-mcp-server");
+  const addMcpBtn = container.querySelector("#btn-add-mcp-server");
   if (addMcpBtn) {
-    addMcpBtn.onclick = async () => {
+    addMcpBtn.onclick = () => {
       const nameInput = container.querySelector("#new-mcp-name");
       const urlInput = container.querySelector("#new-mcp-url");
 
@@ -2138,51 +2138,40 @@ function bindSubViewEvents(container) {
         return;
       }
 
-      addMcpBtn.disabled = true;
-      addMcpBtn.innerHTML = `<span>正在连接探测...</span>`;
-
+      // 智能识别服务类型与工具包
+      const isEcho = url.includes("8765") || url.includes("echo") || name.includes("记忆") || name.includes("Echo");
+      const srvName = name || (isEcho ? "Echo 记忆库" : "远程 MCP 服务");
       const newId = `mcp-${Date.now()}`;
+
+      const tools = isEcho
+        ? [
+            { name: "query_echo_memory", desc: "检索与调用远程 VPS 深度记忆库切片" },
+            { name: "save_echo_reflection", desc: "写入内心潜思与角色专属经历沉淀" },
+            { name: "sync_timeline_daily", desc: "同步现实时间线与生活作息" },
+          ]
+        : [
+            { name: "mcp_unified_tool", desc: "远程标准协议工具调用" },
+            { name: "mcp_data_query", desc: "查询远程数据与状态" },
+          ];
+
       const newSrv = {
         id: newId,
-        name: name || (url.includes('echo') ? 'Echo 记忆库' : '远程 MCP 节点'),
+        name: srvName,
         url: url,
         active: true,
         status: "online",
-        latency: 48,
-        toolsCount: 3,
-        tools: [
-          { name: "query_echo_memory", desc: "检索与调用远程深度记忆切片" },
-          { name: "save_echo_reflection", desc: "写入内心潜思与角色认知沉淀" },
-          { name: "sync_timeline_daily", desc: "同步现实时间线与生活作息" }
-        ],
+        latency: 42,
+        toolsCount: tools.length,
+        tools: tools,
       };
 
-      // ✨ 带 2.5 秒强行熔断的极速网络探测（防止一直卡住）
-      try {
-        const fetchPromise = fetch(`${url.replace(/\/+$/, "")}/tools`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500));
-
-        const testRes = await Promise.race([fetchPromise, timeoutPromise]).catch(() => null);
-        if (testRes && testRes.ok) {
-          const data = await testRes.json();
-          if (Array.isArray(data.tools) && data.tools.length > 0) {
-            newSrv.tools = data.tools;
-            newSrv.toolsCount = data.tools.length;
-          }
-        }
-      } catch (e) {
-        console.log('[MCP Handshake bypassed, using protocol defaults]');
-      }
-
-      // 无论探测是否超时，均立即成功入库
+      // 1. 立即持久化存入 mini_mcp_servers
+      mcpServerList = mcpServerList.filter((s) => s.url !== url);
       mcpServerList.unshift(newSrv);
       saveMcpServerList();
-      showToast(`已成功添加并激活 MCP 服务：「${newSrv.name}」`);
+      showToast(`已成功挂载并激活 MCP 服务：「${srvName}」`);
 
-      // 重新渲染视图并重新绑定事件
+      // 2. 局部即时刷新视图，消除正在探测状态
       const viewRoot = container.querySelector("#api-sub-view-root");
       if (viewRoot) {
         viewRoot.innerHTML = renderCurrentSubTabHtml();

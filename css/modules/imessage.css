@@ -1,12 +1,12 @@
-/* 消息主视图容器 */
-.imessage-container, #view-imessage {
+/* ✨ 核心修复：移除 #view-imessage，只针对内部容器设置 flex */
+.imessage-container {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
   background-color: var(--bg-main, #FFFFFF);
   overflow-y: auto;
-  padding-top: 6px; /* 额外微调间距 */
+  padding-top: 6px;
 }
 
 /* 搜索框栏 */
