@@ -1,0 +1,438 @@
+/* ═══════════════════════════════════════════════════════════════
+   MINI PHONE OS · 表情包中枢 (STICKERS VAULT) INS 白黑风
+   ═══════════════════════════════════════════════════════════════ */
+.sticker-vault-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: #FFFFFF;
+  overflow: hidden;
+}
+
+/* 顶栏 */
+.sticker-vault-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px 10px 16px;
+  border-bottom: 1px solid var(--line-color, #EAEAEA);
+  background: #FFFFFF;
+}
+
+.sticker-header-title-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sticker-main-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: -0.2px;
+}
+
+.sticker-meta-tag {
+  font-size: 8px;
+  font-weight: 800;
+  font-family: ui-monospace, monospace;
+  padding: 1.5px 5px;
+  border: 1.2px solid #111111;
+  border-radius: 3px;
+}
+
+.sticker-count-badge {
+  font-size: 9px;
+  font-weight: 700;
+  color: #555555;
+  background: #F4F4F4;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid #EAEAEA;
+}
+
+/* 工具操作栏 */
+.sticker-action-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #FAFAFA;
+  border-bottom: 1px solid #EAEAEA;
+  overflow-x: auto;
+}
+
+.sticker-action-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.ins-tool-btn {
+  background: #FFFFFF;
+  border: 1.2px solid #111111;
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #111111;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.ins-tool-btn:hover {
+  background: #F0F0F0;
+}
+
+.ins-tool-btn.primary {
+  background: #111111;
+  color: #FFFFFF;
+  border-color: #111111;
+}
+
+.ins-tool-btn.primary:hover {
+  background: #2A2A2A;
+}
+
+/* 分组标签栏 */
+.sticker-groups-bar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 14px;
+  border-bottom: 1px solid #EAEAEA;
+  overflow-x: auto;
+}
+
+.sticker-groups-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.sticker-group-pill {
+  background: #FAFAFA;
+  border: 1px solid #EAEAEA;
+  border-radius: 14px;
+  padding: 3px 10px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #666666;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.15s ease;
+}
+
+.sticker-group-pill.active {
+  background: #111111;
+  color: #FFFFFF;
+  border-color: #111111;
+}
+
+.sticker-group-pill.add-btn {
+  border-style: dashed;
+  color: #111111;
+  font-weight: 800;
+}
+
+/* 表情包自适应完美网格（彻底杜绝横向滚动） */
+.sticker-grid-scroll-area {
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden; /* 彻底禁止横向滚动条 */
+  overflow-y: auto;   /* 仅允许纵向上下滑动 */
+  padding: 10px;
+}
+
+.sticker-masonry-grid {
+  display: grid;
+  width: 100%;
+  box-sizing: border-box;
+  grid-template-columns: repeat(4, minmax(0, 1fr)); /* minmax(0, 1fr) 防止子元素撑破容器宽度 */
+  gap: 6px; /* 间距微调，让4列恰好呼吸感排布 */
+}
+
+.sticker-card-thumb {
+  width: 100%;
+  min-width: 0; /* 关键：允许内容收缩，不撑开产生横向滑动 */
+  box-sizing: border-box;
+  background: #FFFFFF;
+  border: 1px solid #111111;
+  border-radius: 6px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  position: relative;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+}
+
+.sticker-card-thumb:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+
+.sticker-thumb-img-box {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #FAFAFA;
+}
+
+.sticker-thumb-img-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.sticker-thumb-title {
+  font-size: 8px; /* ✨ 字体调小 */
+  font-weight: 700;
+  color: #222222;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.sticker-thumb-del-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: rgba(17, 17, 17, 0.85);
+  color: #FFFFFF;
+  border: none;
+  font-size: 9px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.sticker-card-thumb:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.sticker-thumb-img-box {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #FAFAFA;
+}
+
+.sticker-thumb-img-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.sticker-thumb-title {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #111111;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.sticker-thumb-del-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #111111;
+  color: #FFFFFF;
+  border: none;
+  font-size: 11px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.sticker-thumb-del-btn:hover {
+  opacity: 1;
+}
+
+/* 空状态 */
+.sticker-empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  gap: 8px;
+  color: #888888;
+}
+
+.sticker-empty-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #F4F4F4;
+  border: 1px solid #EAEAEA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sticker-empty-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.sticker-empty-sub {
+  font-size: 9px;
+  color: #888888;
+  text-align: center;
+  max-width: 220px;
+}
+
+/* 弹窗通用 */
+.sticker-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.sticker-modal-card {
+  background: #FFFFFF;
+  border: 1.5px solid #111111;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 320px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+.sticker-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #EEEEEE;
+  padding-bottom: 8px;
+}
+
+.sticker-modal-title {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.sticker-modal-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #111111;
+}
+
+.sticker-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stk-modal-preview-box {
+  width: 100px;
+  height: 100px;
+  border: 1.2px solid #111111;
+  border-radius: 8px;
+  margin: 0 auto;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FAFAFA;
+}
+
+.stk-modal-preview-box.large {
+  width: 140px;
+  height: 140px;
+}
+
+.stk-modal-preview-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.stk-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stk-form-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: #555555;
+}
+
+.stk-input, .stk-select {
+  border: 1px solid #111111;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #111111;
+  outline: none;
+}
+
+.stk-textarea {
+  border: 1px solid #111111;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 9.5px;
+  font-family: ui-monospace, monospace;
+  height: 110px;
+  resize: none;
+  outline: none;
+  background: #FAFAFA;
+}
+
+.stk-desc-text {
+  font-size: 9.5px;
+  color: #666666;
+  line-height: 1.4;
+}

@@ -4,6 +4,7 @@ import { renderUserView } from './modules/user.js';
 import { renderApiSettingsView } from './modules/apiSettings.js';
 import { renderWalletView } from './modules/wallet.js';
 import { renderMessagesView } from './modules/messages.js';
+import { renderStickersGalleryView } from './modules/stickers.js'; // ✨ 导入真表情包中枢
 
 // 系统应用配置表 (INS 极简白黑风格)
 const SYSTEM_APPS = [
@@ -29,11 +30,11 @@ export function initDockNavigation() {
   const dockButtons = document.querySelectorAll('.dock-item');
   const viewPanels = document.querySelectorAll('.view-panel');
 
-   dockButtons.forEach(btn => {
+  dockButtons.forEach(btn => {
     btn.onclick = () => {
       const target = btn.getAttribute('data-target');
 
-      // ✨ 核心修复：点击 Dock 栏切换任何板块时，立即移除顶层覆盖的全屏聊天室
+      // 点击左侧 Dock 导航时，立即清理覆盖在最上层的全屏聊天室
       const activeChatRoom = document.getElementById('chat-room-instance');
       if (activeChatRoom) {
         activeChatRoom.remove();
@@ -68,7 +69,7 @@ function renderDockTargetView(target, panel) {
   } else if (target === 'wallet') {
     renderWalletView(panel);
   } else if (target === 'stickers') {
-    renderStickersGalleryView(panel);
+    renderStickersGalleryView(panel); // ✨ 调用真正的表情包中枢
   } else if (target === 'theme') {
     renderThemeCustomView(panel);
   } else if (target === 'games') {
@@ -89,15 +90,12 @@ export function initSystemHubSidebar() {
   }
 
   sidebarEl.innerHTML = `
-    <!-- 屏幕最左侧微型呼出手柄 -->
     <div class="system-hub-edge-handle" id="btn-trigger-system-hub" title="点击或右滑展开系统目录">
       <span class="hub-edge-bar"></span>
     </div>
 
-    <!-- 遮罩 -->
     <div class="system-hub-backdrop" id="system-hub-backdrop"></div>
 
-    <!-- 侧边抽屉 -->
     <aside class="system-hub-sheet" id="system-hub-sheet">
       <div class="hub-sheet-header">
         <div class="hub-header-left">
@@ -168,7 +166,6 @@ export function initSystemHubSidebar() {
 }
 
 export function switchSystemApp(appId) {
-  // ✨ 核心修复：切换到其他 APP 时移除聊天室覆盖层
   const activeChatRoom = document.getElementById('chat-room-instance');
   if (activeChatRoom) {
     activeChatRoom.remove();
@@ -204,30 +201,7 @@ export function switchSystemApp(appId) {
   });
 }
 
-// ════════════ ✨ 补齐 4 大内置子面板视图函数 (彻底解决 ReferenceError) ════════════
-function renderStickersGalleryView(container) {
-  container.innerHTML = `
-    <div class="user-container" style="display:flex; flex-direction:column; height:100%; padding: 0 14px 14px 14px; overflow-y:auto;">
-      <div class="user-header" style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--line-color);">
-        <span class="user-header-title" style="font-size:16px; font-weight:800; color:#111;">Stickers</span>
-        <span class="user-count-badge" style="font-size:9.5px; font-weight:700; color:#888;">STICKER VAULT</span>
-      </div>
-      <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
-        <div class="api-card" style="border: 1px solid var(--line-color); border-radius:10px; padding:12px; background:#FFF;">
-          <div style="font-size:11.5px; font-weight:800; color:#111; margin-bottom:4px;">默认表情包预设</div>
-          <span style="font-size:9.5px; color:#888;">聊天中可随时在「更多 ➔ 表情包」中快速发送极简线条表情。</span>
-          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-top:8px;">
-            <div style="padding:6px; background:#FAFAFA; border:1px solid #EAEAEA; border-radius:6px; text-align:center; font-size:10px; font-weight:700;">[暗中观察]</div>
-            <div style="padding:6px; background:#FAFAFA; border:1px solid #EAEAEA; border-radius:6px; text-align:center; font-size:10px; font-weight:700;">[叹气]</div>
-            <div style="padding:6px; background:#FAFAFA; border:1px solid #EAEAEA; border-radius:6px; text-align:center; font-size:10px; font-weight:700;">[给心心]</div>
-            <div style="padding:6px; background:#FAFAFA; border:1px solid #EAEAEA; border-radius:6px; text-align:center; font-size:10px; font-weight:700;">[问号]</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
+// ════════════ 3 大辅助子面板视图函数 ════════════
 function renderThemeCustomView(container) {
   container.innerHTML = `
     <div class="user-container" style="display:flex; flex-direction:column; height:100%; padding: 0 14px 14px 14px; overflow-y:auto;">

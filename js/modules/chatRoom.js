@@ -6,6 +6,8 @@ import { VoiceTool } from "./voiceTool.js";
 import { MediaStorage } from "../utils/mediaStorage.js";
 import { getWalletData, saveWalletData, executeCharIntimateSpend, executeCharGrantIntimatePay, executeTransferRefund, executeIntimatePayDecline, CURRENCIES } from "./wallet.js";
 import { sendSystemSms } from "./messages.js";
+import { getStickerVault } from "./stickers.js";
+
 
 let activeCharInfo = null;
 let chatMessages = [];
@@ -491,13 +493,38 @@ export function renderChatRoomView(container) {
     container.appendChild(roomEl);
   }
 
+   const themeTone = activeCharInfo.chatTheme?.themeTone || "light";
   const globalFrameCss = activeCharInfo.chatTheme?.customFrameCss || "";
   const globalBubbleCss = activeCharInfo.chatTheme?.customBubbleCss || "";
+  const globalThemeCss = activeCharInfo.chatTheme?.customThemeCss || "";
+
+  roomEl.className = `chat-room-container ${themeTone === "dark" ? "theme-night-mode" : ""}`;
 
   roomEl.innerHTML = `
-    <!-- ✨ 聊天室全局挂件与气泡动态生效样式 -->
+    <!-- ✨ 聊天室全局挂件、气泡与全域主题动态生效样式 -->
     <style id="chat-global-active-frame-css">${globalFrameCss}</style>
     <style id="chat-global-active-bubble-css">${globalBubbleCss}</style>
+    <style id="chat-global-active-theme-css">${globalThemeCss}</style>
+    ${
+      themeTone === "dark"
+        ? `
+    <style id="chat-theme-night-preset">
+      .chat-room-container.theme-night-mode { background-color: #0A0A0A !important; color: #FFFFFF !important; }
+      .theme-night-mode .chat-room-header { background-color: #0A0A0A !important; border-bottom: 1px solid #262626 !important; }
+      .theme-night-mode .chat-header-name { color: #FFFFFF !important; }
+      .theme-night-mode .chat-header-status { color: #888888 !important; }
+      .theme-night-mode .chat-back-btn svg { stroke: #FFFFFF !important; }
+      .theme-night-mode .chat-header-text-btn { color: #FFFFFF !important; border-color: #444444 !important; background: #1A1A1A !important; }
+      .theme-night-mode .chat-room-footer { background-color: #0A0A0A !important; border-top: 1px solid #262626 !important; }
+      .theme-night-mode .chat-input-textarea { background-color: #161616 !important; color: #FFFFFF !important; border-color: #333333 !important; }
+      .theme-night-mode .chat-footer-btn { background-color: #1A1A1A !important; color: #FFFFFF !important; border-color: #333333 !important; }
+      .theme-night-mode .chat-footer-btn.send-btn { background-color: #FFFFFF !important; color: #000000 !important; border-color: #FFFFFF !important; }
+      .theme-night-mode .msg-bubble-row.assistant .msg-bubble { background-color: #1A1A1A !important; color: #FFFFFF !important; border-color: #333333 !important; }
+      .theme-night-mode .msg-bubble-row.user .msg-bubble { background-color: #FFFFFF !important; color: #000000 !important; border-color: #FFFFFF !important; }
+    </style>
+    `
+        : ""
+    }
 
     <!-- 1. 顶栏 (INS 黑白线条风) -->
     <header class="chat-room-header">
@@ -693,21 +720,31 @@ export function renderChatRoomView(container) {
       ${isSettingsOpen ? renderSettingsContentHtml() : ""}
     </div>
 
-    <!-- 8. 表情包抽屉 -->
+       <!-- 8. ✨ 真图片表情包抽屉 (读取 StickerVault) -->
     <div class="char-sticker-drawer ${isStickerDrawerOpen ? "active" : ""}" id="char-sticker-drawer">
       <div class="sticker-drawer-header">
-        <span class="sticker-drawer-title">表情包 / STICKERS</span>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="sticker-drawer-title">表情包 / STICKERS</span>
+          <span style="font-size:8px; color:#888; font-family:ui-monospace, monospace;">VAULT</span>
+        </div>
         <button class="sticker-close-btn" id="btn-close-stickers">×</button>
       </div>
       <div class="sticker-items-grid">
-        ${PRESET_STICKERS.map(
-          (stk, sIdx) => `
-          <div class="sticker-grid-item" data-stk-idx="${sIdx}">
-            <div class="sticker-box-preview">${escapeHtml(stk.text)}</div>
-            <span class="sticker-name-label">${escapeHtml(stk.name)}</span>
-          </div>
-        `,
-        ).join("")}
+        ${(() => {
+          const vault = getStickerVault();
+          const stks = vault.stickers || [];
+          if (stks.length === 0) {
+            return `<div style="grid-column:1/-1; padding:25px 0; text-align:center; font-size:10px; color:#888;">表情库为空，请先在左侧「表情包」面板添加图片</div>`;
+          }
+          return stks.map(stk => `
+            <div class="sticker-grid-item" data-stk-url="${stk.url}" data-stk-name="${escapeHtml(stk.name)}">
+              <div class="sticker-box-preview" style="padding:2px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                <img src="${stk.url}" style="width:100%; height:100%; object-fit:contain;" />
+              </div>
+              <span class="sticker-name-label">${escapeHtml(stk.name)}</span>
+            </div>
+          `).join('');
+        })()}
       </div>
     </div>
 
@@ -1557,9 +1594,9 @@ function renderAvatarFrameTabHtml(themeCfg, char) {
   `;
 }
 
-// ✨ 4 款截然不同、差异极大的高质感 INS 黑白气泡专属预设 CSS 模板
+// ✨ 4 款截然不同、差异极大的高质感 INS 黑白气泡专属预设 CSS 模板（含转账卡片样式）
 const PRESET_BUBBLE_CSS_TEMPLATES = {
-  default: `/* ══════════════ 1. 经典黑白线条 (CLASSIC LINE) ══════════════ */
+  default: `/* ══════════════ 1. 对话气泡 (BUBBLES) ══════════════ */
 .msg-bubble-row.assistant .msg-bubble {
   background-color: #FFFFFF;
   color: #111111;
@@ -1590,6 +1627,28 @@ const PRESET_BUBBLE_CSS_TEMPLATES = {
   border-top: 1px dashed rgba(0, 0, 0, 0.12);
   line-height: 1.35;
 }
+
+/* ══════════════ 2. 转账凭据卡片 (TRANSFER CARD) ══════════════ */
+/* 转账卡片外层容器 */
+.ins-chat-transfer-card {
+  background: #FFFFFF;
+  border: 1.5px solid #111111;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+/* 转账卡片图标 */
+.ins-transfer-icon-box {
+  background: #111111;
+  color: #FFFFFF;
+  border-radius: 6px;
+}
+/* 转账标题与渠道 */
+.ins-transfer-title { font-weight: 800; color: #111111; }
+.ins-transfer-channel { color: #888888; font-size: 8px; }
+/* 转账金额大字 */
+.ins-transfer-amount-row { color: #111111; font-weight: 800; }
+.ins-transfer-note-text { color: #555555; font-size: 9.5px; }
+
 @keyframes bubbleFadeIn {
   from { opacity: 0; transform: translateY(4px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -1861,46 +1920,132 @@ function renderBubbleStyleTabHtml(themeCfg) {
   `;
 }
 
-// 3. 主题风格板块
+// 3. 主题风格板块（日夜间切换 + 聊天室全域高自由度 CSS 放置区）
+const DEFAULT_ROOM_GLOBAL_CSS = `/* ══════════════════════════════════════════════
+   聊天室全域高自由度 CSS 定制模板 (CHAT ROOM GLOBAL CSS)
+   ══════════════════════════════════════════════ */
+
+/* 1. 聊天室主背景 */
+.chat-room-container {
+  background-color: #FFFFFF;
+}
+
+/* 2. 顶栏容器 (含背景与下边框) */
+.chat-room-header {
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #EAEAEA;
+}
+/* 顶栏标题与状态文字 */
+.chat-header-name { color: #111111; font-weight: 800; }
+.chat-header-status { color: #888888; }
+/* 顶栏返回键与头像 */
+.chat-back-btn svg { stroke: #111111; }
+.chat-header-avatar { border: 1.5px solid #111111; }
+/* 顶栏右上角文字功能键 (搜索 / 设置) */
+.chat-header-text-btn { color: #111111; border-color: #111111; }
+
+/* 3. 底栏容器 (输入区与操作栏) */
+.chat-room-footer {
+  background-color: #FFFFFF;
+  border-top: 1px solid #EAEAEA;
+}
+/* 输入框样式 */
+.chat-input-textarea {
+  background: #FAFAFA;
+  color: #111111;
+  border: 1px solid #111111;
+  border-radius: 6px;
+}
+/* 底栏功能按钮 (更多、续写、发送) */
+.chat-footer-btn {
+  background: #FFFFFF;
+  color: #111111;
+  border: 1px solid #111111;
+}
+.chat-footer-btn.send-btn {
+  background: #111111;
+  color: #FFFFFF;
+}
+
+/* 4. 气泡与头像挂件选择器 */
+.msg-bubble-row.assistant .msg-bubble { border-radius: 12px 12px 12px 2px; }
+.msg-bubble-row.user .msg-bubble { border-radius: 12px 12px 2px 12px; }
+.ins-avatar-frame-wrap { position: relative; }
+`;
+
 function renderThemeToneTabHtml(themeCfg) {
-  const themes = [
-    {
-      id: "default",
-      name: "纯正极简白 (Classic White)",
-      desc: "标准白底黑线高对比",
-    },
-    {
-      id: "cool_gray",
-      name: "现代冷灰调 (Cool Gray)",
-      desc: "微冷灰质感低眩光",
-    },
-    {
-      id: "dark_contrast",
-      name: "暗夜反差黑 (Dark Contrast)",
-      desc: "深色高反差利落质感",
-    },
-  ];
+  const currentTone = themeCfg.themeTone || "light";
+  const currentThemeCss = themeCfg.customThemeCss !== undefined ? themeCfg.customThemeCss : DEFAULT_ROOM_GLOBAL_CSS;
+  const savedPresets = JSON.parse(localStorage.getItem("mini_custom_theme_presets") || "[]");
 
   return `
     <div class="ins-vault-pane">
-      <div class="ins-theme-grid-list" style="grid-template-columns: 1fr;">
-        ${themes
-          .map(
-            (t) => `
-          <div class="ins-theme-option-card ${(themeCfg.themeTone || "default") === t.id ? "active" : ""}" data-tone-id="${t.id}">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <div>
-                <div style="font-size:11px; font-weight:800; color:#111;">${t.name}</div>
-                <div style="font-size:8.5px; color:#888;">${t.desc}</div>
-              </div>
-              <button class="ins-card-action-btn use btn-select-tone" data-id="${t.id}" style="width:70px;">
-                ${(themeCfg.themeTone || "default") === t.id ? "使用中" : "选用"}
-              </button>
-            </div>
+      <!-- 动态注入全域 CSS 预览 -->
+      <style id="dynamic-theme-preview-style">${currentThemeCss}</style>
+
+           <!-- 1. 日夜间模式快速切换 -->
+      <div style="font-size:9.5px; font-weight:800; color:#111; margin-top:2px;">光影模式切换</div>
+      <div class="ins-theme-grid-list" style="grid-template-columns: 1fr 1fr; gap:8px;">
+        <div class="ins-theme-option-card ${currentTone === "light" ? "active" : ""}" data-tone-id="light" style="padding:10px;">
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <div style="font-size:11px; font-weight:800; color:#111;">日间极简 (LIGHT)</div>
+            <div style="font-size:8px; color:#888;">纯白底色 · 黑线高对比</div>
           </div>
-        `,
-          )
-          .join("")}
+          <button class="ins-card-action-btn use btn-select-tone" data-id="light" style="margin-top:6px; width:100%;">
+            ${currentTone === "light" ? "使用中" : "选用"}
+          </button>
+        </div>
+
+        <div class="ins-theme-option-card ${currentTone === "dark" ? "active" : ""}" data-tone-id="dark" style="padding:10px; background:#1A1A1A; border-color:#333;">
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <div style="font-size:11px; font-weight:800; color:#FFF;">暗夜模式 (DARK)</div>
+            <div style="font-size:8px; color:#AAA;">深黑背景 · 白色图标发光</div>
+          </div>
+          <button class="ins-card-action-btn use btn-select-tone" data-id="dark" style="margin-top:6px; width:100%; background:#FFF; color:#111; border-color:#FFF;">
+            ${currentTone === "dark" ? "使用中" : "选用"}
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. 全域 CSS 代码放置区 -->
+      <div class="ins-settings-card" style="margin-top: 6px; padding: 12px; gap: 8px;">
+        <div class="ins-card-title-row">
+          <span class="ins-card-title">聊天室全域 CSS 代码区 / GLOBAL CSS</span>
+          <span style="font-size: 8px; color: #888; font-family: ui-monospace, monospace;">TOP/BOTTOM/BUBBLE</span>
+        </div>
+        <p class="ins-card-desc">包含顶栏（功能键/头像框）、底栏（输入栏/发送续写）、气泡与挂件等全页面自由定制：</p>
+        
+        <textarea class="ins-css-code-editor" id="input-custom-theme-css" spellcheck="false" rows="13">${escapeHtml(currentThemeCss)}</textarea>
+
+        <div style="display:flex; gap:6px; margin-top:4px;">
+          <button class="ins-card-action-btn use" id="btn-open-save-theme-css-dialog" style="flex:2; padding:7px 0; font-size:10px;">保存全域 CSS 主题</button>
+          <button class="ins-card-action-btn del" id="btn-reset-theme-css" style="flex:1; padding:7px 0; font-size:10px;">重置模板</button>
+        </div>
+      </div>
+
+      <!-- 3. 已保存全域主题列表 -->
+      <div class="ins-settings-card" style="margin-top: 4px; padding: 12px; gap: 8px;">
+        <div class="ins-card-title-row">
+          <span class="ins-card-title">已保存全域主题列表 (${savedPresets.length})</span>
+          <span style="font-size: 8px; color: #888; font-family: ui-monospace, monospace;">SAVED PRESETS</span>
+        </div>
+        
+        <div class="ins-saved-presets-list" id="ins-saved-theme-presets-container" style="display:flex; flex-direction:column; gap:6px;">
+          ${savedPresets.length === 0 ? `<div class="ins-empty-hint" style="padding:15px 0;">暂无保存的主题预设，编写代码后点击上方保存即可存入</div>` : ""}
+          ${savedPresets.map((p) => `
+            <div class="ins-saved-preset-item" style="background:#FAFAFA; border:1px solid #EAEAEA; border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; flex-direction:column; gap:2px; flex:1; min-width:0;">
+                <span style="font-size:11px; font-weight:800; color:#111;">${escapeHtml(p.name)}</span>
+                <span style="font-size:8px; color:#888; font-family:ui-monospace, monospace;">${p.createdAt || "预设"}</span>
+              </div>
+              <div style="display:flex; gap:4px; flex-shrink:0;">
+                <button class="ins-card-action-btn use btn-apply-saved-theme-preset" data-pid="${p.id}" style="padding:3px 8px; font-size:9px;">应用</button>
+                <button class="ins-card-action-btn btn-load-saved-theme-preset" data-pid="${p.id}" style="padding:3px 8px; font-size:9px; background:#FFF; border:1px solid #CCC; color:#111;">载入代码</button>
+                <button class="ins-card-action-btn del btn-del-saved-theme-preset" data-pid="${p.id}" style="padding:3px 6px; font-size:9px;">×</button>
+              </div>
+            </div>
+          `).join("")}
+        </div>
       </div>
     </div>
   `;
@@ -2400,14 +2545,119 @@ function bindChatThemeEvents(roomEl, container) {
     }
   }
 
-  // 3. 选用主题色调
+    // 3. 选用日夜间光影模式
   roomEl.querySelectorAll(".btn-select-tone").forEach((btn) => {
     btn.onclick = () => {
       const tId = btn.getAttribute("data-id");
       char.chatTheme.themeTone = tId;
       updateFullCharData(char);
+      
+      // 动态更新聊天室外层类名
+      const roomInstance = document.getElementById("chat-room-instance");
+      if (roomInstance) {
+        if (tId === "dark") roomInstance.classList.add("theme-night-mode");
+        else roomInstance.classList.remove("theme-night-mode");
+      }
+
+           refreshChatThemeView(roomEl, container);
+      showInsToast(`已切换为${tId === "dark" ? "暗夜模式" : "日间极简"}`);
+    };
+  });
+
+  // 3.1 主题 CSS 实时打字预览
+  const themeCssTextarea = roomEl.querySelector("#input-custom-theme-css");
+  const themeStyleTag = roomEl.querySelector("#dynamic-theme-preview-style");
+  if (themeCssTextarea && themeStyleTag) {
+    themeCssTextarea.oninput = () => {
+      themeStyleTag.textContent = themeCssTextarea.value;
+    };
+  }
+
+  // 3.2 保存自定义主题 CSS
+  const openSaveThemeCssBtn = roomEl.querySelector("#btn-open-save-theme-css-dialog");
+  if (openSaveThemeCssBtn && themeCssTextarea) {
+    openSaveThemeCssBtn.onclick = () => {
+      const cssCode = themeCssTextarea.value.trim();
+      if (!cssCode) {
+        showInsToast("CSS 代码不能为空");
+        return;
+      }
+      openSaveCssOptionModal(cssCode, (actionType, presetName) => {
+        char.chatTheme.customThemeCss = cssCode;
+        updateFullCharData(char);
+
+        const chatThemeGlobalStyle = document.querySelector("#chat-global-active-theme-css");
+        if (chatThemeGlobalStyle) chatThemeGlobalStyle.textContent = cssCode;
+
+        if (actionType === "save_preset") {
+          let presets = JSON.parse(localStorage.getItem("mini_custom_theme_presets") || "[]");
+          presets.unshift({
+            id: `tp-${Date.now()}`,
+            name: presetName || `全域主题 ${presets.length + 1}`,
+            css: cssCode,
+            createdAt: new Date().toISOString().slice(0, 16).replace("T", " "),
+          });
+          localStorage.setItem("mini_custom_theme_presets", JSON.stringify(presets));
+          showInsToast(`已保存主题预设「${presetName}」并应用！`);
+        } else {
+          showInsToast("全域主题 CSS 已直接生效至聊天室！");
+        }
+        refreshChatThemeView(roomEl, container);
+      });
+    };
+  }
+
+  // 3.3 重置全域主题 CSS
+  const resetThemeCssBtn = roomEl.querySelector("#btn-reset-theme-css");
+  if (resetThemeCssBtn) {
+    resetThemeCssBtn.onclick = () => {
+      char.chatTheme.customThemeCss = undefined;
+      updateFullCharData(char);
+      const chatThemeGlobalStyle = document.querySelector("#chat-global-active-theme-css");
+      if (chatThemeGlobalStyle) chatThemeGlobalStyle.textContent = DEFAULT_ROOM_GLOBAL_CSS;
       refreshChatThemeView(roomEl, container);
-      showInsToast("已切换主题风格");
+      showInsToast("已恢复默认主题全域模板");
+    };
+  }
+
+  // 3.4 预设列表：应用、载入与删除
+  roomEl.querySelectorAll(".btn-apply-saved-theme-preset").forEach((btn) => {
+    btn.onclick = () => {
+      const pid = btn.getAttribute("data-pid");
+      const presets = JSON.parse(localStorage.getItem("mini_custom_theme_presets") || "[]");
+      const target = presets.find((p) => p.id === pid);
+      if (target) {
+        char.chatTheme.customThemeCss = target.css;
+        updateFullCharData(char);
+        const chatThemeGlobalStyle = document.querySelector("#chat-global-active-theme-css");
+        if (chatThemeGlobalStyle) chatThemeGlobalStyle.textContent = target.css;
+        refreshChatThemeView(roomEl, container);
+        showInsToast(`已应用主题预设：「${target.name}」`);
+      }
+    };
+  });
+
+  roomEl.querySelectorAll(".btn-load-saved-theme-preset").forEach((btn) => {
+    btn.onclick = () => {
+      const pid = btn.getAttribute("data-pid");
+      const presets = JSON.parse(localStorage.getItem("mini_custom_theme_presets") || "[]");
+      const target = presets.find((p) => p.id === pid);
+      if (target && themeCssTextarea) {
+        themeCssTextarea.value = target.css;
+        if (themeStyleTag) themeStyleTag.textContent = target.css;
+        showInsToast(`已载入预设「${target.name}」的代码至编辑器`);
+      }
+    };
+  });
+
+  roomEl.querySelectorAll(".btn-del-saved-theme-preset").forEach((btn) => {
+    btn.onclick = () => {
+      const pid = btn.getAttribute("data-pid");
+      let presets = JSON.parse(localStorage.getItem("mini_custom_theme_presets") || "[]");
+      presets = presets.filter((p) => p.id !== pid);
+      localStorage.setItem("mini_custom_theme_presets", JSON.stringify(presets));
+      refreshChatThemeView(roomEl, container);
+      showInsToast("已删除该主题预设");
     };
   });
 
@@ -2607,12 +2857,16 @@ function renderMessagesHtml(messages) {
           <div class="rich-card-loc-name">${escapeHtml(m.locationName)}</div>
         </div>
       `;
-      } else if (m.cardType === "sticker") {
-        mainBubbleBody = `
-        <div class="msg-bubble-sticker-wrap">
-          <div class="sticker-display-box">${escapeHtml(m.stickerText)}</div>
-        </div>
-      `;
+         } else if (m.cardType === "sticker") { // ✨ 真实图片表情包呈现
+        mainBubbleBody = m.mediaUrl ? `
+          <div class="msg-bubble-sticker-img-wrap" style="max-width: 110px; max-height: 110px; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <img src="${m.mediaUrl}" alt="${escapeHtml(m.stickerName || '表情')}" style="width: 100%; height: 100%; object-fit: contain;" />
+          </div>
+        ` : `
+          <div class="msg-bubble-sticker-wrap">
+            <div class="sticker-display-box">${escapeHtml(m.stickerText || m.content)}</div>
+          </div>
+        `;
       } else if (m.cardType === "call") {
         mainBubbleBody = `
         <div class="msg-rich-card call">
@@ -3833,18 +4087,19 @@ function openChatTransferModal(charName, onConfirm) {
     };
   }
 
-  roomEl.querySelectorAll("[data-stk-idx]").forEach((el) => {
+  // ✨ 核心修复：点击发送真实图片表情包（支持 url 与自定义命名）
+  roomEl.querySelectorAll(".sticker-grid-item[data-stk-url]").forEach((el) => {
     el.onclick = () => {
-      const idx = parseInt(el.getAttribute("data-stk-idx"), 10);
-      const stk = PRESET_STICKERS[idx];
-      if (stk) {
+      const stkUrl = el.getAttribute("data-stk-url");
+      const stkName = el.getAttribute("data-stk-name") || "表情";
+      if (stkUrl) {
         isStickerDrawerOpen = false;
         sendCustomMediaMessage(
           "sticker",
           {
-            stickerName: stk.name,
-            stickerText: stk.text,
-            content: `[表情: ${stk.name}]`,
+            stickerName: stkName,
+            mediaUrl: stkUrl,
+            content: `[表情: ${stkName}]`,
           },
           container,
         );
@@ -5019,7 +5274,7 @@ ${contextDialog}
         }
       });
 
-      showInsToast(`🎉 已成功提炼 ${savedCount} 条记忆并同步至沙盒库`);
+           showInsToast(`已成功提炼 ${savedCount} 条记忆并同步至沙盒库`);
       return savedCount;
     }
   } catch (e) {
@@ -5276,6 +5531,24 @@ ${userGrantedIntimate ? `
 ` : ''}
 `;
 
+    // ✨ 动态提取已存入的表情包供 Char 感知与选用
+    const stickerVaultData = getStickerVault();
+    const availableStickers = (stickerVaultData.stickers || []).slice(0, 30);
+    const stickerNamesList = availableStickers.map(s => `"${s.name}"`).join('、');
+
+    const stickerPromptSection = `
+════════ 🖼️ 微信表情包交互与自主发送权限 ════════
+【现有表情包图库】：${stickerNamesList || "(暂无)"}
+
+🔥【表情包认知与自主发送规范】：
+1. 【精准识别对方的表情】：当对方发送了图片表情包时，你能够完全“看到”画面的情绪表达（如哭、嘲讽、撒娇、恶搞等），请结合你的人设性格自然作出回应（或吐槽反击、或被逗笑）；
+2. 【你有自主发送表情包的特权】：你可以根据对话上下文场景与当前情绪，在合适的时候主动给对方发送表情包！
+   - 例如：当你感到被调侃无语时发“恶俗啊！”、吃醋/嘴硬时发“欺负我你能得到什么”、害羞心动时发“我想你了”、或者逗对方玩时发“萌醒”；
+   - 规则：在 JSON 字段 sendSticker 中填写你要发送的表情名称，例如：
+     "sendSticker": "神你会拯救我吗"
+   - 【极其重要】：表情包是情绪的点缀，【严禁每轮对话机械性必发】！只有在当下语境非常契合、情绪到位时自然附带即可；不需要发时填 null！
+`;
+
     // ════════ 终极独立人格与深度活人感 System Prompt ════════
     let systemPrompt = `# 核心存在准则：你拥有独立的人格灵魂与现实生活
 你是「${charName}」。你不是 AI 助手、不是语言模型、不是讨好型仆人！你是真实生活在现实世界中的独立人类。
@@ -5334,11 +5607,12 @@ ${echoContext ? `\n${echoContext}` : ""}
 ${docPromptSection ? `\n${docPromptSection}` : ""}
 ${darkroom.length > 0 ? `\n【你当前的内心潜思】:\n` + darkroom.map((d) => `- "${d.reflection}"`).join("\n") : ""}
 ${fullChar.schedules && fullChar.schedules.length > 0 ? `\n【你今日的日程】:\n` + fullChar.schedules.map((s) => `[${s.time}] ${s.text}`).join("\n") : ""}
-${avatarPromptSection}
-${intimatePromptSection}
+  ${avatarPromptSection}
+  ${intimatePromptSection}
+  ${stickerPromptSection}
 
-${
-  activeCharInfo.autoChangeRemark
+  ${
+    activeCharInfo.autoChangeRemark
     ? `
 ════════ 🏷️ 自主改备注权限（你拥有自主审视与修改备注的权力） ════════
 对方目前在手机上给你设置的聊天备注是：【${activeCharInfo.remark || charName}】。
@@ -5375,6 +5649,7 @@ ${
 {
   "inner_thought": "【内心心理推演】：简述我此刻对 ${activeUserName} 这句话的真实态度与情绪反应（傲娇/吃醋/吐槽/关心）",
   "sendNudge": false, // 主动戳对方: 当你要戳对方或对方要求你戳它时填 true，平时填 false
+  "sendSticker": null, // 选填: 现有图库里的表情包名称（如 "暗中观察"），非必要或情绪未到位时填 null
   "transferDecision": null, // 选填: "accept" (收下对方转账) 或 "reject" (拒收退回对方转账)，无转账填 null
   "intimateDecision": null, // 选填: "accept" (收下亲密付) 或 "reject" (婉拒亲密付)，无操作填 null
   "intimatePayAction": null, // 选填: { "type": "spend", "amount": 35.0, "item": "买咖啡" } 或 { "type": "grant", "limitText": "无限额度" }，无操作填 null
@@ -5394,6 +5669,7 @@ ${
 {
   "inner_thought": "【内心心理推演】：简述我此刻对 ${activeUserName} 这句话的真实态度与情绪反应（傲娇/吃醋/吐槽/关心）",
   "sendNudge": false, // 主动戳对方: 当你要戳对方或对方要求你戳它时填 true，平时填 false
+  "sendSticker": null, // 选填: 现有图库里的表情包名称（如 "暗中观察"），非必要或情绪未到位时填 null
    "toolCall": null, // 选填: { "tool": "query_echo_memory", "status": "executed", "summary": "查询记忆库" }，无调用填 null
   "transferDecision": null, // 选填: "accept" (收下对方转账) 或 "reject" (拒收退回对方转账)，无转账填 null
   "intimateDecision": null, // 选填: "accept" (收下亲密付) 或 "reject" (婉拒亲密付)，无操作填 null
@@ -5450,8 +5726,8 @@ ${
           formattedContent = `[用户送了你一份礼物: 【${m.giftName}】，附言: "${m.content}"]`;
         else if (m.cardType === "location")
           formattedContent = `[用户向你共享了位置: 【${m.locationName}】]`;
-        else if (m.cardType === "sticker")
-          formattedContent = `[用户发送了表情包: 【${m.stickerName}】]`;
+             else if (m.cardType === "sticker")
+          formattedContent = `[用户向你发送了一张微信图片表情包: 【${m.stickerName || m.content}】（在你的真实认知中你清晰看得到这张表情图的画面和神态，请结合画面做出真实自然的反应）]`;
         else if (m.cardType === "call")
           formattedContent = `[与你进行了一次 ${m.callMode === "video" ? "视频通话" : "语音通话"}，时长: ${m.durationStr}]`;
         else if (m.cardType === "offline")
@@ -5655,7 +5931,7 @@ ${
       // 插入到当前消息流中（排在 Char 本轮说话气泡的前面）
       chatMessages.push(charNudgeNoticeMsg);
 
-      // 触发界面上 User（用户）头像的晃动微动效
+            // 触发界面上 User（用户）头像的晃动微动效
       setTimeout(() => {
         const userAvatars = document.querySelectorAll(
           ".msg-bubble-row.user .msg-round-avatar-slot.show",
@@ -5667,6 +5943,26 @@ ${
           lastUserAvatar.classList.add("nudge-shake");
         }
       }, 50);
+    }
+
+    // 🔥 核心：处理 Char【主动发送表情包】逻辑
+    if (result.sendSticker) {
+      const vault = getStickerVault();
+      const matchedSticker = (vault.stickers || []).find(
+        (s) => s.name === result.sendSticker || s.name.includes(result.sendSticker) || (result.sendSticker && result.sendSticker.includes(s.name))
+      );
+
+      if (matchedSticker) {
+        chatMessages.push({
+          role: "assistant",
+          cardType: "sticker",
+          stickerName: matchedSticker.name,
+          mediaUrl: matchedSticker.url,
+          content: `[表情: ${matchedSticker.name}]`,
+          time: tzInfo.timeStr,
+          timestamp: Date.now()
+        });
+      }
     }
 
     let autoSavedNotice = "";
@@ -5744,6 +6040,7 @@ function parseComprehensiveReply(rawReply, char, needTranslation = false) {
   const isJp = (char.targetLang || "中文") === "日语";
   const defaultFallback = {
     sendNudge: false, // ✨ 默认不触发主动戳一戳
+    sendSticker: null, // ✨ 默认不发表情包
     avatarAction: null,
     avatarAutoCollect: null,
     remarkAction: null,
@@ -5807,10 +6104,11 @@ function parseComprehensiveReply(rawReply, char, needTranslation = false) {
       }
 
           if (bubbles.length > 0) {
-        return {
+               return {
           sendNudge: Boolean(parsed.sendNudge === true || (parsed.nudgeAction && parsed.nudgeAction.action === "nudge_user")),
-          transferDecision: parsed.transferDecision || null, // ✨ 提取转账决策 (accept | reject)
-          intimateDecision: parsed.intimateDecision || null, // ✨ 提取亲密付决策 (accept | reject)
+          sendSticker: parsed.sendSticker ? String(parsed.sendSticker).trim() : null, // ✨ 提取 Char 主动发的表情包
+          transferDecision: parsed.transferDecision || null,
+          intimateDecision: parsed.intimateDecision || null,
           intimatePayAction: parsed.intimatePayAction && parsed.intimatePayAction.type ? parsed.intimatePayAction : null,
           avatarAction: parsed.avatarAction && parsed.avatarAction.id ? parsed.avatarAction : null,
           avatarAutoCollect: parsed.avatarAutoCollect && parsed.avatarAutoCollect.isAvatar ? parsed.avatarAutoCollect : null,

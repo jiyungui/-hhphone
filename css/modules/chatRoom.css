@@ -3369,3 +3369,10 @@ input:checked + .ins-slider:before {
 .ins-transfer-time {
   color: #AAAAAA;
 }
+
+.msg-bubble-row .msg-bubble:has(.msg-bubble-sticker-img-wrap) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
