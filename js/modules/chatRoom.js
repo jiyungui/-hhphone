@@ -7,6 +7,7 @@ import { MediaStorage } from "../utils/mediaStorage.js";
 import { getWalletData, saveWalletData, executeCharIntimateSpend, executeCharGrantIntimatePay, executeTransferRefund, executeIntimatePayDecline, CURRENCIES } from "./wallet.js";
 import { sendSystemSms } from "./messages.js";
 import { getStickerVault } from "./stickers.js";
+import { triggerGlobalMessageNotification } from "./chatSettings.js"; // ✨ 接入全局消息弹窗与专属铃声
 
 
 let activeCharInfo = null;
@@ -6407,7 +6408,7 @@ ${
     const chatRoomEl = document.getElementById("chat-room-instance");
     const scrollAreaEl = document.querySelector("#chat-messages-scroll-area");
 
-    if (chatRoomEl && scrollAreaEl) {
+      if (chatRoomEl && scrollAreaEl) {
       scrollAreaEl.innerHTML =
         `<div class="chat-handoff-pill">[沙盒已连接] ${escapeHtml(activeCharInfo.name)} · 实时交互通道</div>` +
         renderMessagesHtml(chatMessages);
@@ -6415,6 +6416,10 @@ ${
         scrollAreaEl.scrollTop = scrollAreaEl.scrollHeight;
       }, 30);
     }
+
+    // ✨ 触发全局消息弹窗（系统通知 / 灵动岛提醒）与专属提示铃声
+    const lastReplyText = result.bubbles?.[0]?.orig || result.bubbles?.[0]?.trans || (result.sendSticker ? `[表情: ${result.sendSticker}]` : '发来了一条新消息');
+    triggerGlobalMessageNotification(activeCharInfo, lastReplyText);
 
     if (autoSavedNotice) {
       setTimeout(() => {

@@ -2,6 +2,7 @@ import { renderIMessageView } from './modules/imessage.js';
 import { renderCharactersView } from './modules/characters.js';
 import { renderUserView } from './modules/user.js';
 import { renderApiSettingsView } from './modules/apiSettings.js';
+import { renderChatSettingsView, initChatKeepAliveEngine } from './modules/chatSettings.js'; // ✨ 接入 Chat 专属设置与保活
 import { renderWalletView } from './modules/wallet.js';
 import { renderMessagesView } from './modules/messages.js';
 import { renderStickersGalleryView } from './modules/stickers.js'; // ✨ 导入真表情包中枢
@@ -67,7 +68,7 @@ function renderDockTargetView(target, panel) {
   } else if (target === 'user') {
     renderUserView(panel);
   } else if (target === 'settings') {
-    renderApiSettingsView(panel);
+    renderChatSettingsView(panel); // ✨ 聊天设置指向专属的 Chat Settings
   } else if (target === 'wallet') {
     renderWalletView(panel);
    } else if (target === 'stickers') {
@@ -190,7 +191,7 @@ export function switchSystemApp(appId) {
     targetRoot.style.height = '100%';
   }
 
-  if (cleanId === 'api' && targetRoot) {
+   if (cleanId === 'api' && targetRoot) {
     renderApiSettingsView(targetRoot);
   } else if (cleanId === 'messages' && targetRoot) {
     renderMessagesView(targetRoot);
