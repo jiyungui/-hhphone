@@ -5,6 +5,8 @@ import { renderApiSettingsView } from './modules/apiSettings.js';
 import { renderWalletView } from './modules/wallet.js';
 import { renderMessagesView } from './modules/messages.js';
 import { renderStickersGalleryView } from './modules/stickers.js'; // ✨ 导入真表情包中枢
+import { renderDockThemeView, applyGlobalDockTheme, getCurrentDockThemeId, applyChatListCustomCssToDom, getChatListCustomCss } from './modules/dockTheme.js'; // ✨ 接入 Dock 美化中枢与全域 CSS 注入函数
+import { renderGamesCenterView } from './modules/games.js'; // ✨ 引入辛辣大富翁中枢
 
 // 系统应用配置表 (INS 极简白黑风格)
 const SYSTEM_APPS = [
@@ -68,12 +70,12 @@ function renderDockTargetView(target, panel) {
     renderApiSettingsView(panel);
   } else if (target === 'wallet') {
     renderWalletView(panel);
-  } else if (target === 'stickers') {
+   } else if (target === 'stickers') {
     renderStickersGalleryView(panel); // ✨ 调用真正的表情包中枢
-  } else if (target === 'theme') {
-    renderThemeCustomView(panel);
+   } else if (target === 'theme') {
+    renderDockThemeView(panel);
   } else if (target === 'games') {
-    renderGamesCenterView(panel);
+    renderGamesCenterView(panel); // ✨ 渲染真正的 Spicy Monopoly 大富翁对战中枢
   } else if (target === 'moments') {
     renderMomentsView(panel);
   }
@@ -219,23 +221,6 @@ function renderThemeCustomView(container) {
   `;
 }
 
-function renderGamesCenterView(container) {
-  container.innerHTML = `
-    <div class="user-container" style="display:flex; flex-direction:column; height:100%; padding: 0 14px 14px 14px; overflow-y:auto;">
-      <div class="user-header" style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--line-color);">
-        <span class="user-header-title" style="font-size:16px; font-weight:800; color:#111;">Games Hub</span>
-        <span class="user-count-badge" style="font-size:9.5px; font-weight:700; color:#888;">INTERACTION</span>
-      </div>
-      <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
-        <div class="api-card" style="border: 1px solid var(--line-color); border-radius:10px; padding:12px; background:#FFF;">
-          <div style="font-size:11.5px; font-weight:800; color:#111; margin-bottom:2px;">双人互动小游戏 (准备就绪)</div>
-          <span style="font-size:9.5px; color:#888;">在聊天中与 Char 发起投骰子、抽塔罗牌或真心话大冒险对决。</span>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
 function renderMomentsView(container) {
   container.innerHTML = `
     <div class="user-container" style="display:flex; flex-direction:column; height:100%; padding: 0 14px 14px 14px; overflow-y:auto;">
@@ -252,6 +237,8 @@ function renderMomentsView(container) {
 
 // 页面加载完成后启动
 document.addEventListener('DOMContentLoaded', () => {
+  applyGlobalDockTheme(getCurrentDockThemeId());
+  applyChatListCustomCssToDom(getChatListCustomCss()); // ✨ 新增：启动时即时载入并应用列表全域 CSS
   initDockNavigation();
   initSystemHubSidebar();
 });

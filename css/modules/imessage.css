@@ -453,3 +453,949 @@
   font-size: 10px;
   color: var(--text-dim);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   5 大高奢 CHAT 顶栏组件专属样式 (纯净极简黑白 · 零 AI 网图)
+   ═══════════════════════════════════════════════════════════════ */
+
+.imessage-dynamic-widgets-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.ins-custom-widget-slot {
+  width: 100%;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+/* 1. 黑胶亚克力音乐卡片 */
+.ins-widget-vinyl-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.2px solid rgba(0, 0, 0, 0.12);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+.vinyl-acrylic-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+.vinyl-earphone-wire {
+  position: absolute;
+  top: -10px;
+  right: 64px;
+  width: 2px;
+  height: 18px;
+  background: #FFFFFF;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.vinyl-left-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+.vinyl-meta-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vinyl-singer-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: #111111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center;
+}
+.vinyl-singer-name { font-size: 10px; font-weight: 800; color: #111; }
+.vinyl-follow-badge { font-size: 7.5px; font-weight: 700; background: #111; color: #FFF; padding: 1px 4px; border-radius: 10px; }
+.vinyl-diary-tag { font-size: 7.5px; color: #888; font-family: ui-monospace, monospace; }
+.vinyl-lyrics-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 2px 0;
+}
+.lyrics-line.main { font-size: 10.5px; font-weight: 800; color: #111; }
+.lyrics-line.sub { font-size: 8.5px; color: #888; }
+.vinyl-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 90%;
+}
+.vinyl-time-text { font-size: 7.5px; font-family: ui-monospace, monospace; color: #888; }
+.vinyl-progress-bar {
+  flex: 1;
+  height: 2px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  position: relative;
+}
+.vinyl-progress-dot {
+  position: absolute;
+  left: 45%;
+  top: -2.5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #111;
+}
+.vinyl-buttons-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #111;
+  margin-top: 2px;
+}
+.vinyl-play-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #111;
+  color: #FFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.vinyl-disc-wrap {
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: #1A1A1A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  animation: vinylRotate 12s linear infinite;
+}
+.vinyl-disc-groove {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.vinyl-center-art {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #444 15%, #111 90%);
+  background-size: cover;
+  background-position: center;
+}
+@keyframes vinylRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 2. 拍立得画廊日历 */
+.ins-widget-polaroid-diary {
+  background: #111111;
+  color: #FFFFFF;
+  border-radius: 12px;
+  padding: 12px 10px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.polaroid-header-row { display: flex; justify-content: space-between; align-items: center; }
+.polaroid-title { font-size: 13px; font-weight: 900; letter-spacing: 0.5px; }
+.polaroid-wave-icon { display: flex; gap: 2px; align-items: flex-end; height: 10px; }
+.polaroid-wave-icon span { width: 1.5px; background: #FFF; border-radius: 1px; }
+.polaroid-wave-icon span:nth-child(1) { height: 4px; }
+.polaroid-wave-icon span:nth-child(2) { height: 8px; }
+.polaroid-wave-icon span:nth-child(3) { height: 10px; }
+.polaroid-wave-icon span:nth-child(4) { height: 6px; }
+.polaroid-gallery-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 4px; }
+.polaroid-frame-item {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  border: 1.5px solid #FFFFFF;
+  background: #222222;
+  background-size: cover;
+  background-position: center;
+}
+.polaroid-calendar-sub { font-size: 9px; font-weight: 700; color: #AAA; text-align: center; }
+.polaroid-date-metrics {
+  display: flex;
+  justify-content: space-around;
+  padding: 6px 0;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.metric-col { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.m-val { font-size: 11px; font-weight: 800; }
+.m-sub { font-size: 7.5px; color: #888; }
+.polaroid-quote-text { font-size: 8px; color: #888; text-align: center; font-style: italic; }
+.polaroid-taped-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.tape-card-mini {
+  aspect-ratio: 1;
+  background: #1A1A1A;
+  border-radius: 4px;
+  border: 1px solid #333333;
+  background-size: cover;
+  background-position: center;
+}
+
+/* 3. 日系透明语录与时间轴 */
+.ins-widget-quote-timeline { display: flex; flex-direction: column; gap: 8px; }
+.quote-train-card {
+  background: #FFFFFF;
+  border: 1.2px solid #111;
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.quote-train-thumb {
+  width: 90px;
+  height: 52px;
+  border-radius: 6px;
+  background: #111111;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.quote-train-time {
+  position: absolute;
+  bottom: 2px;
+  right: 3px;
+  background: rgba(0,0,0,0.75);
+  color: #FFF;
+  font-size: 7px;
+  font-family: ui-monospace, monospace;
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+.quote-train-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.quote-jp-text { font-size: 9.5px; font-weight: 800; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quote-trans-btn { font-size: 8px; font-weight: 700; color: #2D68C4; cursor: pointer; }
+.quote-cn-text { font-size: 8.5px; color: #555; padding-left: 4px; border-left: 2px solid #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quote-actions-row { display: flex; align-items: center; gap: 8px; color: #888; margin-top: 2px; }
+.chrome-silver-heart {
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle, #EAEAEA 20%, #999999 100%);
+  clip-path: path('M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z');
+  transform: scale(0.5);
+  transform-origin: left center;
+}
+.quote-timeline-sub-box {
+  background: #FAFAFA;
+  border: 1px solid #EAEAEA;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.timeline-header-meta { display: flex; justify-content: space-between; font-size: 9.5px; font-weight: 800; color: #111; margin-bottom: 4px; }
+.timeline-weather-tag { font-size: 8px; font-weight: 600; color: #777; }
+.vertical-timeline-list { display: flex; flex-direction: column; gap: 4px; position: relative; }
+.timeline-v-item { display: flex; align-items: center; gap: 6px; font-size: 9px; color: #888; }
+.timeline-v-item.active {
+  background: #EAEAEA;
+  color: #111;
+  font-weight: 800;
+  padding: 3px 6px;
+  border-radius: 12px;
+}
+.v-dot { width: 5px; height: 5px; border-radius: 50%; background: #BBB; }
+.timeline-v-item.active .v-dot { background: #111; }
+
+/* 4. 发光气泡头像与便签 */
+.ins-widget-bubble-memo {
+  background: #FFFFFF;
+  border: 1.2px solid #111;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.bubble-avatar-halo-box { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bubble-halo-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #FAFAFA;
+  box-shadow: 0 0 16px rgba(0, 0, 0, 0.12);
+  border: 1.5px solid #111111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center;
+}
+.bubble-poem-text { font-size: 8.5px; color: #666; text-align: center; line-height: 1.35; }
+.bubble-status-pill-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: #FAFAFA;
+  border: 1px solid #EAEAEA;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #444;
+}
+.pill-mini-avatar { width: 14px; height: 14px; border-radius: 50%; background: #111; }
+.bubble-sticky-notes-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; width: 100%; }
+.sticky-sketch-card {
+  aspect-ratio: 1;
+  background: #FAFAFA;
+  border: 1px dashed #CCC;
+  border-radius: 4px;
+  background-size: cover;
+  background-position: center;
+}
+
+/* 5. 黑白杂志排版订阅卡 */
+.ins-widget-editorial-card {
+  background: #FFFFFF;
+  border: 1.2px solid #111;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.editorial-pills-row { display: flex; gap: 4px; }
+.e-pill { font-size: 8px; font-weight: 800; padding: 2px 8px; border-radius: 12px; background: #EFEFEF; color: #444; }
+.e-pill.dark { background: #111; color: #FFF; }
+.editorial-banner-box {
+  background: #000000;
+  color: #FFFFFF;
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.editorial-manga-thumb {
+  width: 76px;
+  height: 52px;
+  border-radius: 6px;
+  background: #111111;
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+}
+.editorial-banner-right { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.editorial-charm-title { font-size: 9px; font-style: italic; font-weight: 800; }
+.editorial-speech-bubble { font-size: 8px; background: #FFF; color: #111; padding: 1px 6px; border-radius: 8px; width: fit-content; font-style: italic; }
+.editorial-subscribe-btn {
+  background: transparent;
+  border: 1px solid #FFF;
+  color: #FFF;
+  font-size: 8px;
+  font-weight: 800;
+  border-radius: 12px;
+  padding: 2px 8px;
+  width: fit-content;
+  cursor: pointer;
+}
+.editorial-meta-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 8.5px;
+  color: #444;
+  border-bottom: 1px solid #EEE;
+  padding-bottom: 4px;
+}
+.editorial-meta-info .lbl { color: #999; margin-right: 4px; }
+.editorial-meta-info .val.bold { font-weight: 800; color: #111; }
+.editorial-street-title { font-size: 9.5px; font-weight: 800; color: #111; text-align: center; }
+.editorial-street-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.street-photo { aspect-ratio: 1; border-radius: 4px; background: #EFEFEF; border: 1px dashed #DDD; background-size: cover; background-position: center; }
+
+/* ═══════════════════════════════════════════════════════════════
+   INS 高奢悬浮弹窗与极简黑白滑块控件
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 胶囊切换按钮组 */
+.ins-segment-pill-btn {
+  flex: 1;
+  padding: 5px 0;
+  font-size: 8.5px;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: #666666;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ins-segment-pill-btn.active {
+  background: #111111;
+  color: #FFFFFF;
+  font-weight: 800;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* 极简 INS 黑白细线滑块 */
+.ins-custom-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 3px;
+  background: #E5E5E5;
+  border-radius: 2px;
+  outline: none;
+  margin: 6px 0;
+}
+.ins-custom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #111111;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+.ins-custom-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+.ins-custom-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #111111;
+  border: 2px solid #FFFFFF;
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   8 大新增高奢组件样式 (RIBBON / TICKET / PROFILE / DESK / JASMINE / COVERFLOW / BENTO / LOGIN)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1. 紫色飘带书签便签卡 */
+.ins-widget-ribbon-card {
+  background: #FFFFFF;
+  border: 1.2px solid #111;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ribbon-top-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  background: #FAFAFA;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+.ribbon-purple-flag {
+  width: 12px;
+  height: 20px;
+  background: #8E7CE8;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+  margin-right: 6px;
+}
+.ribbon-title-box { display: flex; flex-direction: column; flex: 1; }
+.ribbon-main-title { font-size: 13px; font-weight: 900; color: #111; }
+.ribbon-sub-quote { font-size: 8px; color: #888; font-family: ui-monospace, monospace; }
+.ribbon-rabbit-avatar {
+  width: 32px;
+  height: 32px;
+  border: 1.2px solid #111;
+  border-radius: 6px;
+  background: #FFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ribbon-dashed-divider {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-top: 1px dashed #CCC;
+  border-bottom: 1px dashed #CCC;
+  padding: 4px 0;
+}
+.r-pill-btn { font-size: 8.5px; font-weight: 700; border: 1px solid #111; border-radius: 12px; padding: 2px 8px; background: #FFF; }
+.r-pill-btn.active { background: #111; color: #FFF; }
+.ribbon-bottom-card {
+  background: #FAFAFA;
+  border: 1px solid #EAEAEA;
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.r-card-head { font-size: 10px; font-weight: 800; color: #111; }
+.r-card-body { font-size: 8px; color: #888; }
+.r-card-tag { font-size: 8px; font-weight: 700; background: #8E7CE8; color: #FFF; padding: 2px 8px; border-radius: 10px; }
+
+/* 2. 红线票根时间轴 */
+.ins-widget-ticket-card {
+  background: #FFFFFF;
+  border: 1.2px solid #111;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ticket-stub-wrap {
+  display: flex;
+  border: 1px dashed #111;
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: #FAFAFA;
+  position: relative;
+}
+.ticket-left-body { display: flex; flex-direction: column; gap: 2px; flex: 1.2; }
+.ticket-name { font-size: 12px; font-weight: 900; color: #111; }
+.ticket-year { font-size: 8px; color: #888; }
+.ticket-eng-tag { font-size: 7.5px; color: #666; font-style: italic; }
+.ticket-photo-box { width: 60px; height: 40px; border-radius: 4px; background: #111; margin-top: 2px; }
+.ticket-center-quote {
+  flex: 1.5;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: 0 6px;
+}
+.ticket-red-thread-svg { width: 100%; height: 20px; }
+.ticket-bold-poem { font-size: 9px; font-weight: 900; color: #111; text-align: center; line-height: 1.25; }
+.ticket-barcode-stub {
+  border-left: 1px dashed #999;
+  padding-left: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ticket-vert-tags { display: flex; flex-direction: column; font-size: 6px; color: #888; transform: scale(0.8); }
+.ticket-barcode-lines {
+  width: 14px;
+  height: 48px;
+  background: repeating-linear-gradient(to bottom, #111, #111 2px, transparent 2px, transparent 4px);
+}
+.ticket-polaroids-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; }
+.ticket-polaroid-item { aspect-ratio: 1; background: #F0F0F0; border: 1px solid #CCC; border-radius: 4px; }
+
+/* 3. INS 个人主页面板 */
+.ins-widget-profile-card {
+  background: #FFFFFF;
+  border: 1.2px solid #111;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.profile-top-header { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 800; }
+.profile-top-icons { display: flex; gap: 6px; }
+.profile-main-body { display: flex; gap: 10px; align-items: center; }
+.profile-avatar-stack { position: relative; width: 50px; height: 50px; }
+.profile-big-avatar { width: 46px; height: 46px; border-radius: 50%; background: #222; border: 1.5px solid #111; }
+.profile-mini-avatar-badge { position: absolute; bottom: 0; right: 0; width: 18px; height: 18px; border-radius: 50%; background: #FFF; border: 1px solid #111; }
+.profile-meta-info { display: flex; flex-direction: column; gap: 1px; flex: 1; }
+.profile-name-text { font-size: 11px; font-weight: 800; }
+.profile-handle-text { font-size: 8px; color: #888; }
+.profile-stats-row { display: flex; gap: 6px; font-size: 8px; color: #444; margin: 2px 0; }
+.profile-v-badge { font-size: 7.5px; font-weight: 700; background: #FAFAFA; border: 1px solid #DDD; padding: 1px 4px; border-radius: 8px; width: fit-content; }
+.profile-btn-row { display: flex; gap: 6px; }
+.p-action-btn { flex: 1; font-size: 8px; font-weight: 700; background: #F5F5F5; border: 1px solid #DDD; border-radius: 6px; padding: 4px 0; cursor: pointer; }
+.profile-bio-text { font-size: 8.5px; font-weight: 700; color: #111; }
+.profile-tags-row { display: flex; gap: 4px; font-size: 7.5px; color: #666; }
+.profile-tags-row span { background: #F0F0F0; padding: 1px 5px; border-radius: 4px; }
+.profile-story-circles-row { display: flex; justify-content: space-between; margin-top: 4px; }
+.p-story-col { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 7.5px; color: #666; }
+.p-story-c { width: 32px; height: 32px; border-radius: 50%; background: #FAFAFA; border: 1px solid #111; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+.profile-music-pill { background: #F0F0F0; border-radius: 12px; padding: 3px 8px; font-size: 8px; font-weight: 700; color: #333; width: fit-content; margin-top: 2px; }
+
+/* 4. 桌搭锁屏画廊卡片 */
+.ins-widget-desk-card {
+  background: #FFFFFF;
+  border: 1.2px solid #111;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.desk-banner-frame {
+  height: 80px;
+  background: #111;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 14px;
+}
+.desk-lockscreen-mock {
+  width: 52px;
+  height: 70px;
+  background: #222;
+  border: 1px solid #FFF;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 2px;
+  color: #FFF;
+}
+.mock-date { font-size: 5px; transform: scale(0.8); }
+.mock-time { font-size: 11px; font-weight: 900; line-height: 1; }
+.mock-wallpaper-thumb { width: 38px; height: 26px; background: #444; border-radius: 3px; margin-top: 4px; }
+.desk-user-bar { display: flex; gap: 6px; align-items: center; }
+.desk-avatar { width: 24px; height: 24px; border-radius: 50%; background: #111; }
+.desk-info-col { display: flex; flex-direction: column; }
+.desk-user-name { font-size: 9.5px; font-weight: 800; color: #111; }
+.desk-follow-tag { font-size: 7px; background: #888; color: #FFF; padding: 0 4px; border-radius: 4px; }
+.desk-desc-text { font-size: 7.5px; color: #777; }
+.desk-mini-four-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.desk-c-card { aspect-ratio: 1; background: #F5F5F5; border: 1px solid #CCC; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
+
+/* 5. Jasmine 极简天气日历 */
+.ins-widget-jasmine-card {
+  background: #FFFFFF;
+  border: 1.2px solid #111;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.jasmine-top-row { display: flex; align-items: baseline; gap: 8px; width: 100%; }
+.j-huge-day { font-size: 24px; font-weight: 900; line-height: 1; color: #111; }
+.j-en-month { font-size: 11px; font-weight: 700; color: #888; letter-spacing: 1px; }
+.jasmine-title-block { width: 100%; display: flex; flex-direction: column; border-top: 1px solid #EEE; padding-top: 4px; }
+.j-main-title { font-size: 11px; font-weight: 800; color: #111; }
+.j-sub-title { font-size: 8px; color: #888; }
+.jasmine-center-avatar-wrap { display: flex; justify-content: space-between; align-items: center; width: 100%; margin: 4px 0; }
+.j-side-tag { font-size: 7.5px; color: #888; }
+.j-avatar-circle { width: 44px; height: 44px; border-radius: 50%; background: #111; position: relative; }
+.j-speech-cloud { position: absolute; top: -4px; right: -8px; background: #FFF; border: 1px solid #111; border-radius: 8px; font-size: 6px; padding: 1px 4px; }
+.jasmine-name-label { font-size: 9px; font-weight: 800; }
+.jasmine-quote-box { background: #FAFAFA; border-radius: 4px; padding: 3px 8px; font-size: 8px; color: #666; width: 100%; box-sizing: border-box; display: flex; gap: 4px; }
+
+/* 6. 3D CoverFlow 唱片机 */
+.ins-widget-coverflow-card {
+  background: #FAFAFA;
+  border: 1.2px solid #111;
+  border-radius: 12px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  perspective: 600px;
+}
+.coverflow-cards-stage { display: flex; justify-content: center; align-items: center; width: 100%; height: 90px; }
+.cov-card { width: 70px; height: 70px; border-radius: 6px; background: #DDD; border: 1px solid #FFF; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: all 0.3s ease; }
+.cov-card.side.left-2 { transform: rotateY(35deg) scale(0.7) translateX(30px); opacity: 0.5; z-index: 1; }
+.cov-card.side.left-1 { transform: rotateY(25deg) scale(0.85) translateX(15px); opacity: 0.8; z-index: 2; }
+.cov-card.center-focus { width: 85px; height: 85px; background: #111; transform: scale(1); z-index: 3; position: relative; }
+.cov-song-tag { position: absolute; bottom: 4px; left: 4px; right: 4px; background: rgba(0,0,0,0.7); color: #FFF; border-radius: 4px; padding: 2px; text-align: center; display: flex; flex-direction: column; }
+.cov-song-tag .s-name { font-size: 8px; font-weight: 800; }
+.cov-song-tag .s-singer { font-size: 6.5px; opacity: 0.8; }
+.cov-card.side.right-1 { transform: rotateY(-25deg) scale(0.85) translateX(-15px); opacity: 0.8; z-index: 2; }
+.cov-card.side.right-2 { transform: rotateY(-35deg) scale(0.7) translateX(-30px); opacity: 0.5; z-index: 1; }
+.coverflow-lyrics-text { font-size: 8.5px; font-weight: 700; color: #444; text-align: center; line-height: 1.35; }
+.coverflow-player-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFF;
+  border: 1px solid #EAEAEA;
+  border-radius: 20px;
+  padding: 4px 12px;
+  width: 90%;
+}
+.cov-play-btn { width: 18px; height: 18px; border-radius: 50%; background: #111; color: #FFF; display: flex; align-items: center; justify-content: center; }
+.cov-prog-bar { flex: 1; height: 2px; background: #EEE; position: relative; }
+.cov-dot { position: absolute; left: 40%; top: -2px; width: 6px; height: 6px; border-radius: 50%; background: #111; }
+.cov-heart-pill { font-size: 10px; font-weight: 800; color: #C83C3C; }
+
+/* 7. Bento 便当四宫格与胶卷 */
+.ins-widget-bento-card {
+  background: #FFFFFF;
+  border: 1.2px solid #111;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bento-grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.bento-cell { background: #FAFAFA; border: 1px solid #EAEAEA; border-radius: 8px; padding: 6px; }
+.bento-cell.date-ring { display: flex; align-items: center; gap: 6px; }
+.ring-circle { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #111; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; }
+.ring-meta { display: flex; flex-direction: column; font-size: 7.5px; color: #666; }
+.bento-cell.music-subject { grid-row: span 2; display: flex; flex-direction: column; gap: 4px; }
+.b-music-header { display: flex; align-items: center; gap: 4px; }
+.b-album-thumb { width: 22px; height: 22px; border-radius: 4px; background: #111; }
+.b-song { font-size: 8.5px; font-weight: 800; }
+.b-singer { font-size: 7px; color: #888; }
+.b-close { margin-left: auto; font-size: 10px; color: #888; }
+.b-sub-tag { font-size: 8px; font-weight: 800; }
+.b-input-mock { font-size: 7.5px; color: #888; background: #FFF; border: 1px solid #DDD; border-radius: 4px; padding: 3px 5px; display: flex; justify-content: space-between; }
+.bento-cell.welcome-pill { display: flex; align-items: center; gap: 6px; }
+.b-avatar-ring { width: 24px; height: 24px; border-radius: 50%; background: #111; }
+.b-wel-text { font-size: 8px; font-weight: 800; }
+.b-status-tag { font-size: 7px; background: #DDD; padding: 1px 4px; border-radius: 4px; }
+.bento-accordion-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; }
+.b-strip-fold { aspect-ratio: 1; background: #F0F0F0; border: 1px solid #CCC; border-radius: 2px; }
+
+/* 8. 密码信箱与三联拍立得 */
+.ins-widget-login-card {
+  background: #FFFFFF;
+  border: 1.2px solid #111;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.login-main-card {
+  background: #FAFAFA;
+  border: 1px solid #EAEAEA;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.login-left-avatar-box { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.login-bubble-pop { font-size: 7.5px; font-weight: 800; background: #FFF; border: 1px solid #111; border-radius: 6px; padding: 1px 4px; }
+.login-avatar-frame { width: 50px; height: 50px; border-radius: 6px; background: #111; border: 1px solid #111; }
+.login-center-divider { display: flex; flex-direction: column; align-items: center; font-size: 7.5px; color: #888; }
+.div-arrows { font-size: 12px; color: #111; font-weight: 900; }
+.login-right-inputs { display: flex; flex-direction: column; gap: 4px; }
+.l-input-group { display: flex; flex-direction: column; }
+.l-lbl { font-size: 7.5px; color: #666; font-weight: 700; }
+.l-box { font-size: 8px; font-weight: 800; background: #FFF; border: 1px solid #111; border-radius: 4px; padding: 2px 6px; width: 80px; }
+.login-polaroids-three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 4px; }
+.l-polaroid-item { aspect-ratio: 1; background: #F0F0F0; border: 1px solid #CCC; border-radius: 4px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   4 大新增高奢组件样式 (CLIP PAIR / MEMORY / NEWSPAPER / BANNER PROFILE)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1. Inny 回形针双人插画卡片 */
+.ins-widget-clip-card {
+  background: #FFFFFF;
+  border: 1.2px solid #111;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.clip-banner-wrap {
+  position: relative;
+  width: 100%;
+  height: 110px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #111111;
+}
+.clip-metal-icon {
+  position: absolute;
+  top: 4px;
+  left: 10px;
+  width: 14px;
+  height: 28px;
+  border: 2px solid #FFFFFF;
+  border-radius: 8px;
+  z-index: 5;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.clip-photo-bg {
+  width: 100%;
+  height: 100%;
+  background: #222222;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 8px;
+  box-sizing: border-box;
+}
+.clip-avatar-bubble {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 14px;
+  padding: 2px 8px 2px 3px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 8px;
+  font-weight: 700;
+  color: #111;
+}
+.c-b-ava { width: 14px; height: 14px; border-radius: 50%; background: #111; }
+.clip-right-actions { display: flex; flex-direction: column; gap: 4px; }
+.c-act { width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; font-size: 8.5px; }
+.clip-title-name { font-size: 14px; font-weight: 900; color: #111; font-family: serif; }
+.clip-tags-row { display: flex; gap: 6px; font-size: 8px; color: #666; font-weight: 700; }
+.clip-bio-desc { font-size: 8px; color: #777; line-height: 1.35; font-style: italic; }
+
+/* 2. MEMORY 错落相框与周历进度 */
+.ins-widget-memory-card {
+  background: #FFFFFF;
+  border: 1.2px solid #111;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mem-title-head { font-size: 13px; font-weight: 900; letter-spacing: 0.5px; }
+.mem-polaroid-cluster {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  height: 60px;
+  margin: 4px 0;
+}
+.mem-p-box { width: 44px; height: 44px; background: #F0F0F0; border: 1px solid #CCC; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+.mem-p-box.tilt-1 { transform: rotate(-6deg) scale(0.95); }
+.mem-p-box.tilt-2 { transform: rotate(3deg); }
+.mem-p-box.tilt-3 { transform: rotate(-2deg); }
+.mem-p-box.tilt-4 { transform: rotate(5deg) scale(0.95); }
+.mem-greeting-text { font-size: 10.5px; font-weight: 800; color: #111; }
+.mem-timeline-bar { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-top: 1px solid #EEE; }
+.mem-day-dot-col { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 8px; color: #AAA; }
+.mem-day-dot-col.active { color: #111; font-weight: 800; }
+.d-dot { width: 4px; height: 4px; border-radius: 50%; background: #DDD; }
+.mem-day-dot-col.active .d-dot { background: #111; width: 6px; height: 6px; }
+
+/* 3. MEETING YOU 报纸画报 */
+.ins-widget-newspaper-card {
+  background: #FFFFFF;
+  border: 1.2px solid #111;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.news-top-masthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1.5px solid #111;
+  padding-bottom: 2px;
+}
+.news-mast-main { font-size: 14px; font-weight: 900; letter-spacing: 1px; }
+.news-mast-badge { font-size: 9px; font-weight: 900; }
+.news-main-grid { display: flex; gap: 8px; margin-top: 4px; }
+.news-left-photo {
+  width: 68px;
+  height: 68px;
+  border-radius: 4px;
+  background: #111;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 3px;
+  color: #FFF;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+.news-right-article { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.news-sub-tag { font-size: 7.5px; color: #888; font-weight: 700; }
+.news-name-title { font-size: 12px; font-weight: 900; }
+.news-stars { font-size: 7px; color: #111; }
+.news-body-quote { font-size: 7.5px; color: #555; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.news-bottom-split { display: flex; gap: 6px; align-items: center; border-top: 1px solid #EEE; padding-top: 4px; }
+.news-weather-slot { display: flex; align-items: center; gap: 4px; border-right: 1px solid #EEE; padding-right: 8px; }
+.news-weather-slot .w-temp { font-size: 11px; font-weight: 900; }
+.news-weather-slot .w-meta { font-size: 6.5px; color: #888; }
+.news-stamp-box {
+  flex: 1;
+  border: 1px solid #111;
+  border-radius: 6px;
+  padding: 3px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.stamp-head { font-size: 7.5px; font-weight: 800; }
+.stamp-text { font-size: 6.5px; color: #777; max-width: 90px; }
+.stamp-year { font-size: 8px; font-weight: 900; text-align: right; line-height: 1; }
+.news-footer-note { font-size: 7.5px; color: #666; font-style: italic; }
+
+/* 4. Npcs 宽幅横幅社媒卡 */
+.ins-widget-banner-profile-card {
+  background: #FFFFFF;
+  border: 1.2px solid #111;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.bp-top-cover {
+  width: 100%;
+  height: 60px;
+  background: #111111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFF;
+  font-size: 13px;
+  font-family: serif;
+  font-style: italic;
+}
+.bp-user-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 10px;
+  margin-top: -20px;
+}
+.bp-overlap-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid #FFFFFF;
+  background: #222;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.bp-actions-right { display: flex; gap: 4px; }
+.bp-btn { font-size: 8px; font-weight: 800; border: 1px solid #111; border-radius: 12px; padding: 2px 8px; background: #FFF; cursor: pointer; }
+.bp-btn.dark { background: #111; color: #FFF; }
+.bp-info-block { padding: 4px 10px 10px 10px; display: flex; flex-direction: column; gap: 2px; }
+.bp-name-huge { font-size: 12px; font-weight: 900; color: #111; }
+.bp-handle-sub { font-size: 7.5px; color: #888; }
+.bp-bio-paragraph { font-size: 8px; color: #444; margin: 2px 0; }
+.bp-metrics-row { display: flex; gap: 8px; font-size: 8px; color: #666; }

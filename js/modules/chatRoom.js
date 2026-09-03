@@ -500,11 +500,44 @@ export function renderChatRoomView(container) {
 
   roomEl.className = `chat-room-container ${themeTone === "dark" ? "theme-night-mode" : ""}`;
 
-  roomEl.innerHTML = `
-    <!-- ✨ 聊天室全局挂件、气泡与全域主题动态生效样式 -->
+   const wpConfig = activeCharInfo.chatTheme?.wallpaperConfig || { fit: "cover", posX: 50, posY: 50, opacity: 100, blur: 0 };
+  const currentWpUrl = activeCharInfo.chatTheme?.customWallpaperUrl || "";
+    const wallpaperCss = currentWpUrl ? `
+    /* 独立壁纸层样式：铺满消息区域、处于下层 */
+    .chat-wallpaper-fixed-layer {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: url('${currentWpUrl}');
+      background-size: ${wpConfig.fit === "stretch" ? "100% 100%" : wpConfig.fit};
+      background-position: ${wpConfig.posX}% ${wpConfig.posY}%;
+      background-repeat: no-repeat;
+      opacity: ${wpConfig.opacity / 100};
+      filter: blur(${wpConfig.blur}px);
+      pointer-events: none;
+      z-index: 1;
+    }
+    /* 消息流透明展示，浮在壁纸上方 */
+    .chat-messages-area {
+      position: relative !important;
+      background: transparent !important;
+      z-index: 2;
+    }
+    /* 顶栏与底栏实体背景覆盖，处于最高层 */
+    .chat-room-header { position: relative; z-index: 10; background-color: #FFFFFF !important; }
+    .chat-room-footer { position: relative; z-index: 10; background-color: #FFFFFF !important; }
+    .chat-more-drawer { position: relative; z-index: 10; background-color: #FFFFFF !important; }
+    .chat-quote-bar { position: relative; z-index: 10; background-color: #F8F8F8 !important; }
+    .theme-night-mode .chat-room-header { background-color: #0A0A0A !important; }
+    .theme-night-mode .chat-room-footer { background-color: #0A0A0A !important; }
+    .theme-night-mode .chat-more-drawer { background-color: #0A0A0A !important; }
+  ` : "";
+
+    roomEl.innerHTML = `
+    <!-- 聊天室全局挂件、气泡、全域主题与壁纸生效样式 -->
     <style id="chat-global-active-frame-css">${globalFrameCss}</style>
     <style id="chat-global-active-bubble-css">${globalBubbleCss}</style>
     <style id="chat-global-active-theme-css">${globalThemeCss}</style>
+    <style id="chat-global-active-wallpaper-css">${wallpaperCss}</style>
     ${
       themeTone === "dark"
         ? `
@@ -525,6 +558,9 @@ export function renderChatRoomView(container) {
     `
         : ""
     }
+
+    <!-- ✨ 独立壁纸层 (置于顶底栏下层、消息流后方，杜绝遮挡与顶底栏污染) -->
+    <div class="chat-wallpaper-fixed-layer" id="chat-room-wallpaper-bg"></div>
 
     <!-- 1. 顶栏 (INS 黑白线条风) -->
     <header class="chat-room-header">
@@ -1920,7 +1956,7 @@ function renderBubbleStyleTabHtml(themeCfg) {
   `;
 }
 
-// 3. 主题风格板块（日夜间切换 + 聊天室全域高自由度 CSS 放置区）
+// 3. 主题风格板块（日夜间切换 + 聊天室全域高自由度 CSS 放置区，无 Emoji）
 const DEFAULT_ROOM_GLOBAL_CSS = `/* ══════════════════════════════════════════════
    聊天室全域高自由度 CSS 定制模板 (CHAT ROOM GLOBAL CSS)
    ══════════════════════════════════════════════ */
@@ -1935,13 +1971,10 @@ const DEFAULT_ROOM_GLOBAL_CSS = `/* ══════════════�
   background-color: #FFFFFF;
   border-bottom: 1px solid #EAEAEA;
 }
-/* 顶栏标题与状态文字 */
 .chat-header-name { color: #111111; font-weight: 800; }
 .chat-header-status { color: #888888; }
-/* 顶栏返回键与头像 */
 .chat-back-btn svg { stroke: #111111; }
 .chat-header-avatar { border: 1.5px solid #111111; }
-/* 顶栏右上角文字功能键 (搜索 / 设置) */
 .chat-header-text-btn { color: #111111; border-color: #111111; }
 
 /* 3. 底栏容器 (输入区与操作栏) */
@@ -1949,14 +1982,12 @@ const DEFAULT_ROOM_GLOBAL_CSS = `/* ══════════════�
   background-color: #FFFFFF;
   border-top: 1px solid #EAEAEA;
 }
-/* 输入框样式 */
 .chat-input-textarea {
   background: #FAFAFA;
   color: #111111;
   border: 1px solid #111111;
   border-radius: 6px;
 }
-/* 底栏功能按钮 (更多、续写、发送) */
 .chat-footer-btn {
   background: #FFFFFF;
   color: #111111;
@@ -1967,7 +1998,89 @@ const DEFAULT_ROOM_GLOBAL_CSS = `/* ══════════════�
   color: #FFFFFF;
 }
 
-/* 4. 气泡与头像挂件选择器 */
+/* 4. 引用消息相关样式 (QUOTES) */
+/* 4.1 输入栏上方即时引用预览条 */
+.chat-quote-bar {
+  background: #F8F8F8;
+  border-top: 1px solid #EAEAEA;
+  border-bottom: 1px solid #EAEAEA;
+}
+.quote-bar-left-line { background: #111111; width: 3px; }
+.quote-user-tag { color: #111111; font-weight: 800; font-size: 9.5px; }
+.quote-hint-label { color: #888888; font-size: 8px; }
+.quote-text-preview { color: #555555; font-size: 10px; }
+.quote-cancel-btn svg { stroke: #111111; }
+/* 4.2 气泡内部附带的引用卡片 */
+.msg-quote-card {
+  background: rgba(0, 0, 0, 0.04);
+  border-left: 2px solid #111111;
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+.msg-quote-sender { color: #111111; font-weight: 700; font-size: 9px; }
+.msg-quote-text { color: #666666; font-size: 9.5px; }
+
+/* 5. 翻译相关样式 (TRANSLATION) */
+.msg-bubble-orig {
+  color: inherit;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.msg-bubble-trans {
+  color: #777777;
+  font-size: 10px;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.12);
+  line-height: 1.35;
+}
+.msg-bubble-row.user .msg-bubble-trans {
+  border-top-color: rgba(255, 255, 255, 0.2);
+  color: #D6D6D6;
+}
+
+/* 6. 工具栏抽屉与全部 12 款工具图标样式 (MORE TOOLS PANEL) */
+/* 工具抽屉底板与网格 */
+.chat-more-drawer {
+  background: #FFFFFF;
+  border-top: 1px solid #EAEAEA;
+}
+.more-tools-grid {
+  gap: 12px 8px;
+}
+/* 工具图标通用外框 */
+.more-tool-icon-box {
+  background: #FFFFFF;
+  border: 1.2px solid #111111;
+  border-radius: 12px;
+  width: 44px;
+  height: 44px;
+  color: #111111;
+}
+.more-tool-icon-box svg {
+  stroke: #111111;
+}
+/* 工具文字说明 */
+.more-tool-lbl {
+  color: #111111;
+  font-size: 9.5px;
+  font-weight: 700;
+}
+/* 各个独立工具专属定制选择器 (可单独改色/加背景/加发光) */
+#tool-rewind-chat .more-tool-icon-box {}    /* 1. 重回 */
+#tool-tts-speak .more-tool-icon-box {}      /* 2. 语音 */
+#tool-open-camera .more-tool-icon-box {}    /* 3. 相机 */
+#tool-open-album .more-tool-icon-box {}     /* 4. 相册 */
+#tool-send-transfer .more-tool-icon-box {}  /* 5. 转账 */
+#tool-send-gift .more-tool-icon-box {}      /* 6. 礼物 */
+#tool-send-location .more-tool-icon-box {}  /* 7. 定位 */
+#tool-share-chat .more-tool-icon-box {}     /* 8. 分享 */
+#tool-offline-meetup .more-tool-icon-box {} /* 9. 线下 */
+#tool-voice-call .more-tool-icon-box {}     /* 10. 语音通话 */
+#tool-video-call .more-tool-icon-box {}     /* 11. 视频通话 */
+#tool-open-stickers .more-tool-icon-box {}  /* 12. 表情包 */
+
+/* 7. 气泡与头像挂件选择器 */
 .msg-bubble-row.assistant .msg-bubble { border-radius: 12px 12px 12px 2px; }
 .msg-bubble-row.user .msg-bubble { border-radius: 12px 12px 2px 12px; }
 .ins-avatar-frame-wrap { position: relative; }
@@ -2051,35 +2164,120 @@ function renderThemeToneTabHtml(themeCfg) {
   `;
 }
 
-// 4. 壁纸背景板块
+// 4. 壁纸背景板块（移除冗余预设、新增上传命名、实时多维参数微调与列表切换）
 function renderWallpaperTabHtml(themeCfg) {
+  const customWpList = JSON.parse(localStorage.getItem("mini_custom_wallpapers") || "[]");
+  const currentUrl = themeCfg.customWallpaperUrl || "";
+  const wpConfig = themeCfg.wallpaperConfig || { fit: "cover", posX: 50, posY: 50, opacity: 100, blur: 0 };
+  const isDefault = (themeCfg.wallpaper || "default") === "default" || !currentUrl;
+
   return `
     <div class="ins-vault-pane">
+      <!-- 1. 上传入口卡片 -->
       <div class="ins-upload-dashed-card" id="btn-upload-custom-wallpaper">
         <div class="ins-upload-icon-circle">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         </div>
-        <span class="ins-upload-main-text">上传自定义聊天室壁纸</span>
-        <span class="ins-upload-sub-text">支持本地高清图片作为专属背景</span>
+        <span class="ins-upload-main-text">上传自定义壁纸</span>
+        <span class="ins-upload-sub-text">支持本地图片 · 上传时命名并存入列表</span>
         <input type="file" id="input-chat-wallpaper-file" accept="image/*" style="display:none;" />
       </div>
 
-      <div style="font-size:9.5px; font-weight:800; color:#111; margin-top:4px;">预设纹理背景</div>
-      <div class="ins-theme-grid-list">
-        <div class="ins-wallpaper-card ${(themeCfg.wallpaper || "default") === "default" ? "active" : ""}" data-wp-id="default">
-          <div class="wp-thumb-box default"></div>
-          <span class="wp-title">默认留白</span>
-          <button class="ins-card-action-btn use btn-select-wp" data-id="default">选用</button>
+      <!-- 2. 壁纸参数微调面板 (仅在使用自定义壁纸时可调) -->
+      <div class="ins-settings-card" style="margin-top: 6px; padding: 12px; gap: 10px;">
+        <div class="ins-card-title-row">
+          <span class="ins-card-title">壁纸视觉微调面板 / WALLPAPER CONFIG</span>
+          <span style="font-size: 8px; color: #888; font-family: ui-monospace, monospace;">REALTIME ADJUST</span>
         </div>
-        <div class="ins-wallpaper-card ${themeCfg.wallpaper === "grid_p2" ? "active" : ""}" data-wp-id="grid_p2">
-          <div class="wp-thumb-box grid_p2"></div>
-          <span class="wp-title">P2 斜纹细网格</span>
-          <button class="ins-card-action-btn use btn-select-wp" data-id="grid_p2">选用</button>
+
+        <!-- 实时微缩预览窗口 -->
+        <div style="position:relative; width:100%; height:90px; border:1px solid #111; border-radius:8px; overflow:hidden; background:#F5F5F5; display:flex; align-items:center; justify-content:center;">
+          ${currentUrl ? `
+            <div id="wp-tuning-preview-layer" style="position:absolute; inset:0; background-image:url('${currentUrl}'); background-size:${wpConfig.fit === "stretch" ? "100% 100%" : wpConfig.fit}; background-position:${wpConfig.posX}% ${wpConfig.posY}%; background-repeat:no-repeat; opacity:${wpConfig.opacity / 100}; filter:blur(${wpConfig.blur}px);"></div>
+            <div style="position:relative; z-index:1; font-size:9px; font-weight:800; background:rgba(0,0,0,0.6); color:#FFF; padding:2px 8px; border-radius:4px;">效果实时预览</div>
+          ` : `
+            <div style="font-size:9.5px; color:#888; font-weight:700;">当前为默认留白背景，选用壁纸后可在此调参</div>
+          `}
         </div>
-        <div class="ins-wallpaper-card ${themeCfg.wallpaper === "dots" ? "active" : ""}" data-wp-id="dots">
-          <div class="wp-thumb-box dots"></div>
-          <span class="wp-title">极简细点阵</span>
-          <button class="ins-card-action-btn use btn-select-wp" data-id="dots">选用</button>
+
+        ${currentUrl ? `
+          <!-- 快捷适配模式切换 -->
+          <div style="display:flex; gap:6px;">
+            <button class="ins-card-action-btn ${wpConfig.fit === "cover" ? "use" : ""}" id="btn-wp-fit-cover" style="flex:1; padding:5px 0; font-size:9px;">铺满屏幕</button>
+            <button class="ins-card-action-btn ${wpConfig.fit === "contain" ? "use" : ""}" id="btn-wp-fit-contain" style="flex:1; padding:5px 0; font-size:9px;">居中包含</button>
+            <button class="ins-card-action-btn ${wpConfig.fit === "stretch" ? "use" : ""}" id="btn-wp-fit-stretch" style="flex:1; padding:5px 0; font-size:9px;">拉伸填满</button>
+          </div>
+
+          <!-- 滑块 1：不透明度 -->
+          <div style="display:flex; flex-direction:column; gap:3px;">
+            <div style="display:flex; justify-content:space-between; font-size:9px; font-weight:700; color:#444;">
+              <span>不透明度 (OPACITY)</span>
+              <span id="lbl-wp-opacity">${wpConfig.opacity}%</span>
+            </div>
+            <input type="range" class="ins-range-slider" id="slider-wp-opacity" min="10" max="100" value="${wpConfig.opacity}" />
+          </div>
+
+          <!-- 滑块 2：毛玻璃模糊 -->
+          <div style="display:flex; flex-direction:column; gap:3px;">
+            <div style="display:flex; justify-content:space-between; font-size:9px; font-weight:700; color:#444;">
+              <span>毛玻璃模糊 (BLUR)</span>
+              <span id="lbl-wp-blur">${wpConfig.blur}px</span>
+            </div>
+            <input type="range" class="ins-range-slider" id="slider-wp-blur" min="0" max="25" value="${wpConfig.blur}" />
+          </div>
+
+          <!-- 滑块 3：水平位置 X -->
+          <div style="display:flex; flex-direction:column; gap:3px;">
+            <div style="display:flex; justify-content:space-between; font-size:9px; font-weight:700; color:#444;">
+              <span>水平定位 (POSITION X)</span>
+              <span id="lbl-wp-posx">${wpConfig.posX}%</span>
+            </div>
+            <input type="range" class="ins-range-slider" id="slider-wp-posx" min="0" max="100" value="${wpConfig.posX}" />
+          </div>
+
+          <!-- 滑块 4：垂直位置 Y -->
+          <div style="display:flex; flex-direction:column; gap:3px;">
+            <div style="display:flex; justify-content:space-between; font-size:9px; font-weight:700; color:#444;">
+              <span>垂直定位 (POSITION Y)</span>
+              <span id="lbl-wp-posy">${wpConfig.posY}%</span>
+            </div>
+            <input type="range" class="ins-range-slider" id="slider-wp-posy" min="0" max="100" value="${wpConfig.posY}" />
+          </div>
+
+          <!-- 保存参数至当前壁纸 -->
+          <button class="ins-card-action-btn use" id="btn-save-current-wp-config" style="width:100%; padding:7px 0; font-size:10px; margin-top:2px;">保存当前壁纸参数到列表</button>
+        ` : ""}
+      </div>
+
+      <!-- 3. 已保存壁纸列表 -->
+      <div class="ins-settings-card" style="margin-top: 4px; padding: 12px; gap: 8px;">
+        <div class="ins-card-title-row">
+          <span class="ins-card-title">已存壁纸列表 (${customWpList.length + 1})</span>
+          <span style="font-size: 8px; color: #888; font-family: ui-monospace, monospace;">WALLPAPERS</span>
+        </div>
+
+        <div class="ins-theme-grid-list" style="grid-template-columns: repeat(3, 1fr); gap: 8px;">
+          <!-- 默认留白项 -->
+          <div class="ins-wallpaper-card ${isDefault ? "active" : ""}" data-wp-type="default" style="display:flex; flex-direction:column; gap:4px; padding:6px; background:#FFF; border:1.2px solid #111; border-radius:6px; cursor:pointer;">
+            <div style="width:100%; height:50px; background:#FFFFFF; border:1px dashed #CCC; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:8px; color:#888;">留白</div>
+            <span style="font-size:9px; font-weight:800; color:#111; text-align:center;">默认留白</span>
+            <button class="ins-card-action-btn ${isDefault ? "use" : ""} btn-apply-default-wp" style="padding:3px 0; font-size:8.5px; width:100%;">${isDefault ? "使用中" : "选用"}</button>
+          </div>
+
+          <!-- 自定义壁纸项 -->
+          ${customWpList.map((wp) => {
+            const isUsing = currentUrl === wp.url;
+            return `
+              <div class="ins-wallpaper-card ${isUsing ? "active" : ""}" style="position:relative; display:flex; flex-direction:column; gap:4px; padding:6px; background:#FFF; border:1.2px solid #111; border-radius:6px;">
+                <div style="width:100%; height:50px; background-image:url('${wp.url}'); background-size:cover; background-position:center; border-radius:4px; border:1px solid #EAEAEA;"></div>
+                <span style="font-size:9px; font-weight:800; color:#111; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(wp.name)}</span>
+                <div style="display:flex; gap:3px;">
+                  <button class="ins-card-action-btn ${isUsing ? "use" : ""} btn-apply-saved-wp" data-id="${wp.id}" style="flex:1; padding:3px 0; font-size:8.5px;">${isUsing ? "使用中" : "选用"}</button>
+                  <button class="ins-card-action-btn del btn-del-saved-wp" data-id="${wp.id}" style="padding:3px 5px; font-size:8.5px;">×</button>
+                </div>
+              </div>
+            `;
+          }).join("")}
         </div>
       </div>
     </div>
@@ -2661,19 +2859,59 @@ function bindChatThemeEvents(roomEl, container) {
     };
   });
 
-  // 4. 选用预设壁纸
-  roomEl.querySelectorAll(".btn-select-wp").forEach((btn) => {
-    btn.onclick = () => {
-      const wpId = btn.getAttribute("data-id");
-      char.chatTheme.wallpaper = wpId;
+   // 4. 辅助函数：将壁纸参数实时应用到聊天室全局 DOM
+  const applyWallpaperToChatRoom = (url, cfg) => {
+    const wpStyle = document.querySelector("#chat-global-active-wallpaper-css");
+    if (!wpStyle) return;
+    if (!url) {
+      wpStyle.textContent = "";
+      return;
+    }
+            wpStyle.textContent = `
+      /* 独立壁纸层样式：铺满消息区域、处于下层 */
+      .chat-wallpaper-fixed-layer {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-image: url('${url}');
+        background-size: ${cfg.fit === "stretch" ? "100% 100%" : cfg.fit};
+        background-position: ${cfg.posX}% ${cfg.posY}%;
+        background-repeat: no-repeat;
+        opacity: ${cfg.opacity / 100};
+        filter: blur(${cfg.blur}px);
+        pointer-events: none;
+        z-index: 1;
+      }
+      /* 消息流透明展示，浮在壁纸上方 */
+      .chat-messages-area {
+        position: relative !important;
+        background: transparent !important;
+        z-index: 2;
+      }
+      /* 顶栏与底栏实体背景覆盖，处于最高层 */
+      .chat-room-header { position: relative; z-index: 10; background-color: #FFFFFF !important; }
+      .chat-room-footer { position: relative; z-index: 10; background-color: #FFFFFF !important; }
+      .chat-more-drawer { position: relative; z-index: 10; background-color: #FFFFFF !important; }
+      .chat-quote-bar { position: relative; z-index: 10; background-color: #F8F8F8 !important; }
+      .theme-night-mode .chat-room-header { background-color: #0A0A0A !important; }
+      .theme-night-mode .chat-room-footer { background-color: #0A0A0A !important; }
+      .theme-night-mode .chat-more-drawer { background-color: #0A0A0A !important; }
+    `;
+  };
+
+  // 4.1 选用默认留白
+  const defaultWpBtn = roomEl.querySelector(".btn-apply-default-wp");
+  if (defaultWpBtn) {
+    defaultWpBtn.onclick = () => {
+      char.chatTheme.wallpaper = "default";
       char.chatTheme.customWallpaperUrl = "";
       updateFullCharData(char);
+      applyWallpaperToChatRoom("", {});
       refreshChatThemeView(roomEl, container);
-      showInsToast("已应用背景壁纸");
+      showInsToast("已恢复默认留白背景");
     };
-  });
+  }
 
-  // 上传自定义壁纸
+  // 4.2 上传自定义壁纸并弹出 INS 风命名弹窗
   const upWpBtn = roomEl.querySelector("#btn-upload-custom-wallpaper");
   const upWpInput = roomEl.querySelector("#input-chat-wallpaper-file");
   if (upWpBtn && upWpInput) {
@@ -2682,13 +2920,168 @@ function bindChatThemeEvents(roomEl, container) {
       upWpInput.click();
     };
     upWpInput.onchange = (e) => {
-      handleAvatarFile(e.target.files[0], (dataUrl) => {
-        char.chatTheme.wallpaper = "custom";
-        char.chatTheme.customWallpaperUrl = dataUrl;
-        updateFullCharData(char);
-        refreshChatThemeView(roomEl, container);
-        showInsToast("已设置自定义壁纸");
+      const file = e.target.files[0];
+      if (!file) return;
+      handleAvatarFile(file, (dataUrl) => {
+        openWallpaperNameModal(dataUrl, (customName) => {
+          let wpList = JSON.parse(localStorage.getItem("mini_custom_wallpapers") || "[]");
+          const newWp = {
+            id: `wp-${Date.now()}`,
+            name: customName || `壁纸 ${wpList.length + 1}`,
+            url: dataUrl,
+            config: { fit: "cover", posX: 50, posY: 50, opacity: 100, blur: 0 },
+            createdAt: new Date().toISOString().slice(0, 10),
+          };
+          wpList.unshift(newWp);
+          localStorage.setItem("mini_custom_wallpapers", JSON.stringify(wpList));
+
+          char.chatTheme.wallpaper = "custom";
+          char.chatTheme.customWallpaperUrl = dataUrl;
+          char.chatTheme.wallpaperConfig = { ...newWp.config };
+          updateFullCharData(char);
+
+          applyWallpaperToChatRoom(dataUrl, char.chatTheme.wallpaperConfig);
+          refreshChatThemeView(roomEl, container);
+          showInsToast(`已保存并应用壁纸「${newWp.name}」`);
+        });
       });
+    };
+  }
+
+  // 4.3 选用已存壁纸
+  roomEl.querySelectorAll(".btn-apply-saved-wp").forEach((btn) => {
+    btn.onclick = () => {
+      const wpId = btn.getAttribute("data-id");
+      const wpList = JSON.parse(localStorage.getItem("mini_custom_wallpapers") || "[]");
+      const target = wpList.find((w) => w.id === wpId);
+      if (target) {
+        char.chatTheme.wallpaper = "custom";
+        char.chatTheme.customWallpaperUrl = target.url;
+        char.chatTheme.wallpaperConfig = target.config || { fit: "cover", posX: 50, posY: 50, opacity: 100, blur: 0 };
+        updateFullCharData(char);
+
+        applyWallpaperToChatRoom(target.url, char.chatTheme.wallpaperConfig);
+        refreshChatThemeView(roomEl, container);
+        showInsToast(`已应用壁纸「${target.name}」`);
+      }
+    };
+  });
+
+  // 4.4 删除已存壁纸
+  roomEl.querySelectorAll(".btn-del-saved-wp").forEach((btn) => {
+    btn.onclick = () => {
+      const wpId = btn.getAttribute("data-id");
+      let wpList = JSON.parse(localStorage.getItem("mini_custom_wallpapers") || "[]");
+      const target = wpList.find((w) => w.id === wpId);
+      wpList = wpList.filter((w) => w.id !== wpId);
+      localStorage.setItem("mini_custom_wallpapers", JSON.stringify(wpList));
+
+      if (target && char.chatTheme.customWallpaperUrl === target.url) {
+        char.chatTheme.wallpaper = "default";
+        char.chatTheme.customWallpaperUrl = "";
+        updateFullCharData(char);
+        applyWallpaperToChatRoom("", {});
+      }
+      refreshChatThemeView(roomEl, container);
+      showInsToast("已删除该壁纸");
+    };
+  });
+
+  // 4.5 实时调节控制逻辑 (滑块与适配模式)
+  if (!char.chatTheme.wallpaperConfig) {
+    char.chatTheme.wallpaperConfig = { fit: "cover", posX: 50, posY: 50, opacity: 100, blur: 0 };
+  }
+  const currentCfg = char.chatTheme.wallpaperConfig;
+  const previewLayer = roomEl.querySelector("#wp-tuning-preview-layer");
+
+  const updateTuningRealtime = () => {
+    if (previewLayer) {
+      previewLayer.style.backgroundSize = currentCfg.fit === "stretch" ? "100% 100%" : currentCfg.fit;
+      previewLayer.style.backgroundPosition = `${currentCfg.posX}% ${currentCfg.posY}%`;
+      previewLayer.style.opacity = currentCfg.opacity / 100;
+      previewLayer.style.filter = `blur(${currentCfg.blur}px)`;
+    }
+    applyWallpaperToChatRoom(char.chatTheme.customWallpaperUrl, currentCfg);
+  };
+
+  const bindSlider = (id, key, unit, lblId) => {
+    const slider = roomEl.querySelector(id);
+    const lbl = roomEl.querySelector(lblId);
+    if (slider && lbl) {
+      slider.oninput = () => {
+        currentCfg[key] = parseInt(slider.value, 10);
+        lbl.textContent = `${slider.value}${unit}`;
+        updateTuningRealtime();
+      };
+    }
+  };
+
+  bindSlider("#slider-wp-opacity", "opacity", "%", "#lbl-wp-opacity");
+  bindSlider("#slider-wp-blur", "blur", "px", "#lbl-wp-blur");
+  bindSlider("#slider-wp-posx", "posX", "%", "#lbl-wp-posx");
+  bindSlider("#slider-wp-posy", "posY", "%", "#lbl-wp-posy");
+
+  const bindFitBtn = (id, fitValue) => {
+    const btn = roomEl.querySelector(id);
+    if (btn) {
+      btn.onclick = () => {
+        currentCfg.fit = fitValue;
+        updateTuningRealtime();
+        refreshChatThemeView(roomEl, container);
+      };
+    }
+  };
+  bindFitBtn("#btn-wp-fit-cover", "cover");
+  bindFitBtn("#btn-wp-fit-contain", "contain");
+  bindFitBtn("#btn-wp-fit-stretch", "stretch");
+
+  // 4.6 保存当前微调参数至壁纸库
+  const saveCfgBtn = roomEl.querySelector("#btn-save-current-wp-config");
+  if (saveCfgBtn && char.chatTheme.customWallpaperUrl) {
+    saveCfgBtn.onclick = () => {
+      let wpList = JSON.parse(localStorage.getItem("mini_custom_wallpapers") || "[]");
+      const matched = wpList.find((w) => w.url === char.chatTheme.customWallpaperUrl);
+      if (matched) {
+        matched.config = { ...currentCfg };
+        localStorage.setItem("mini_custom_wallpapers", JSON.stringify(wpList));
+      }
+      updateFullCharData(char);
+      showInsToast("已保存当前壁纸参数至列表");
+    };
+  }
+
+  // 4.7 INS 风格壁纸命名弹窗函数
+  function openWallpaperNameModal(imgUrl, onConfirm) {
+    const overlay = document.createElement("div");
+    overlay.className = "sticker-modal-overlay";
+    overlay.innerHTML = `
+      <div class="sticker-modal-card">
+        <div class="sticker-modal-header">
+          <span class="sticker-modal-title">命名并保存壁纸</span>
+          <button class="sticker-modal-close" id="btn-close-wp-modal">×</button>
+        </div>
+        <div class="sticker-modal-body">
+          <div style="width:100%; height:100px; background-image:url('${imgUrl}'); background-size:cover; background-position:center; border:1px solid #111; border-radius:6px;"></div>
+          <div class="stk-form-group">
+            <span class="stk-form-label">壁纸命名</span>
+            <input type="text" class="stk-input" id="input-new-wp-name" placeholder="例如：极简落日 / 侘寂冷灰" value="自定义壁纸 ${Date.now().toString().slice(-4)}" />
+          </div>
+          <div style="display:flex; gap:6px; margin-top:4px;">
+            <button class="ins-card-action-btn use" id="btn-confirm-save-wp" style="flex:1; padding:8px 0;">确认存入</button>
+            <button class="ins-card-action-btn" id="btn-cancel-save-wp" style="flex:1; padding:8px 0; background:#FFF; border:1px solid #CCC; color:#111;">取消</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const closeModal = () => overlay.remove();
+    overlay.querySelector("#btn-close-wp-modal").onclick = closeModal;
+    overlay.querySelector("#btn-cancel-save-wp").onclick = closeModal;
+    overlay.querySelector("#btn-confirm-save-wp").onclick = () => {
+      const name = overlay.querySelector("#input-new-wp-name").value.trim();
+      closeModal();
+      onConfirm(name);
     };
   }
 }
